@@ -12,7 +12,12 @@ export async function deleteComment(commentId: string): Promise<ActionResult> {
 
   const comment = await db.comment.findFirst({
     where: { id: commentId },
-    include: { _count: { select: { children: true } }, post: { include: { topic: true } } },
+    select: {
+      userId: true,
+      postId: true,
+      _count: { select: { children: true } },
+      post: { select: { topic: { select: { slug: true } } } },
+    },
   });
 
   if (!comment) {

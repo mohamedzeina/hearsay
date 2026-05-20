@@ -12,7 +12,10 @@ export async function deletePost(postId: string): Promise<ActionResult | void> {
 
   const post = await db.post.findFirst({
     where: { id: postId },
-    include: { topic: true },
+    select: {
+      userId: true,
+      topic: { select: { slug: true } },
+    },
   });
 
   if (!post) {
