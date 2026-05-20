@@ -36,12 +36,13 @@ export default function Avatar({
 }: AvatarProps) {
   const s = SIZES[size];
   const ringClass = RINGS[ring];
+  const name = user.name?.trim() ?? '';
 
   if (user.image) {
     return (
       <Image
         src={user.image}
-        alt={user.name || ''}
+        alt={name}
         width={s.px}
         height={s.px}
         className={`${s.box} rounded-full object-cover ${ringClass} ${className}`.trim()}
@@ -49,7 +50,7 @@ export default function Avatar({
     );
   }
 
-  const initial = user.name?.trim()?.[0]?.toUpperCase() ?? '?';
+  const initial = name[0]?.toUpperCase() ?? '?';
   const fallback = tone
     ? `${tone.bg} ${tone.text}`
     : 'bg-persimmon-soft text-persimmon-deep';

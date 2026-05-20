@@ -76,16 +76,9 @@ export default function SignInLoading() {
               {/* "Why only GitHub?" disclosure */}
               <Skeleton className="h-3 w-36 rounded bg-cream-2" />
 
-              {/* Social proof divider + avatars + text */}
+              {/* Social proof divider + generic block (real count revealed after data loads) */}
               <div className="pt-5 border-t border-rule flex items-center gap-3">
-                <div className="flex -space-x-2 shrink-0">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton
-                      key={i}
-                      className="w-8 h-8 rounded-full bg-cream-2 ring-2 ring-surface"
-                    />
-                  ))}
-                </div>
+                <Skeleton className="h-8 w-24 rounded-full bg-cream-2 shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   <Skeleton className="h-3 w-3/4 rounded bg-cream-2" />
                   <Skeleton className="h-2.5 w-1/2 rounded bg-cream-2" />
