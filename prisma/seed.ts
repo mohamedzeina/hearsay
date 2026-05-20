@@ -55,7 +55,19 @@ async function main() {
   );
 
   console.log('Creating topics...');
-  const [webDev, javascript, career, openSource, design] = await Promise.all([
+  const [
+    webDev,
+    javascript,
+    career,
+    openSource,
+    design,
+    food,
+    books,
+    travel,
+    music,
+    fitness,
+    gaming,
+  ] = await Promise.all([
     db.topic.create({
       data: {
         slug: 'web-dev',
@@ -89,6 +101,48 @@ async function main() {
         slug: 'design',
         description:
           'UI patterns, design systems, accessibility, and visual craft',
+      },
+    }),
+    db.topic.create({
+      data: {
+        slug: 'food',
+        description:
+          'Home cooking, recipes, restaurants, and everything tasty',
+      },
+    }),
+    db.topic.create({
+      data: {
+        slug: 'books',
+        description:
+          'Book recommendations, reviews, and reading habits',
+      },
+    }),
+    db.topic.create({
+      data: {
+        slug: 'travel',
+        description:
+          'Trip ideas, destinations, and the logistics of getting there',
+      },
+    }),
+    db.topic.create({
+      data: {
+        slug: 'music',
+        description:
+          'Albums, gear, discovery, and how you actually listen',
+      },
+    }),
+    db.topic.create({
+      data: {
+        slug: 'fitness',
+        description:
+          'Running, lifting, yoga, recovery — everything that gets you moving',
+      },
+    }),
+    db.topic.create({
+      data: {
+        slug: 'gaming',
+        description:
+          'Games, hardware, and fitting them into a real-life schedule',
       },
     }),
   ]);
@@ -192,6 +246,96 @@ async function main() {
         title: 'Why is dark mode still so hard to get right?',
         content:
           "Built three apps with dark mode in the last year and each time the contrast and hierarchy fall apart in subtle ways. Curious whether others have a design process or set of guardrails that actually leads to a dark theme that feels intentional rather than inverted.",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: food.id,
+        userId: byHandle.maya.id,
+        title: "What's your weeknight dinner formula?",
+        content:
+          "I've fallen into the trap of cooking the same three meals on rotation. Trying to figure out a *formula* I can mix and match instead of memorising new recipes every week.\n\nMy current attempt:\n\n- A protein (rotating chicken, tofu, eggs, lentils)\n- A grain or carb\n- A green vegetable\n- A sauce that ties it all together\n\nThe sauce is what's saving me — peanut, tahini-lemon, salsa verde, miso-butter. What's your go-to weeknight pattern?",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: books.id,
+        userId: byHandle.jordan.id,
+        title: 'Stopped reading three books in a row — am I being too picky?',
+        content:
+          "Genuinely worried I'm becoming impatient as a reader. The last three books I picked up, I bailed on around the 60-page mark. Each one was *fine* — just not pulling me in.\n\nDo you push through when a book isn't grabbing you, or just move on? Life feels too short for books you're not enjoying, but I also wonder if I'm missing the slow burns.",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: travel.id,
+        userId: byHandle.aiden.id,
+        title: 'Solo trips have a 3-day sweet spot for me — anyone else?',
+        content:
+          "Just got back from a solo week in Lisbon. The first three days were amazing — wandering, eating, no schedule. By day five I was honestly bored of my own company.\n\nIs three days the limit for everyone, or am I just bad at being alone? Curious what your sweet spot is for solo travel.",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: music.id,
+        userId: byHandle.riley.id,
+        title: 'How do you actually find new music in 2026?',
+        content:
+          "Spotify's recommendations have started feeling like a hall of mirrors — same five artists in every mix. I miss the days of a friend handing me a USB stick.\n\nWhat's working for you? Newsletters? Bandcamp? A specific radio show? I'll take anything that isn't another algorithm.",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: fitness.id,
+        userId: byHandle.sasha.id,
+        title: 'Coming back to running after 2 years — start from zero or pick up where I left off?',
+        content:
+          "I used to run 30km a week pretty comfortably. Then life happened and I haven't laced up in two years.\n\nMy instinct is to do 5km easy and see how it feels. Everyone I've asked says *no*, walk-run for a month first. The ego wants to skip ahead. The knees want to listen.\n\nWhat would you do?",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: gaming.id,
+        userId: byHandle.theo.id,
+        title: 'Steam Deck vs gaming PC — which one actually gets played more?',
+        content:
+          "I built a nice gaming PC three years ago. Then I got a Steam Deck. The PC has barely been on in months.\n\nTurns out 'I can play it on the couch' beats 'it looks slightly better' every single time. Anyone else gone all-in on handheld and not looked back?",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: food.id,
+        userId: byHandle.lin.id,
+        title: 'Home espresso rabbit hole — worth it, or just buy good beans and a V60?',
+        content:
+          "I'm one click away from spending way too much on an espresso setup. My partner thinks I've lost the plot and that a pour-over with great beans is 90% of the experience for 10% of the cost.\n\nThey're probably right. But the *probably* is doing a lot of work in that sentence. Talk me out of it, or into it.",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: books.id,
+        userId: byHandle.kai.id,
+        title: 'Anyone else re-reading old favourites instead of starting new ones?',
+        content:
+          "I noticed I've been going back to books I've already read three or four times. There's something comforting about knowing exactly how it's going to feel.\n\nIs this a sign I'm in a reading rut, or is re-reading underrated? I almost feel guilty about it, like I should be *making progress* through my TBR pile.",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: travel.id,
+        userId: byHandle.nadia.id,
+        title: 'Slow travel converted me — a month in one city beats three cities in a week',
+        content:
+          "Spent four weeks in Mexico City instead of rushing across the country, and it's changed how I want to travel forever.\n\nYou learn the actual neighbourhood. You go back to the same cafe twice. You stop optimising. Anyone else made the switch? Where would you stay for a month?",
+      },
+    }),
+    db.post.create({
+      data: {
+        topicId: music.id,
+        userId: byHandle.sam.id,
+        title: 'Concerts have gotten weirdly expensive — is it just me?',
+        content:
+          "Saw a show last weekend and the ticket plus fees was almost £90 for an artist I'd never have paid £40 for two years ago. I get that touring is the income now, but the calculus has shifted enough that I'm choosing fewer, bigger shows over the smaller venues I used to love.\n\nAm I just getting older or has something fundamentally changed?",
       },
     }),
   ]);
@@ -392,6 +536,165 @@ async function main() {
     },
   });
 
+  // posts[11] — Weeknight dinner formula
+  const p11c0 = await db.comment.create({
+    data: {
+      postId: posts[11].id,
+      userId: byHandle.jordan.id,
+      content:
+        "The sauce angle is real. I keep about four jars going in the fridge at all times and dinner basically writes itself.",
+    },
+  });
+  await db.comment.create({
+    data: {
+      postId: posts[11].id,
+      parentId: p11c0.id,
+      userId: byHandle.aiden.id,
+      content:
+        "Which four? I have peanut sauce and... a lot of mustard.",
+    },
+  });
+
+  // posts[12] — DNF books
+  await db.comment.create({
+    data: {
+      postId: posts[12].id,
+      userId: byHandle.theo.id,
+      content:
+        "I've stopped feeling guilty about it. The publishing world produces way more than anyone can read — being picky is the only sane response.",
+    },
+  });
+
+  // posts[13] — Solo trip sweet spot
+  await db.comment.create({
+    data: {
+      postId: posts[13].id,
+      userId: byHandle.nadia.id,
+      content:
+        "I get the opposite — three days isn't enough to settle in anywhere. Try a week somewhere walkable and see if it shifts.",
+    },
+  });
+  await db.comment.create({
+    data: {
+      postId: posts[13].id,
+      userId: byHandle.maya.id,
+      content:
+        "Three days for me too. After that I want someone to share the meals with.",
+    },
+  });
+
+  // posts[14] — Finding new music
+  await db.comment.create({
+    data: {
+      postId: posts[14].id,
+      userId: byHandle.sasha.id,
+      content:
+        "Bandcamp Daily and a couple of Substack newsletters do all the heavy lifting for me now. The algorithms gave up on me.",
+    },
+  });
+  await db.comment.create({
+    data: {
+      postId: posts[14].id,
+      userId: byHandle.kai.id,
+      content:
+        "Genuinely just texting friends 'what are you listening to'. Not scalable but the hit rate is so much higher.",
+    },
+  });
+
+  // posts[15] — Returning to running
+  const p15c0 = await db.comment.create({
+    data: {
+      postId: posts[15].id,
+      userId: byHandle.aiden.id,
+      content:
+        "Walk-run. Your cardio comes back in weeks, your tendons take *months*. Don't ask me how I know.",
+    },
+  });
+  await db.comment.create({
+    data: {
+      postId: posts[15].id,
+      parentId: p15c0.id,
+      userId: byHandle.maya.id,
+      content:
+        "Co-signed. The first injury after a long break is always the dumb, avoidable one.",
+    },
+  });
+
+  // posts[16] — Steam Deck vs PC
+  await db.comment.create({
+    data: {
+      postId: posts[16].id,
+      userId: byHandle.riley.id,
+      content:
+        "Same exact arc. The PC is a glorified emulator host now. Comfort wins every time.",
+    },
+  });
+
+  // posts[17] — Home espresso
+  await db.comment.create({
+    data: {
+      postId: posts[17].id,
+      userId: byHandle.sam.id,
+      content:
+        "I went down this exact hole. Honestly? Get a good grinder, any half-decent machine, and great beans. The grinder is what actually matters.",
+    },
+  });
+  await db.comment.create({
+    data: {
+      postId: posts[17].id,
+      userId: byHandle.kai.id,
+      content:
+        "Don't do it. Buy a V60, save the money, drink better beans more often.",
+    },
+  });
+
+  // posts[18] — Re-reading books
+  const p18c0 = await db.comment.create({
+    data: {
+      postId: posts[18].id,
+      userId: byHandle.lin.id,
+      content:
+        "Re-reading is one of the best things about reading. You notice everything you missed the first time.",
+    },
+  });
+  await db.comment.create({
+    data: {
+      postId: posts[18].id,
+      parentId: p18c0.id,
+      userId: byHandle.jordan.id,
+      content:
+        "Also it's how you find out which books actually held up. Half of mine didn't.",
+    },
+  });
+
+  // posts[19] — Slow travel
+  await db.comment.create({
+    data: {
+      postId: posts[19].id,
+      userId: byHandle.theo.id,
+      content:
+        "A month in Tbilisi was the best travel I've done. Cheap, walkable, and you get a 'usual cafe' by week two.",
+    },
+  });
+
+  // posts[20] — Concert prices
+  await db.comment.create({
+    data: {
+      postId: posts[20].id,
+      userId: byHandle.riley.id,
+      content:
+        "Not just you. Fees alone have gone unhinged. I now budget for two big shows a year and that's it.",
+    },
+  });
+  await db.comment.create({
+    data: {
+      postId: posts[20].id,
+      userId: byHandle.nadia.id,
+      content:
+        "Smaller venues are where the magic still is, and they're holding the line on prices. Worth chasing them out.",
+    },
+  });
+
   console.log('Sprinkling votes...');
 
   // Deterministic-ish PRNG so reruns look similar.
@@ -430,7 +733,7 @@ async function main() {
 
   const stats = {
     users: users.length,
-    topics: 5,
+    topics: 11,
     posts: posts.length,
     comments: allComments.length,
     postVotes: await db.postVote.count(),
