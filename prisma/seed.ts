@@ -340,6 +340,39 @@ async function main() {
     }),
   ]);
 
+  // Preserved real user (a real GitHub-authenticated account, if any). When
+  // present we mix in posts and comments authored by them so the seed reflects
+  // the actual owner of the dev DB, not just the seeded personas.
+  const realUsers = await db.user.findMany({
+    where: { email: { not: { endsWith: `@${SEED_EMAIL_DOMAIN}` } } },
+    orderBy: { id: 'asc' },
+  });
+  const owner = realUsers[0] ?? null;
+
+  let ownerFoodPost: { id: string } | null = null;
+  let ownerCareerPost: { id: string } | null = null;
+  if (owner) {
+    console.log(`Adding posts by ${owner.name ?? owner.email}...`);
+    ownerFoodPost = await db.post.create({
+      data: {
+        topicId: food.id,
+        userId: owner.id,
+        title: "Best thing you've cooked lately?",
+        content:
+          "Spent way too long this weekend chasing a perfect roasted whole cauliflower — turmeric, tahini, pomegranate. Absolutely worth the time.\n\nWhat's been your standout home cook of the month?",
+      },
+    });
+    ownerCareerPost = await db.post.create({
+      data: {
+        topicId: career.id,
+        userId: owner.id,
+        title: "What's one habit that's quietly made you a better engineer?",
+        content:
+          "Not the big rewrites or hot takes — the boring small habits.\n\nFor me it's writing a one-paragraph summary at the end of every coding session. Sounds tiny; saves an hour of re-discovery the next morning.\n\nWhat's yours?",
+      },
+    });
+  }
+
   console.log('Creating comment threads...');
 
   // posts[0] — Next.js
@@ -695,6 +728,66 @@ async function main() {
     },
   });
 
+  if (owner) {
+    console.log(`Adding comments by ${owner.name ?? owner.email}...`);
+
+    // Owner chiming in on a few existing threads
+    await db.comment.create({
+      data: {
+        postId: posts[1].id,
+        userId: owner.id,
+        content:
+          "Tailwind convert here too. The 'where did I define that class' problem disappeared overnight.",
+      },
+    });
+    await db.comment.create({
+      data: {
+        postId: posts[11].id,
+        userId: owner.id,
+        content:
+          "Sauce-as-strategy is the way. A good tahini-lemon will rescue a Tuesday on its own.",
+      },
+    });
+    await db.comment.create({
+      data: {
+        postId: posts[15].id,
+        userId: owner.id,
+        content:
+          "Walk-run, no question. Cardio comes back fast, joints don't.",
+      },
+    });
+    await db.comment.create({
+      data: {
+        postId: posts[20].id,
+        userId: owner.id,
+        content:
+          "Switched to one big show plus smaller local venues. Way better ratio per pound.",
+      },
+    });
+
+    // Personas responding to the owner's posts so they're not orphaned
+    if (ownerFoodPost) {
+      await db.comment.create({
+        data: {
+          postId: ownerFoodPost.id,
+          userId: byHandle.maya.id,
+          content:
+            "Roasted cauliflower never disappoints. I do harissa-yogurt instead of tahini when I want a change of pace.",
+        },
+      });
+    }
+    if (ownerCareerPost) {
+      await db.comment.create({
+        data: {
+          postId: ownerCareerPost.id,
+          userId: byHandle.theo.id,
+          content:
+            "Love this. The end-of-session note habit has saved me on every project I've actually shipped.",
+        },
+      });
+    }
+  }
+
   console.log('Sprinkling votes...');
 
   // Deterministic-ish PRNG so reruns look similar.
@@ -712,8 +805,15 @@ async function main() {
     return out;
   };
 
-  for (const post of posts) {
-    const voters = pick(users, 2 + Math.floor(rand() * 5)); // 2–6 votes
+  const voterPool = owner ? [...users, owner] : users;
+  const allPosts = [
+    ...posts,
+    ...(ownerFoodPost ? [ownerFoodPost] : []),
+    ...(ownerCareerPost ? [ownerCareerPost] : []),
+  ];
+
+  for (const post of allPosts) {
+    const voters = pick(voterPool, 2 + Math.floor(rand() * 5)); // 2–6 votes
     for (const voter of voters) {
       await db.postVote.create({
         data: { userId: voter.id, postId: post.id },
@@ -723,7 +823,7 @@ async function main() {
 
   const allComments = await db.comment.findMany({ select: { id: true } });
   for (const c of allComments) {
-    const voters = pick(users, Math.floor(rand() * 4)); // 0–3 votes
+    const voters = pick(voterPool, Math.floor(rand() * 4)); // 0–3 votes
     for (const voter of voters) {
       await db.commentVote.create({
         data: { userId: voter.id, commentId: c.id },
@@ -732,9 +832,9 @@ async function main() {
   }
 
   const stats = {
-    users: users.length,
+    users: users.length + (owner ? 1 : 0),
     topics: 11,
-    posts: posts.length,
+    posts: allPosts.length,
     comments: allComments.length,
     postVotes: await db.postVote.count(),
     commentVotes: await db.commentVote.count(),
