@@ -3,12 +3,14 @@
 import { useFormState } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Textarea } from '@nextui-org/react';
+import { useSession } from 'next-auth/react';
 import FormButton from '@/components/common/formButton';
 import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
 import SurfacePanel from '@/components/common/surface-panel';
 import { IconReply } from '@/components/icons';
 import { inputClassNames as textareaClassNames } from '@/lib/form-classes';
+import { useSignInPrompt } from '@/components/auth/signin-prompt';
 
 interface CommentCreateFormProps {
   postId: string;
@@ -23,6 +25,9 @@ export default function CommentCreateForm({
 }: CommentCreateFormProps) {
   const [open, setOpen] = useState(startOpen);
   const ref = useRef<HTMLFormElement | null>(null);
+  const session = useSession();
+  const signInPrompt = useSignInPrompt();
+  const isAuthed = session.status === 'authenticated';
   const [formState, action] = useFormState(
     actions.createComment.bind(null, { postId, parentId }),
     { errors: {} }
@@ -90,7 +95,15 @@ export default function CommentCreateForm({
             Markdown coming soon
           </span>
         </header>
-        <div className="p-5">{form}</div>
+        <div className="p-5">
+          {session.status === 'unauthenticated' ? (
+            <SignInToReplyCTA
+              onClick={() => signInPrompt.open('Sign in to join the discussion.')}
+            />
+          ) : (
+            form
+          )}
+        </div>
       </SurfacePanel>
     );
   }
@@ -100,7 +113,13 @@ export default function CommentCreateForm({
       {!open && (
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            if (!isAuthed) {
+              signInPrompt.open('Sign in to reply.');
+              return;
+            }
+            setOpen(true);
+          }}
           className="group inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2 hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
         >
           <IconReply className="w-3.5 h-3.5" />
@@ -108,6 +127,24 @@ export default function CommentCreateForm({
         </button>
       )}
       {open && <div className="mt-3">{form}</div>}
+    </div>
+  );
+}
+
+function SignInToReplyCTA({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="flex flex-col items-start gap-3 py-2">
+      <p className="text-sm text-ink-2 leading-relaxed">
+        Got something to add? Sign in and join the thread.
+      </p>
+      <button
+        type="button"
+        onClick={onClick}
+        className="group inline-flex items-center gap-2 h-10 px-4 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.98] transition-all duration-200 motion-reduce:transition-none shadow-soft"
+      >
+        Sign in to reply
+        <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none">&rarr;</span>
+      </button>
     </div>
   );
 }
