@@ -18,15 +18,11 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Reddit-style sign-in modal on protected actions (vote, reply, write a post, create a topic)
 - ✅ Full test suite — Vitest unit + component, integration vs Docker Postgres, Playwright E2E (130 tests)
 - ✅ Multi-persona seed with DiceBear avatars; idempotent reset on rerun
+- ✅ Markdown rendering on posts and comments (react-markdown + remark-gfm, restricted)
 
 ---
 
 ## Tier 1 — highest leverage
-
-- **Markdown content** (M)
-  The comment form literally says "Markdown coming soon." Plain text is
-  friction for code snippets, links, and lists. `react-markdown` with a
-  restricted plugin set; reuse existing typography classes.
 
 - **Edit posts and comments** (S)
   You can delete but not fix a typo. Add `editedAt` to the rows and an
@@ -143,4 +139,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-21. Update or trash as priorities shift._
+_Last touched 2026-05-21 (after markdown ship). Update or trash as priorities shift._
