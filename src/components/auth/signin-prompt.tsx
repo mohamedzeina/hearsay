@@ -5,7 +5,6 @@ import {
   useCallback,
   useContext,
   useState,
-  useTransition,
 } from 'react';
 import {
   Modal,
@@ -36,23 +35,23 @@ export default function SignInPromptProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [reason, setReason] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const pathname = usePathname();
 
   const open = useCallback(
     (r?: string) => {
       setReason(r ?? null);
+      setPending(false);
       onOpen();
     },
     [onOpen]
   );
 
   const handleGithub = () => {
-    startTransition(() => {
-      signIn('github', { callbackUrl: pathname || '/' });
-    });
+    setPending(true);
+    signIn('github', { callbackUrl: pathname || '/' });
   };
 
   return (
