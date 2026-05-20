@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { PostWithData } from '@/db/queries/posts';
 import PostCard from './post-card';
 import PostEmpty from './post-empty';
@@ -19,10 +19,16 @@ export default function PostFeed({ posts }: { posts: PostWithData[] }) {
   const [sort, setSort] = useState<Sort>('top');
   const [page, setPage] = useState(1);
 
-  const sorted = [...posts].sort((a, b) => {
-    if (sort === 'top') return b._count.comments - a._count.comments;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  const sorted = useMemo(
+    () =>
+      [...posts].sort((a, b) => {
+        if (sort === 'top') return b._count.comments - a._count.comments;
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      }),
+    [posts, sort]
+  );
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
   const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
