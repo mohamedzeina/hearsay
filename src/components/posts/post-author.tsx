@@ -11,10 +11,19 @@ export default async function PostAuthor({ postId }: PostAuthorProps) {
   const post = await fetchPostById(postId);
   if (!post) return null;
 
-  const [userPostCount, userReplyCount] = await Promise.all([
-    db.post.count({ where: { userId: post.userId } }),
-    db.comment.count({ where: { userId: post.userId, deleted: false } }),
-  ]);
+  const userStats = await db.user.findUnique({
+    where: { id: post.userId },
+    select: {
+      _count: {
+        select: {
+          Post: true,
+          Comment: { where: { deleted: false } },
+        },
+      },
+    },
+  });
+  const userPostCount = userStats?._count.Post ?? 0;
+  const userReplyCount = userStats?._count.Comment ?? 0;
 
   return (
     <SurfacePanel as="section" aria-label="About the author">
