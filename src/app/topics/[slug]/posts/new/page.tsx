@@ -3,6 +3,7 @@
 import { useFormState } from 'react-dom';
 import { Input, Textarea } from '@nextui-org/react';
 import FormButton from '@/components/common/formButton';
+import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
 import Link from 'next/link';
 import paths from '@/paths';
@@ -91,22 +92,7 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
               errorMessage={formState.errors.content?.join(', ')}
               classNames={textareaClassNames}
             />
-            {formState.errors._form && (
-              <div className="flex items-start gap-2 px-3 py-2.5 bg-persimmon-soft border border-persimmon/30 rounded-xl text-persimmon-deep text-sm">
-                <svg
-                  className="w-4 h-4 mt-0.5 flex-shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-4.75a.75.75 0 001.5 0v-4.5a.75.75 0 00-1.5 0v4.5zm.75-7.5a1 1 0 100-2 1 1 0 000 2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>{formState.errors._form.join(', ')}</span>
-              </div>
-            )}
+            <FormError messages={formState.errors._form} />
 
             <div className="flex items-center justify-between pt-2 border-t border-rule">
               <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">
