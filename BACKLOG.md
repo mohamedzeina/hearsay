@@ -12,13 +12,16 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 
 ---
 
-## Tier 1 — highest leverage
+## Recently shipped (since last backlog touch)
 
-- **Voting / reactions on posts and comments** (M)
-  The "top" sort currently uses comment count as a proxy. Real votes (or
-  multi-reactions like thumbs / lightbulb / disagree) let "top" mean
-  something. Single integer column on `Post`/`Comment` plus a `Vote` join
-  table; the existing pagination already supports re-sorting.
+- ✅ Voting on posts and comments (upvote-only), with "top" sort by vote count
+- ✅ Reddit-style sign-in modal on protected actions (vote, reply, write a post, create a topic)
+- ✅ Full test suite — Vitest unit + component, integration vs Docker Postgres, Playwright E2E (130 tests)
+- ✅ Multi-persona seed with DiceBear avatars; idempotent reset on rerun
+
+---
+
+## Tier 1 — highest leverage
 
 - **Markdown content** (M)
   The comment form literally says "Markdown coming soon." Plain text is
@@ -42,9 +45,9 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 ## Tier 2 — engagement & retention
 
 - **In-app notifications** (L)
-  When someone replies to a post or comment you authored. A `Notification`
-  model, dropdown in the header, mark-as-read. No email yet — keep it
-  self-contained.
+  When someone replies to a post or comment you authored, or upvotes
+  your content. A `Notification` model, dropdown in the header,
+  mark-as-read. No email yet — keep it self-contained.
 
 - **Saved posts** (S)
   Bookmark button on `PostCard`; `/saved` page. Single join table.
@@ -68,8 +71,8 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
   win for the dev-heavy seed topics (`javascript`, `web-dev`, `open-source`).
 
 - **Comment sort options** (S)
-  Currently implicit newest-first. Add top / old / new toggles; reuse the
-  post-feed sort pill pattern.
+  Currently implicit newest-first. Add top / old / new toggles; reuse
+  the post-feed sort pill pattern. Top would use the new vote counts.
 
 - **Word / char counters on forms** (S)
   Live counter against the Zod min/max under each textarea. Reduces
@@ -93,12 +96,12 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 ## Tier 5 — polish
 
 - **Dark mode** (M)
-  CSS-var-driven theming is most of the way there already. Toggle in the
-  header, persist in `localStorage`, swap a small set of hex values.
+  CSS-var-driven theming is most of the way there already. Toggle in
+  the header, persist in `localStorage`, swap a small set of hex values.
 
 - **OG image generation per post** (S)
-  `@vercel/og` for `/topics/[slug]/posts/[id]/opengraph-image.tsx`. Much
-  better link previews when shared.
+  `@vercel/og` for `/topics/[slug]/posts/[id]/opengraph-image.tsx`.
+  Much better link previews when shared.
 
 - **RSS feed per topic** (S)
   `/topics/[slug]/feed.xml` route. A signal the platform respects open
@@ -107,6 +110,16 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - **Activity / read-state per post** (S)
   Local-only — mark posts as visited so the home feed can fade them
   slightly. No server tracking required.
+
+## Tier 6 — infra & DX
+
+- **CI pipeline running the full test pyramid** (S)
+  `test:everything` already works locally. Wire it to GitHub Actions:
+  spin up the Docker test PG, run unit + integration + E2E on every PR.
+
+- **Coverage gate** (S)
+  Vitest already supports `--coverage`. Add a threshold so PRs that
+  drop coverage below the line fail CI.
 
 ---
 
@@ -126,6 +139,7 @@ light-touch).
 - Quote-retweet-style reposting that decontextualizes.
 - Visible karma scores. Votes as a sort signal are fine; karma as a
   status game is the gateway drug to farming.
+- Downvotes. Upvote-only is intentional — disagreement goes in replies.
 
 ---
 
