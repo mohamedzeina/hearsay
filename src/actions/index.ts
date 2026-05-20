@@ -3,3 +3,6 @@ export { createPost } from './create-post';
 export { createTopic } from './create-topic';
 export { deleteComment } from './delete-comment';
 export { deletePost } from './delete-post';
+export { togglePostVote } from './toggle-post-vote';
+export { toggleCommentVote } from './toggle-comment-vote';
+export type { VoteResult } from './toggle-post-vote';
