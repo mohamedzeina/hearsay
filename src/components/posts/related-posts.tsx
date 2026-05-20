@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { db } from '@/db';
 import paths from '@/paths';
 import { timeAgo } from '@/lib/utils';
 import SurfacePanel from '@/components/common/surface-panel';
+import { fetchRelatedPosts } from '@/db/queries/posts';
 
 interface RelatedPostsProps {
   postId: string;
@@ -13,18 +13,7 @@ export default async function RelatedPosts({
   postId,
   topicSlug,
 }: RelatedPostsProps) {
-  const posts = await db.post.findMany({
-    where: {
-      topic: { slug: topicSlug },
-      NOT: { id: postId },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 4,
-    include: {
-      _count: { select: { comments: { where: { deleted: false } } } },
-      user: { select: { name: true } },
-    },
-  });
+  const posts = await fetchRelatedPosts(postId, topicSlug);
 
   if (posts.length === 0) return null;
 

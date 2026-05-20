@@ -49,3 +49,30 @@ export function fetchRecentPosts(): Promise<PostWithData[]> {
 		include: postInclude,
 	});
 }
+
+export type RelatedPost = {
+	id: string;
+	title: string;
+	createdAt: Date;
+	_count: { comments: number };
+};
+
+export function fetchRelatedPosts(
+	postId: string,
+	topicSlug: string
+): Promise<RelatedPost[]> {
+	return db.post.findMany({
+		where: {
+			topic: { slug: topicSlug },
+			NOT: { id: postId },
+		},
+		orderBy: { createdAt: 'desc' },
+		take: 4,
+		select: {
+			id: true,
+			title: true,
+			createdAt: true,
+			_count: { select: { comments: { where: { deleted: false } } } },
+		},
+	});
+}
