@@ -1,0 +1,17 @@
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: hearsay-postgres-test
+    environment:
+      POSTGRES_USER: hearsay
+      POSTGRES_PASSWORD: hearsay
+      POSTGRES_DB: hearsay_test
+    ports:
+      - '54329:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U hearsay -d hearsay_test']
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data

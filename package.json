@@ -7,9 +7,13 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:all": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:db:up": "docker compose -f docker-compose.test.yml up -d",
+    "test:db:down": "docker compose -f docker-compose.test.yml down -v"
   },
   "dependencies": {
     "@auth/core": "0.18.1",
@@ -37,6 +41,7 @@
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.0.1",
+    "dotenv": "^17.4.2",
     "eslint": "^8",
     "eslint-config-next": "14.1.4",
     "jsdom": "^26.1.0",
