@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { IconChevronDown } from '@/components/icons';
+import Avatar from '@/components/common/avatar';
 
 export default function HeaderAuth() {
   const session = useSession();
@@ -28,7 +28,6 @@ export default function HeaderAuth() {
 
   if (session.data?.user) {
     const user = session.data.user;
-    const initial = user.name?.[0]?.toUpperCase() ?? '?';
     return (
       <div ref={ref} className="relative">
         <button
@@ -37,19 +36,7 @@ export default function HeaderAuth() {
           aria-haspopup="menu"
           aria-expanded={open}
         >
-          {user.image ? (
-            <Image
-              src={user.image}
-              alt={user.name || ''}
-              width={32}
-              height={32}
-              className="w-8 h-8 rounded-full"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-persimmon-soft text-persimmon-deep text-sm font-semibold flex items-center justify-center">
-              {initial}
-            </div>
-          )}
+          <Avatar user={user} size="md" ring="none" />
           <span className="hidden md:inline text-sm font-medium text-ink max-w-[120px] truncate">
             {user.name}
           </span>

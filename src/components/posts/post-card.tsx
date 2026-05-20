@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import paths from '@/paths';
 import type { PostWithData } from '@/db/queries/posts';
 import { timeAgo, topicTone } from '@/lib/utils';
 import { IconReply } from '@/components/icons';
+import Avatar from '@/components/common/avatar';
 
 interface PostCardProps {
   post: PostWithData;
@@ -47,19 +47,7 @@ export default function PostCard({ post, hideTopic }: PostCardProps) {
 
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
           <div className="flex items-center gap-1.5">
-            {post.user.image ? (
-              <Image
-                src={post.user.image}
-                alt={post.user.name || ''}
-                width={20}
-                height={20}
-                className="rounded-full ring-1 ring-rule"
-              />
-            ) : (
-              <span className="w-5 h-5 rounded-full bg-persimmon-soft text-[10px] font-semibold text-persimmon-deep flex items-center justify-center">
-                {post.user.name?.[0]?.toUpperCase() ?? '?'}
-              </span>
-            )}
+            <Avatar user={post.user} size="xs" />
             <span className="font-medium text-ink">{post.user.name}</span>
           </div>
 

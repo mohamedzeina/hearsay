@@ -1,8 +1,8 @@
-import Image from 'next/image';
 import { signIn } from '@/auth';
 import { db } from '@/db';
 import { topicTone } from '@/lib/utils';
 import { IconChevronRight } from '@/components/icons';
+import Avatar from '@/components/common/avatar';
 
 export default async function SignInPage() {
   const [userCount, topicCount, postCount, topTopics, recentUsers] =
@@ -204,28 +204,15 @@ export default async function SignInPage() {
               {userCount > 0 && (
                 <div className="mt-7 pt-6 border-t border-rule flex items-center gap-3">
                   <div className="flex -space-x-2 shrink-0">
-                    {recentUsers.map((u) => {
-                      const initial =
-                        u.name?.trim()?.[0]?.toUpperCase() ?? '?';
-                      const tone = topicTone(u.id);
-                      return u.image ? (
-                        <Image
-                          key={u.id}
-                          src={u.image}
-                          alt={u.name || ''}
-                          width={32}
-                          height={32}
-                          className="w-8 h-8 rounded-full ring-2 ring-surface object-cover"
-                        />
-                      ) : (
-                        <span
-                          key={u.id}
-                          className={`w-8 h-8 rounded-full text-[11px] font-semibold flex items-center justify-center ring-2 ring-surface ${tone.bg} ${tone.text}`}
-                        >
-                          {initial}
-                        </span>
-                      );
-                    })}
+                    {recentUsers.map((u) => (
+                      <Avatar
+                        key={u.id}
+                        user={u}
+                        size="md"
+                        ring="surface"
+                        tone={topicTone(u.id)}
+                      />
+                    ))}
                   </div>
                   <p className="text-xs text-ink-2 leading-snug">
                     Join{' '}

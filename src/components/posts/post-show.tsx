@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { auth } from '@/auth';
 import { deletePost } from '@/actions';
 import DeleteButton from '@/components/common/delete-button';
+import Avatar from '@/components/common/avatar';
 import { fetchPostById } from '@/db/queries/posts';
 import paths from '@/paths';
 import { topicTone, timeAgo } from '@/lib/utils';
@@ -60,19 +60,7 @@ export default async function PostShow({ postId }: PostShowProps) {
 
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-ink-2">
           <div className="flex items-center gap-2">
-            {post.user.image ? (
-              <Image
-                src={post.user.image}
-                alt={post.user.name || ''}
-                width={24}
-                height={24}
-                className="rounded-full ring-1 ring-rule"
-              />
-            ) : (
-              <span className="w-6 h-6 rounded-full bg-persimmon-soft text-[10px] font-semibold text-persimmon-deep flex items-center justify-center">
-                {post.user.name?.[0]?.toUpperCase() ?? '?'}
-              </span>
-            )}
+            <Avatar user={post.user} size="sm" />
             <span className="font-semibold text-ink">{post.user.name}</span>
           </div>
           <span className="w-1 h-1 rounded-full bg-ink-3" aria-hidden />

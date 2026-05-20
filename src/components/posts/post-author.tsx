@@ -1,7 +1,7 @@
-import Image from 'next/image';
 import { fetchPostById } from '@/db/queries/posts';
 import { db } from '@/db';
 import SurfacePanel from '@/components/common/surface-panel';
+import Avatar from '@/components/common/avatar';
 
 interface PostAuthorProps {
   postId: string;
@@ -27,19 +27,7 @@ export default async function PostAuthor({ postId }: PostAuthorProps) {
 
       <div className="p-4">
         <div className="flex items-center gap-3">
-          {post.user.image ? (
-            <Image
-              src={post.user.image}
-              alt={post.user.name || ''}
-              width={48}
-              height={48}
-              className="w-12 h-12 rounded-full ring-1 ring-rule shrink-0"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-persimmon-soft text-persimmon-deep text-base font-semibold flex items-center justify-center shrink-0">
-              {post.user.name?.[0]?.toUpperCase() ?? '?'}
-            </div>
-          )}
+          <Avatar user={post.user} size="lg" className="shrink-0" />
           <div className="min-w-0">
             <p className="font-display font-bold text-ink truncate">
               {post.user.name ?? 'anon'}

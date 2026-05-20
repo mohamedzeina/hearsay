@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import CommentCreateForm from '@/components/comments/comment-create-form';
 import DeleteButton from '@/components/common/delete-button';
+import Avatar from '@/components/common/avatar';
 import { deleteComment } from '@/actions';
 import { timeAgo } from '@/lib/utils';
 
@@ -55,26 +55,12 @@ export default function CommentCard({
     );
   }
 
-  const initial = comment.user.name?.[0]?.toUpperCase() ?? '?';
-
   return (
     <div className="rounded-2xl border border-rule bg-surface shadow-soft transition-shadow duration-200 motion-reduce:transition-none hover:shadow-lift/40">
       <div className="flex gap-3 p-4">
         {/* Avatar column with collapse rail */}
         <div className="flex flex-col items-center shrink-0">
-          {comment.user.image ? (
-            <Image
-              src={comment.user.image}
-              alt={comment.user.name || 'user'}
-              width={32}
-              height={32}
-              className="w-8 h-8 rounded-full ring-1 ring-rule"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-persimmon-soft text-persimmon-deep text-xs font-semibold flex items-center justify-center">
-              {initial}
-            </div>
-          )}
+          <Avatar user={comment.user} size="md" />
           {children && (
             <button
               type="button"
