@@ -125,7 +125,7 @@ export default async function SignInPage() {
         </section>
 
         {/* RIGHT: Auth card */}
-        <section className="lg:col-span-5 lg:sticky lg:top-24">
+        <section className="lg:col-span-5 lg:sticky lg:top-[calc(var(--nav-h)+2rem)]">
           <div className="relative rounded-3xl border border-rule bg-surface shadow-lift overflow-hidden">
             {/* Top accent */}
             <div className="h-1.5 bg-persimmon" aria-hidden />

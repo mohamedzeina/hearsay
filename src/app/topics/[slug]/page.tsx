@@ -99,7 +99,7 @@ export default async function TopicShowPage({ params }: TopicShowPageProps) {
         </div>
 
         <aside className="hidden lg:block lg:col-span-4">
-          <div className="sticky top-24 space-y-5">
+          <div className="sticky top-[calc(var(--nav-h)+2rem)] space-y-5">
             <div className="rounded-2xl border border-rule bg-surface shadow-soft p-5">
               <h3 className="font-display font-bold text-sm text-ink mb-1">
                 Got something to say?

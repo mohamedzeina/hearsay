@@ -46,22 +46,12 @@ export async function createTopic(formState: FormState,
       }
     })
   } catch (err: unknown) {
-    if (err instanceof Error) {
-      return {
-        errors: {
-          _form: [err.message]
-        }
+    console.error('createTopic failed', err);
+    return {
+      errors: {
+        _form: ['Failed to create topic. The slug may already be taken.']
       }
     }
-    else {
-      return {
-        errors: {
-          _form: ['Something went wrong']
-        }
-      }
-    }
-
-
   }
 
   revalidatePath('/');

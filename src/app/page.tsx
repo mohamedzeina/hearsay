@@ -40,7 +40,7 @@ export default async function Home() {
           <PostFeed posts={posts} />
         </div>
         <aside className="lg:col-span-4">
-          <div className="sticky top-24 space-y-5">
+          <div className="sticky top-[calc(var(--nav-h)+2rem)] space-y-5">
             <SidebarPanel
               title="Start something"
               hint="Create a topic"

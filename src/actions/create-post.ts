@@ -60,21 +60,12 @@ export async function createPost(
       }
     })
   } catch (err: unknown) {
-    if (err instanceof Error) {
-      return {
-        errors: {
-          _form: [err.message]
-        }
+    console.error('createPost failed', err);
+    return {
+      errors: {
+        _form: ['Failed to create post. Please try again.']
       }
     }
-    else {
-      return {
-        errors: {
-          _form: ['Failed to create post']
-        }
-      }
-    }
-
   }
   revalidatePath(paths.topicShow(slug));
   redirect(paths.postShow(slug, post.id));

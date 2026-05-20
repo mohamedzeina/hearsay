@@ -11,7 +11,7 @@ export default function Header() {
 
       <div className="border-b border-rule bg-cream/85 backdrop-blur supports-[backdrop-filter]:bg-cream/70">
         <div className="container mx-auto max-w-6xl px-4">
-          <div className="flex items-center gap-3 sm:gap-4 h-16">
+          <div className="flex items-center gap-3 sm:gap-4 h-[var(--nav-h)]">
             {/* Brand — left */}
             <Link
               href="/"

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
-import { IconChevronDown } from '@/components/icons';
+import { IconChevronDown, IconSignOut } from '@/components/icons';
 import Avatar from '@/components/common/avatar';
 
 export default function HeaderAuth() {
@@ -61,9 +61,7 @@ export default function HeaderAuth() {
               role="menuitem"
             >
               <span className="flex items-center gap-2">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
-                </svg>
+                <IconSignOut className="w-4 h-4" />
                 Sign out
               </span>
               <span aria-hidden className="text-ink-3">&rarr;</span>

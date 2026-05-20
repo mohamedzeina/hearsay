@@ -48,6 +48,15 @@ export function IconPlus({ strokeWidth = 2, ...props }: IconProps) {
   );
 }
 
+/** Sign-out icon: a door with an outgoing arrow. */
+export function IconSignOut({ strokeWidth = 2, ...props }: IconProps) {
+  return (
+    <svg {...outlineBase} strokeWidth={strokeWidth} {...props}>
+      <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
+    </svg>
+  );
+}
+
 /** Filled chevron used for select/disclosure affordances. Different viewBox & style than outline icons. */
 export function IconChevronDown(props: IconProps) {
   return (
