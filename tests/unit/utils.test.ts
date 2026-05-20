@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { timeAgo, topicTone } from '@/lib/utils';
+import { timeAgo, topicTone, stripMarkdown } from '@/lib/utils';
 
 describe('timeAgo', () => {
   beforeEach(() => {
@@ -78,5 +78,66 @@ describe('topicTone', () => {
 
   it('handles unicode slugs', () => {
     expect(() => topicTone('café-discussion')).not.toThrow();
+  });
+});
+
+describe('stripMarkdown', () => {
+  it('returns plain text unchanged', () => {
+    expect(stripMarkdown('Hello world')).toBe('Hello world');
+  });
+
+  it('unwraps bold and italic', () => {
+    expect(stripMarkdown('**bold** and *italic* and ~~struck~~')).toBe(
+      'bold and italic and struck'
+    );
+  });
+
+  it('unwraps links to their label', () => {
+    expect(stripMarkdown('Try [Vercel](https://vercel.com)')).toBe('Try Vercel');
+  });
+
+  it('removes inline code backticks', () => {
+    expect(stripMarkdown('Use `npm test` to run')).toBe('Use npm test to run');
+  });
+
+  it('drops fenced code blocks entirely', () => {
+    const input = 'Before\n```js\nconst x = 1;\n```\nAfter';
+    expect(stripMarkdown(input)).toBe('Before After');
+  });
+
+  it('drops images entirely', () => {
+    expect(stripMarkdown('Look ![alt](https://x.com/img.png) here')).toBe(
+      'Look here'
+    );
+  });
+
+  it('strips list markers', () => {
+    const input = '- one\n- two\n- three';
+    expect(stripMarkdown(input)).toBe('one two three');
+  });
+
+  it('strips ordered list markers', () => {
+    expect(stripMarkdown('1. first\n2. second')).toBe('first second');
+  });
+
+  it('strips heading hashes', () => {
+    expect(stripMarkdown('# Heading\nbody text')).toBe('Heading body text');
+  });
+
+  it('strips blockquote markers', () => {
+    expect(stripMarkdown('> a quote\nplain')).toBe('a quote plain');
+  });
+
+  it('collapses whitespace', () => {
+    expect(stripMarkdown('a\n\nb\n\nc')).toBe('a b c');
+  });
+
+  it('handles a realistic seeded post body', () => {
+    const input =
+      'Tailwind has changed how I write CSS. The case:\n\n- **No more naming things.** Dead.\n- Colocation wins.\n\nWould love your take.';
+    const out = stripMarkdown(input);
+    expect(out).not.toMatch(/[*#`>-]/);
+    expect(out).toContain('No more naming things.');
+    expect(out).toContain('Colocation wins');
   });
 });

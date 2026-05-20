@@ -6,6 +6,28 @@ export function timeAgo(date: Date): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+/**
+ * Flatten markdown to plain text for card previews. Not a full parser —
+ * just enough to keep `line-clamp-2` snippets clean. Drops code blocks
+ * and images entirely; unwraps bold/italic/links/lists/headings/quotes.
+ */
+export function stripMarkdown(input: string): string {
+  return input
+    .replace(/```[\s\S]*?```/g, '') // fenced code blocks
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links → text
+    .replace(/`([^`]+)`/g, '$1') // inline code
+    .replace(/(\*\*|__)(.+?)\1/g, '$2') // bold
+    .replace(/(\*|_)(.+?)\1/g, '$2') // italic
+    .replace(/~~(.+?)~~/g, '$1') // strikethrough
+    .replace(/^\s{0,3}>\s?/gm, '') // blockquote markers
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '') // headings
+    .replace(/^\s{0,3}[-*+]\s+/gm, '') // unordered list markers
+    .replace(/^\s{0,3}\d+\.\s+/gm, '') // ordered list markers
+    .replace(/\s+/g, ' ') // collapse whitespace (incl. newlines)
+    .trim();
+}
+
 const TOPIC_PALETTE = [
   { bg: 'bg-[#FDE8E0]', text: 'text-[#9C3D24]', dot: 'bg-[#C25636]' }, // terracotta
   { bg: 'bg-[#E4EBDF]', text: 'text-[#3F5733]', dot: 'bg-[#5F7A4D]' }, // sage

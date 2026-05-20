@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import paths from '@/paths';
 import type { PostWithData } from '@/db/queries/posts';
-import { timeAgo, topicTone } from '@/lib/utils';
+import { timeAgo, topicTone, stripMarkdown } from '@/lib/utils';
 import { IconReply } from '@/components/icons';
 import Avatar from '@/components/common/avatar';
 import VoteButton from '@/components/votes/vote-button';
@@ -43,7 +43,7 @@ export default function PostCard({ post, hideTopic }: PostCardProps) {
         </h3>
 
         <p className="mt-2 text-sm text-ink-2 line-clamp-2 leading-relaxed">
-          {post.content}
+          {stripMarkdown(post.content)}
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
