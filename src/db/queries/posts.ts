@@ -1,30 +1,57 @@
 import type { Post } from '@prisma/client';
 import { db } from '@/db';
 import { cache } from 'react';
+import { getViewerId } from '@/lib/server-utils';
 
 export type PostWithData = Post & {
 	topic: { slug: string };
 	user: { name: string | null; image: string | null };
-	_count: { comments: number };
+	_count: { comments: number; votes: number };
+	votes: { id: string }[];
 };
 
-const postInclude = {
-	topic: { select: { slug: true } },
-	user: { select: { name: true, image: true } },
-	_count: { select: { comments: { where: { deleted: false } } } },
-} as const;
+function postInclude(viewerId: string | null) {
+	return {
+		topic: { select: { slug: true } },
+		user: { select: { name: true, image: true } },
+		_count: {
+			select: {
+				comments: { where: { deleted: false } },
+				votes: true,
+			},
+		},
+		votes: {
+			where: { userId: viewerId ?? '' },
+			select: { id: true },
+			take: 1,
+		},
+	} as const;
+}
 
-export const fetchPostById = cache((postId: string) =>
-  db.post.findFirst({
-    where: { id: postId },
-    include: {
-      user: { select: { name: true, image: true } },
-      topic: { select: { slug: true } },
-    },
-  })
-);
+export const fetchPostById = cache(async (postId: string) => {
+	const viewerId = await getViewerId();
+	return db.post.findFirst({
+		where: { id: postId },
+		include: {
+			user: { select: { name: true, image: true } },
+			topic: { select: { slug: true } },
+			_count: {
+				select: {
+					comments: { where: { deleted: false } },
+					votes: true,
+				},
+			},
+			votes: {
+				where: { userId: viewerId ?? '' },
+				select: { id: true },
+				take: 1,
+			},
+		},
+	});
+});
 
-export function fetchPostsBySearchTerm(term: string): Promise<PostWithData[]> {
+export async function fetchPostsBySearchTerm(term: string): Promise<PostWithData[]> {
+	const viewerId = await getViewerId();
 	return db.post.findMany({
 		where: {
 			OR: [
@@ -32,21 +59,23 @@ export function fetchPostsBySearchTerm(term: string): Promise<PostWithData[]> {
 				{ content: { contains: term, mode: 'insensitive' } },
 			],
 		},
-		include: postInclude,
+		include: postInclude(viewerId),
 	});
 }
 
-export function fetchPostByTopicSlug(slug: string): Promise<PostWithData[]> {
+export async function fetchPostByTopicSlug(slug: string): Promise<PostWithData[]> {
+	const viewerId = await getViewerId();
 	return db.post.findMany({
 		where: { topic: { slug } },
-		include: postInclude,
+		include: postInclude(viewerId),
 	});
 }
 
-export function fetchRecentPosts(): Promise<PostWithData[]> {
+export async function fetchRecentPosts(): Promise<PostWithData[]> {
+	const viewerId = await getViewerId();
 	return db.post.findMany({
 		orderBy: { createdAt: 'desc' },
-		include: postInclude,
+		include: postInclude(viewerId),
 	});
 }
 
