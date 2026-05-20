@@ -73,8 +73,9 @@ model Post {
   userId  String
   topicId String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  editedAt  DateTime?
 
   user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   topic    Topic      @relation(fields: [topicId], references: [id])
@@ -89,8 +90,9 @@ model Comment {
   userId   String
   parentId String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  editedAt  DateTime?
 
   deleted Boolean @default(false)
 
