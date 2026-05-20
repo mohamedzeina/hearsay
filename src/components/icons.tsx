@@ -57,6 +57,34 @@ export function IconSignOut({ strokeWidth = 2, ...props }: IconProps) {
   );
 }
 
+/** Spinning loader for pending buttons. Hidden when prefers-reduced-motion is on. */
+export function IconSpinner(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      {...props}
+      className={`animate-spin motion-reduce:hidden ${props.className ?? ''}`.trim()}
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeOpacity="0.25"
+      />
+      <path
+        d="M21 12a9 9 0 0 0-9-9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 /** Filled chevron used for select/disclosure affordances. Different viewBox & style than outline icons. */
 export function IconChevronDown(props: IconProps) {
   return (

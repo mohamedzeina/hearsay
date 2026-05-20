@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
-import { IconChevronDown, IconSignOut } from '@/components/icons';
+import { IconChevronDown, IconSignOut, IconSpinner } from '@/components/icons';
 import Avatar from '@/components/common/avatar';
 
 export default function HeaderAuth() {
   const session = useSession();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [authPending, setAuthPending] = useState<'in' | 'out' | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -56,13 +57,23 @@ export default function HeaderAuth() {
               <p className="text-xs text-ink-2 truncate font-mono">{user.email}</p>
             </div>
             <button
-              onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }); }}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-ink hover:bg-persimmon-soft hover:text-persimmon-deep transition-colors duration-150 motion-reduce:transition-none"
+              onClick={() => {
+                setAuthPending('out');
+                setOpen(false);
+                signOut({ callbackUrl: '/' });
+              }}
+              disabled={authPending === 'out'}
+              aria-busy={authPending === 'out'}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-ink hover:bg-persimmon-soft hover:text-persimmon-deep disabled:opacity-70 disabled:cursor-not-allowed transition-colors duration-150 motion-reduce:transition-none"
               role="menuitem"
             >
               <span className="flex items-center gap-2">
-                <IconSignOut className="w-4 h-4" />
-                Sign out
+                {authPending === 'out' ? (
+                  <IconSpinner className="w-4 h-4" />
+                ) : (
+                  <IconSignOut className="w-4 h-4" />
+                )}
+                {authPending === 'out' ? 'Signing out…' : 'Sign out'}
               </span>
               <span aria-hidden className="text-ink-3">&rarr;</span>
             </button>
@@ -76,11 +87,25 @@ export default function HeaderAuth() {
 
   return (
     <button
-      onClick={() => signIn()}
-      className="group inline-flex items-center gap-1.5 px-4 h-10 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.98] transition-all duration-200 motion-reduce:transition-none shadow-soft"
+      onClick={() => {
+        setAuthPending('in');
+        signIn();
+      }}
+      disabled={authPending === 'in'}
+      aria-busy={authPending === 'in'}
+      className="group inline-flex items-center gap-1.5 px-4 h-10 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.98] disabled:opacity-80 disabled:cursor-not-allowed transition-all duration-200 motion-reduce:transition-none shadow-soft"
     >
-      Sign in
-      <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none">&rarr;</span>
+      {authPending === 'in' ? (
+        <>
+          <IconSpinner className="w-4 h-4" />
+          <span>Signing in&hellip;</span>
+        </>
+      ) : (
+        <>
+          Sign in
+          <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none">&rarr;</span>
+        </>
+      )}
     </button>
   );
 }
