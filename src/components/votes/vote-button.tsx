@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useSession } from 'next-auth/react';
 import { togglePostVote, toggleCommentVote } from '@/actions';
+import { useSignInPrompt } from '@/components/auth/signin-prompt';
 
 interface VoteButtonProps {
   kind: 'post' | 'comment';
@@ -28,11 +30,18 @@ export default function VoteButton({
     voted: initialVoted,
   });
   const [isPending, startTransition] = useTransition();
+  const session = useSession();
+  const signInPrompt = useSignInPrompt();
 
   const onClick = (e: React.MouseEvent) => {
     // Cards are wrapped in <Link> — don't let the click navigate.
     e.preventDefault();
     e.stopPropagation();
+
+    if (session.status !== 'authenticated') {
+      signInPrompt.open('Sign in to upvote.');
+      return;
+    }
 
     const prev = state;
     const next = {
