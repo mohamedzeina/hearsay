@@ -1,18 +1,24 @@
+import Image from 'next/image';
 import { signIn } from '@/auth';
 import { db } from '@/db';
 import { topicTone } from '@/lib/utils';
 import { IconChevronRight } from '@/components/icons';
 
 export default async function SignInPage() {
-  const [userCount, topicCount, postCount, topTopics] = await Promise.all([
-    db.user.count(),
-    db.topic.count(),
-    db.post.count(),
-    db.topic.findMany({
-      take: 9,
-      orderBy: { posts: { _count: 'desc' } },
-    }),
-  ]);
+  const [userCount, topicCount, postCount, topTopics, recentUsers] =
+    await Promise.all([
+      db.user.count(),
+      db.topic.count(),
+      db.post.count(),
+      db.topic.findMany({
+        take: 9,
+        orderBy: { posts: { _count: 'desc' } },
+      }),
+      db.user.findMany({
+        take: 4,
+        select: { id: true, name: true, image: true },
+      }),
+    ]);
 
   return (
     <div className="py-10 sm:py-14 lg:py-20">
@@ -198,14 +204,25 @@ export default async function SignInPage() {
               {userCount > 0 && (
                 <div className="mt-7 pt-6 border-t border-rule flex items-center gap-3">
                   <div className="flex -space-x-2 shrink-0">
-                    {['A', 'M', 'K', 'J'].map((ch, i) => {
-                      const tone = topicTone(ch + i);
-                      return (
+                    {recentUsers.map((u) => {
+                      const initial =
+                        u.name?.trim()?.[0]?.toUpperCase() ?? '?';
+                      const tone = topicTone(u.id);
+                      return u.image ? (
+                        <Image
+                          key={u.id}
+                          src={u.image}
+                          alt={u.name || ''}
+                          width={32}
+                          height={32}
+                          className="w-8 h-8 rounded-full ring-2 ring-surface object-cover"
+                        />
+                      ) : (
                         <span
-                          key={ch}
+                          key={u.id}
                           className={`w-8 h-8 rounded-full text-[11px] font-semibold flex items-center justify-center ring-2 ring-surface ${tone.bg} ${tone.text}`}
                         >
-                          {ch}
+                          {initial}
                         </span>
                       );
                     })}
