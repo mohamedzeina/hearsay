@@ -9,23 +9,35 @@ import {
   ModalBody,
   useDisclosure,
 } from '@nextui-org/react';
+import { useSession } from 'next-auth/react';
 import FormButton from '../common/formButton';
 import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
 import { inputClassNames } from '@/lib/form-classes';
 import { IconPlus } from '@/components/icons';
+import { useSignInPrompt } from '@/components/auth/signin-prompt';
 
 export default function TopicCreateForm() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const session = useSession();
+  const signInPrompt = useSignInPrompt();
   const [formState, action] = useFormState(actions.createTopic, {
     errors: {},
   });
+
+  const handleTrigger = () => {
+    if (session.status !== 'authenticated') {
+      signInPrompt.open('Sign in to start a topic.');
+      return;
+    }
+    onOpen();
+  };
 
   return (
     <>
       <button
         type="button"
-        onClick={onOpen}
+        onClick={handleTrigger}
         className="group w-full inline-flex items-center justify-center gap-2 h-10 px-4 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.99] transition-all duration-200 motion-reduce:transition-none shadow-soft"
       >
         <IconPlus
