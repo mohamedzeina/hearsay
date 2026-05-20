@@ -29,6 +29,25 @@ export function IconSearch({ strokeWidth = 2, ...props }: IconProps) {
   );
 }
 
+/** Pencil icon. Used by the "Write a post" CTA and the new-post page header. */
+export function IconPencil({ strokeWidth = 2, ...props }: IconProps) {
+  return (
+    <svg {...outlineBase} strokeWidth={strokeWidth} {...props}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>
+  );
+}
+
+/** Plus icon. Used by the "Create a topic" CTA. */
+export function IconPlus({ strokeWidth = 2, ...props }: IconProps) {
+  return (
+    <svg {...outlineBase} strokeWidth={strokeWidth} {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
 /** Filled chevron used for select/disclosure affordances. Different viewBox & style than outline icons. */
 export function IconChevronDown(props: IconProps) {
   return (

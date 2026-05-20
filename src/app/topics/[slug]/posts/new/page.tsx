@@ -9,6 +9,7 @@ import Link from 'next/link';
 import paths from '@/paths';
 import { topicTone } from '@/lib/utils';
 import SurfacePanel from '@/components/common/surface-panel';
+import { IconPencil } from '@/components/icons';
 import {
   inputClassNamesLg as inputClassNames,
   textareaClassNamesLg as textareaClassNames,
@@ -42,18 +43,7 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
         <div className="px-6 sm:px-8 py-7 sm:py-8">
           <div className="flex items-start gap-3">
             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${tone.bg}`}>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={`w-5 h-5 ${tone.text}`}
-              >
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z" />
-              </svg>
+              <IconPencil className={`w-5 h-5 ${tone.text}`} />
             </div>
             <div className="min-w-0">
               <h1 className="font-display font-extrabold tracking-tight text-2xl sm:text-3xl text-ink leading-tight">

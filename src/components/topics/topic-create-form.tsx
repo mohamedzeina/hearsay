@@ -13,6 +13,7 @@ import FormButton from '../common/formButton';
 import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
 import { inputClassNames } from '@/lib/form-classes';
+import { IconPlus } from '@/components/icons';
 
 export default function TopicCreateForm() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -27,16 +28,10 @@ export default function TopicCreateForm() {
         onClick={onOpen}
         className="group w-full inline-flex items-center justify-center gap-2 h-10 px-4 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.99] transition-all duration-200 motion-reduce:transition-none shadow-soft"
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
+        <IconPlus
           strokeWidth={2.4}
-          strokeLinecap="round"
           className="w-4 h-4 transition-transform duration-300 motion-reduce:transition-none group-hover:rotate-90"
-        >
-          <path d="M12 5v14M5 12h14" />
-        </svg>
+        />
         Create a topic
       </button>
 
