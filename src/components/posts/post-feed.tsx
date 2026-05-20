@@ -10,7 +10,7 @@ import { usePaginated } from '@/lib/use-paginated';
 type Sort = 'top' | 'new';
 
 const SORT_META: Record<Sort, { title: string; subtitle: string }> = {
-  top: { title: 'Top discussions', subtitle: 'Most replies first' },
+  top: { title: 'Top discussions', subtitle: 'Most upvotes first' },
   new: { title: 'Fresh posts', subtitle: 'Latest first' },
 };
 
@@ -20,7 +20,7 @@ export default function PostFeed({ posts }: { posts: PostWithData[] }) {
   const sorted = useMemo(
     () =>
       [...posts].sort((a, b) => {
-        if (sort === 'top') return b._count.comments - a._count.comments;
+        if (sort === 'top') return b._count.votes - a._count.votes;
         return (
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
