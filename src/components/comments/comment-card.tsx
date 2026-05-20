@@ -4,6 +4,7 @@ import { useState } from 'react';
 import CommentCreateForm from '@/components/comments/comment-create-form';
 import DeleteButton from '@/components/common/delete-button';
 import Avatar from '@/components/common/avatar';
+import VoteButton from '@/components/votes/vote-button';
 import { deleteComment } from '@/actions';
 import { timeAgo } from '@/lib/utils';
 
@@ -16,6 +17,8 @@ interface CommentCardProps {
     createdAt: Date;
     deleted: boolean;
     user: { name: string | null; image: string | null };
+    _count: { votes: number };
+    votes: { id: string }[];
   };
   isOwner: boolean;
   hasReplies: boolean;
@@ -105,7 +108,14 @@ export default function CommentCard({
             {comment.content}
           </p>
 
-          <div className="mt-2">
+          <div className="mt-2 flex items-center gap-2">
+            <VoteButton
+              kind="comment"
+              id={comment.id}
+              initialCount={comment._count.votes}
+              initialVoted={comment.votes.length > 0}
+              size="sm"
+            />
             <CommentCreateForm postId={comment.postId} parentId={comment.id} />
           </div>
         </div>

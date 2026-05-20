@@ -4,6 +4,7 @@ import type { PostWithData } from '@/db/queries/posts';
 import { timeAgo, topicTone } from '@/lib/utils';
 import { IconReply } from '@/components/icons';
 import Avatar from '@/components/common/avatar';
+import VoteButton from '@/components/votes/vote-button';
 
 interface PostCardProps {
   post: PostWithData;
@@ -46,6 +47,16 @@ export default function PostCard({ post, hideTopic }: PostCardProps) {
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
+          <VoteButton
+            kind="post"
+            id={post.id}
+            initialCount={post._count.votes}
+            initialVoted={post.votes.length > 0}
+            size="sm"
+          />
+
+          <span className="w-1 h-1 rounded-full bg-ink-3" aria-hidden />
+
           <div className="flex items-center gap-1.5">
             <Avatar user={post.user} size="xs" />
             <span className="font-medium text-ink">{post.user.name}</span>

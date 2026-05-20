@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { deletePost } from '@/actions';
 import DeleteButton from '@/components/common/delete-button';
 import Avatar from '@/components/common/avatar';
+import VoteButton from '@/components/votes/vote-button';
 import { fetchPostById } from '@/db/queries/posts';
 import paths from '@/paths';
 import { topicTone, timeAgo } from '@/lib/utils';
@@ -84,6 +85,19 @@ export default async function PostShow({ postId }: PostShowProps) {
         <p className="mt-6 text-ink-2 text-base sm:text-[17px] leading-[1.75] whitespace-pre-wrap">
           {post.content}
         </p>
+
+        <div className="mt-7 pt-5 border-t border-rule flex items-center gap-3">
+          <VoteButton
+            kind="post"
+            id={post.id}
+            initialCount={post._count.votes}
+            initialVoted={post.votes.length > 0}
+            size="md"
+          />
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
+            {post._count.votes === 1 ? 'upvote' : 'upvotes'} &middot; agree out loud
+          </span>
+        </div>
       </div>
     </SurfacePanel>
   );
