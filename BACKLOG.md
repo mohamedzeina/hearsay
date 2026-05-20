@@ -16,9 +16,9 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 
 - ✅ Voting on posts and comments (upvote-only), with "top" sort by vote count
 - ✅ Reddit-style sign-in modal on protected actions (vote, reply, write a post, create a topic)
-- ✅ Full test suite — Vitest unit + component, integration vs Docker Postgres, Playwright E2E (130 tests)
+- ✅ Full test suite — Vitest unit + component, integration vs Docker Postgres, Playwright E2E (138 tests)
 - ✅ Multi-persona seed with DiceBear avatars; idempotent reset on rerun
-- ✅ Markdown rendering on posts and comments (react-markdown + remark-gfm, restricted)
+- ✅ Markdown rendering on posts and comments (react-markdown + remark-gfm, restricted); seed enriched with bold/lists/code-blocks/links/blockquotes
 
 ---
 
@@ -62,9 +62,11 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 
 ## Tier 3 — content quality
 
-- **Code blocks with syntax highlighting** (S)
-  Comes nearly for free with markdown + Shiki or rehype-highlight. Big
-  win for the dev-heavy seed topics (`javascript`, `web-dev`, `open-source`).
+- **Syntax highlighting on code blocks** (S)
+  Code blocks already render through markdown — they just lack
+  highlighting. Drop in Shiki or rehype-highlight via the existing
+  Markdown wrapper. Big win for the dev-heavy seed topics
+  (`javascript`, `web-dev`, `open-source`).
 
 - **Comment sort options** (S)
   Currently implicit newest-first. Add top / old / new toggles; reuse
@@ -139,4 +141,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-21 (after markdown ship). Update or trash as priorities shift._
+_Last touched 2026-05-21 (after markdown ship + seed refresh). Update or trash as priorities shift._
