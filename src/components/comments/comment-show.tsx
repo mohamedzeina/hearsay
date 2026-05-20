@@ -1,26 +1,27 @@
 import CommentCard from '@/components/comments/comment-card';
-import { fetchCommentsByPostId } from '@/db/queries/comments';
-import { auth } from '@/auth';
+import type { CommentWithAuthor } from '@/db/queries/comments';
 
 interface CommentShowProps {
-  commentId: string;
-  postId: string;
+  comment: CommentWithAuthor;
+  childrenByParent: Map<string | null, CommentWithAuthor[]>;
+  currentUserId: string | null;
 }
 
-export default async function CommentShow({ commentId, postId }: CommentShowProps) {
-  const [comments, session] = await Promise.all([
-    fetchCommentsByPostId(postId),
-    auth(),
-  ]);
+export default function CommentShow({
+  comment,
+  childrenByParent,
+  currentUserId,
+}: CommentShowProps) {
+  const children = childrenByParent.get(comment.id) ?? [];
+  const isOwner = currentUserId === comment.userId;
 
-  const comment = comments.find((c) => c.id === commentId);
-  if (!comment) return null;
-
-  const children = comments.filter((c) => c.parentId === commentId);
-  const isOwner = session?.user?.id === comment.userId;
-
-  const renderedChildren = children.map((child) => (
-    <CommentShow key={child.id} commentId={child.id} postId={postId} />
+  const rendered = children.map((child) => (
+    <CommentShow
+      key={child.id}
+      comment={child}
+      childrenByParent={childrenByParent}
+      currentUserId={currentUserId}
+    />
   ));
 
   return (
@@ -29,7 +30,7 @@ export default async function CommentShow({ commentId, postId }: CommentShowProp
       isOwner={isOwner}
       hasReplies={children.length > 0}
     >
-      {renderedChildren.length > 0 ? renderedChildren : null}
+      {rendered.length > 0 ? rendered : null}
     </CommentCard>
   );
 }

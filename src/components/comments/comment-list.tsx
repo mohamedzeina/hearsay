@@ -1,5 +1,9 @@
 import CommentShow from '@/components/comments/comment-show';
-import { fetchCommentsByPostId } from '@/db/queries/comments';
+import {
+  fetchCommentsByPostId,
+  type CommentWithAuthor,
+} from '@/db/queries/comments';
+import { auth } from '@/auth';
 import { IconReply } from '@/components/icons';
 
 interface CommentListProps {
@@ -7,12 +11,21 @@ interface CommentListProps {
 }
 
 export default async function CommentList({ postId }: CommentListProps) {
-  const comments = await fetchCommentsByPostId(postId);
+  const [comments, session] = await Promise.all([
+    fetchCommentsByPostId(postId),
+    auth(),
+  ]);
 
-  const topLevelComments = comments.filter(
-    (comment) => comment.parentId === null
-  );
+  const childrenByParent = new Map<string | null, CommentWithAuthor[]>();
+  for (const c of comments) {
+    const arr = childrenByParent.get(c.parentId);
+    if (arr) arr.push(c);
+    else childrenByParent.set(c.parentId, [c]);
+  }
+
+  const topLevelComments = childrenByParent.get(null) ?? [];
   const activeCount = comments.filter((c) => !c.deleted).length;
+  const currentUserId = session?.user?.id ?? null;
 
   return (
     <section aria-label="Comments">
@@ -49,7 +62,11 @@ export default async function CommentList({ postId }: CommentListProps) {
               id={`c-${comment.id}`}
               className="scroll-mt-24 comment-anchor"
             >
-              <CommentShow commentId={comment.id} postId={postId} />
+              <CommentShow
+                comment={comment}
+                childrenByParent={childrenByParent}
+                currentUserId={currentUserId}
+              />
             </li>
           ))}
         </ul>
