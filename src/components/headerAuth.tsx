@@ -59,7 +59,6 @@ export default function HeaderAuth() {
             <button
               onClick={() => {
                 setAuthPending('out');
-                setOpen(false);
                 signOut({ callbackUrl: '/' });
               }}
               disabled={authPending === 'out'}
