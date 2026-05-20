@@ -5,6 +5,7 @@ import CommentCreateForm from '@/components/comments/comment-create-form';
 import DeleteButton from '@/components/common/delete-button';
 import Avatar from '@/components/common/avatar';
 import VoteButton from '@/components/votes/vote-button';
+import Markdown from '@/components/common/markdown';
 import { deleteComment } from '@/actions';
 import { timeAgo } from '@/lib/utils';
 
@@ -104,9 +105,8 @@ export default function CommentCard({
             )}
           </div>
 
-          <p className="text-sm text-ink-2 leading-[1.65] whitespace-pre-wrap">
-            {comment.content}
-          </p>
+          <Markdown content={comment.content} variant="comment" />
+
 
           <div className="mt-2 flex items-center gap-2">
             <VoteButton

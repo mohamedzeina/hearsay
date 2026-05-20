@@ -92,7 +92,7 @@ export default function CommentCreateForm({
             </h2>
           </div>
           <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
-            Markdown coming soon
+            Markdown supported
           </span>
         </header>
         <div className="p-5">

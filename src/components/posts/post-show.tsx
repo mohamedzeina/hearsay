@@ -9,6 +9,7 @@ import { fetchPostById } from '@/db/queries/posts';
 import paths from '@/paths';
 import { topicTone, timeAgo } from '@/lib/utils';
 import SurfacePanel from '@/components/common/surface-panel';
+import Markdown from '@/components/common/markdown';
 
 interface PostShowProps {
   postId: string;
@@ -82,9 +83,7 @@ export default async function PostShow({ postId }: PostShowProps) {
 
         <div className="mt-6 h-px bg-rule" />
 
-        <p className="mt-6 text-ink-2 text-base sm:text-[17px] leading-[1.75] whitespace-pre-wrap">
-          {post.content}
-        </p>
+        <Markdown content={post.content} variant="body" className="mt-6" />
 
         <div className="mt-7 pt-5 border-t border-rule flex items-center gap-3">
           <VoteButton
