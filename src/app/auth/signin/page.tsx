@@ -178,8 +178,8 @@ export default async function SignInPage() {
 
               {/* Social proof — real user count */}
               {userCount > 0 && (
-                <div className="mt-7 pt-6 border-t border-rule flex items-center gap-3">
-                  <div className="flex -space-x-2 shrink-0">
+                <div className="mt-7 pt-6 border-t border-rule flex items-center gap-4">
+                  <div className="flex -space-x-1.5 shrink-0">
                     {recentUsers.map((u) => (
                       <Avatar
                         key={u.id}
