@@ -43,13 +43,6 @@ export function fetchPostByTopicSlug(slug: string): Promise<PostWithData[]> {
 	});
 }
 
-export function fetchTopPosts(): Promise<PostWithData[]> {
-	return db.post.findMany({
-		orderBy: [{ comments: { _count: 'desc' } }],
-		include: postInclude,
-	});
-}
-
 export function fetchRecentPosts(): Promise<PostWithData[]> {
 	return db.post.findMany({
 		orderBy: { createdAt: 'desc' },

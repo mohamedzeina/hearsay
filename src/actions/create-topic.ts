@@ -64,7 +64,6 @@ export async function createTopic(formState: FormState,
 
   }
 
-  // TODO: revalidate the homepage
   revalidatePath('/');
   redirect(paths.topicShow(topic.slug));
 
