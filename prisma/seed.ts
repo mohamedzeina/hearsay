@@ -110,7 +110,7 @@ async function main() {
         userId: byHandle.sasha.id,
         title: 'Tailwind CSS — love it or hate it?',
         content:
-          'Tailwind has completely changed how I write CSS. Once you get past the initial learning curve the productivity gains are real. But I know a lot of developers find utility classes messy. Would love to hear where people stand on this after using it in production.',
+          "Tailwind has completely changed how I write CSS. Once you get past the initial learning curve the productivity gains are *real*. The case for it, in three lines:\n\n- **No more naming things.** `card-header-wrapper-inner` is finally dead.\n- **Colocation wins.** The styles live where the markup lives.\n- **Design tokens are cheap.** Override the theme once, the whole app updates.\n\nBut I know a lot of developers find utility classes messy. Would love to hear where people stand on this after using it in production.",
       },
     }),
     db.post.create({
@@ -119,7 +119,7 @@ async function main() {
         userId: byHandle.aiden.id,
         title: 'What hosting platform do you use for side projects?',
         content:
-          "I've been using Vercel for frontend and Neon for the database. Works great for Next.js but I'm curious what others are using, especially for more backend-heavy projects. Fly.io? Railway? Render? What's your go-to stack for deploying side projects without spending much?",
+          "I've been using [Vercel](https://vercel.com) for frontend and [Neon](https://neon.tech) for the database. Works great for Next.js but I'm curious what others are using, especially for more backend-heavy projects.\n\nThe usual suspects:\n\n1. Fly.io — great for persistent processes (websockets, background workers)\n2. Railway — easiest one-click deploys, can get pricey\n3. Render — solid middle ground, good free tier\n4. Self-hosted on a VPS — control vs. ops cost tradeoff\n\nWhat's your go-to stack for deploying side projects without spending much?",
       },
     }),
     db.post.create({
@@ -128,7 +128,7 @@ async function main() {
         userId: byHandle.kai.id,
         title: 'Why does JavaScript still not have a built-in sleep function?',
         content:
-          'I know about setTimeout and I know about async/await with a Promise wrapper. But why, after all these years, is there no native sleep() in JS? Coming from Python this still trips me up. Anyone know the historical reason behind this design decision?',
+          "I know about `setTimeout` and I know about `async/await` with a Promise wrapper:\n\n```js\nconst sleep = (ms) => new Promise(r => setTimeout(r, ms));\nawait sleep(1000);\n```\n\nBut why, after all these years, is there no native `sleep()` in JS? Coming from Python this still trips me up. Anyone know the *historical* reason behind this design decision?",
       },
     }),
     db.post.create({
@@ -137,7 +137,7 @@ async function main() {
         userId: byHandle.jordan.id,
         title: 'TypeScript strict mode — is it worth the pain?',
         content:
-          "Turned on strict mode in a mid-sized project last week and spent two days fixing type errors I didn't know existed. Genuinely caught two real bugs in the process. Still debating if it's worth enforcing on a team with mixed TypeScript experience. What do you all think?",
+          "Turned on strict mode in a mid-sized project last week:\n\n```json\n{\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"noUncheckedIndexedAccess\": true\n  }\n}\n```\n\nSpent two days fixing type errors I didn't know existed. **Genuinely caught two real bugs in the process** — both around array access returning `undefined`. Still debating if it's worth enforcing on a team with *mixed* TypeScript experience. What do you all think?",
       },
     }),
     db.post.create({
@@ -173,7 +173,7 @@ async function main() {
         userId: byHandle.nadia.id,
         title: 'Maintainer burnout is real — how do you keep going?',
         content:
-          "I've been maintaining a mid-popularity OSS library for three years. Issues pile up, the few sponsors barely cover hosting, and lately I've been resenting opening the repo. Curious how other maintainers handle the long-term emotional load.",
+          "I've been maintaining a mid-popularity OSS library for three years. Issues pile up, the few sponsors barely cover hosting, and lately I've been resenting opening the repo.\n\n> The work that pays nothing is the work that drains the most.\n\nCurious how other maintainers handle the long-term emotional load. What's worked for *you*?",
       },
     }),
     db.post.create({
@@ -276,7 +276,7 @@ async function main() {
       postId: posts[2].id,
       userId: byHandle.theo.id,
       content:
-        "Vercel + Neon is my go-to as well. Neon's branching feature is underrated — great for testing schema changes without touching prod.",
+        "**Vercel + Neon** is my go-to as well. Neon's branching feature is underrated — great for testing schema changes without touching prod. One command:\n\n```bash\nneonctl branches create --name feature/add-votes\n```\n\nAnd you've got an isolated DB pointed at the same data.",
     },
   });
   await db.comment.create({
@@ -303,7 +303,7 @@ async function main() {
       parentId: p3c0.id,
       userId: byHandle.jordan.id,
       content:
-        'Right, and Node.js inherited the same model. The Promise-based workaround is pretty clean once you get used to it: `await new Promise(r => setTimeout(r, 1000))`.',
+        "Right, and Node.js inherited the same model. The Promise-based workaround is pretty clean once you get used to it:\n\n```js\nawait new Promise(r => setTimeout(r, 1000));\n```\n\nReads almost like the imperative version.",
     },
   });
 
@@ -313,7 +313,7 @@ async function main() {
       postId: posts[4].id,
       userId: byHandle.maya.id,
       content:
-        "Strict mode is 100% worth it. The pain is upfront, the safety is forever. I'd never start a new project without it.",
+        "Strict mode is **100% worth it**. The pain is upfront, the safety is forever. I'd never start a new project without it.\n\nAlso recommend enabling these two right out of the gate:\n\n- `noUncheckedIndexedAccess`\n- `exactOptionalPropertyTypes`",
     },
   });
   await db.comment.create({
