@@ -1,5 +1,3 @@
-'use server';
-
 import { db } from '@/db';
 
 export interface SuggestionResult {
@@ -16,10 +14,12 @@ export interface SuggestionResult {
   }[];
 }
 
+const MAX_TERM_LENGTH = 100;
+
 export async function fetchSearchSuggestions(
   rawTerm: string
 ): Promise<SuggestionResult> {
-  const term = rawTerm.trim();
+  const term = rawTerm.trim().slice(0, MAX_TERM_LENGTH);
   if (term.length < 2) {
     return { topics: [], posts: [] };
   }

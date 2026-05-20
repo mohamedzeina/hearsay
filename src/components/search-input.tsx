@@ -1,21 +1,12 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import paths from '@/paths';
 import { topicTone } from '@/lib/utils';
 import { IconSearch, IconReply } from '@/components/icons';
-import {
-  fetchSearchSuggestions,
-  type SuggestionResult,
-} from '@/actions/search-suggestions';
+import type { SuggestionResult } from '@/db/queries/search-suggestions';
 
 const EMPTY: SuggestionResult = { topics: [], posts: [] };
 const DEBOUNCE_MS = 200;
@@ -31,7 +22,6 @@ export default function SearchInput() {
   const [focused, setFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestionResult>(EMPTY);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(false);
 
   // Flat ordered list for keyboard navigation
@@ -60,15 +50,28 @@ export default function SearchInput() {
       return;
     }
     setIsLoading(true);
-    const timer = setTimeout(() => {
-      startTransition(async () => {
-        const result = await fetchSearchSuggestions(trimmed);
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/search/suggestions?term=${encodeURIComponent(trimmed)}`,
+          { signal: controller.signal }
+        );
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const result: SuggestionResult = await res.json();
         setSuggestions(result);
         setActiveIndex(-1);
         setIsLoading(false);
-      });
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return;
+        setSuggestions(EMPTY);
+        setIsLoading(false);
+      }
     }, DEBOUNCE_MS);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [trimmed]);
 
   // Close on outside click
