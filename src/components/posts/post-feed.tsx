@@ -5,10 +5,9 @@ import type { PostWithData } from '@/db/queries/posts';
 import PostCard from './post-card';
 import PostEmpty from './post-empty';
 import PostPagination from './post-pagination';
+import { usePaginated } from '@/lib/use-paginated';
 
 type Sort = 'top' | 'new';
-
-const PAGE_SIZE = 5;
 
 const SORT_META: Record<Sort, { title: string; subtitle: string }> = {
   top: { title: 'Top discussions', subtitle: 'Most replies first' },
@@ -17,7 +16,6 @@ const SORT_META: Record<Sort, { title: string; subtitle: string }> = {
 
 export default function PostFeed({ posts }: { posts: PostWithData[] }) {
   const [sort, setSort] = useState<Sort>('top');
-  const [page, setPage] = useState(1);
 
   const sorted = useMemo(
     () =>
@@ -30,8 +28,7 @@ export default function PostFeed({ posts }: { posts: PostWithData[] }) {
     [posts, sort]
   );
 
-  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
-  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { page, setPage, totalPages, paginated } = usePaginated(sorted);
 
   const handleSort = (s: Sort) => {
     setSort(s);
