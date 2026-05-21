@@ -11,6 +11,7 @@ import {
   IconSpinner,
 } from '@/components/icons';
 import Avatar from '@/components/common/avatar';
+import { PrimaryButton } from '@/components/common/primary-button';
 import paths from '@/paths';
 
 export default function HeaderAuth() {
@@ -104,14 +105,13 @@ export default function HeaderAuth() {
   if (pathname === '/auth/signin') return null;
 
   return (
-    <button
+    <PrimaryButton
       onClick={() => {
         setAuthPending('in');
         signIn();
       }}
       disabled={authPending === 'in'}
       aria-busy={authPending === 'in'}
-      className="group inline-flex items-center gap-1.5 px-4 h-10 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.98] disabled:opacity-80 disabled:cursor-not-allowed transition-all duration-200 motion-reduce:transition-none shadow-soft"
     >
       {authPending === 'in' ? (
         <>
@@ -124,6 +124,6 @@ export default function HeaderAuth() {
           <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none">&rarr;</span>
         </>
       )}
-    </button>
+    </PrimaryButton>
   );
 }

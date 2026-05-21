@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import TopicCreateForm from '@/components/topics/topic-create-form';
 import TopicList from '@/components/topics/topic-list';
 import { fetchRecentPosts } from '@/db/queries/posts';
 import PostFeed from '@/components/posts/post-feed';
 import SurfacePanel from '@/components/common/surface-panel';
+import { PrimaryLink } from '@/components/common/primary-button';
 import { auth } from '@/auth';
 import { db } from '@/db';
 
@@ -121,10 +121,7 @@ function SignedOutHero({
         </p>
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
-          <Link
-            href="/auth/signin"
-            className="group inline-flex items-center gap-2 px-5 h-11 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.98] transition-all duration-200 motion-reduce:transition-none shadow-soft"
-          >
+          <PrimaryLink href="/auth/signin" className="h-11">
             Join the conversation
             <span
               aria-hidden
@@ -132,7 +129,7 @@ function SignedOutHero({
             >
               &rarr;
             </span>
-          </Link>
+          </PrimaryLink>
           <a
             href="#feed"
             className="inline-flex items-center gap-1.5 px-4 h-11 rounded-full border border-rule bg-surface text-ink text-sm font-medium hover:border-ink-2 transition-colors duration-200 motion-reduce:transition-none"

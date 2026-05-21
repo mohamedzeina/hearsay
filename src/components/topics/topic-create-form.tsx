@@ -13,6 +13,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import FormButton from '../common/form-button';
 import FormError from '@/components/common/form-error';
+import { PrimaryButton } from '@/components/common/primary-button';
 import * as actions from '@/actions';
 import { inputClassNames } from '@/lib/form-classes';
 import { IconPlus } from '@/components/icons';
@@ -49,17 +50,13 @@ export default function TopicCreateForm() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleTrigger}
-        className="group w-full inline-flex items-center justify-center gap-2 h-10 px-4 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.99] transition-all duration-200 motion-reduce:transition-none shadow-soft"
-      >
+      <PrimaryButton type="button" onClick={handleTrigger} fullWidth>
         <IconPlus
           strokeWidth={2.4}
           className="w-4 h-4 transition-transform duration-300 motion-reduce:transition-none group-hover:rotate-90"
         />
         Create a topic
-      </button>
+      </PrimaryButton>
 
       <Modal
         isOpen={isOpen}

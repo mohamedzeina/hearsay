@@ -5,6 +5,7 @@ import { Textarea } from '@heroui/react';
 import { useSession } from 'next-auth/react';
 import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
+import { PrimaryButton } from '@/components/common/primary-button';
 import * as actions from '@/actions';
 import SurfacePanel from '@/components/common/surface-panel';
 import { IconReply } from '@/components/icons';
@@ -141,14 +142,10 @@ function SignInToReplyCTA({ onClick }: { onClick: () => void }) {
       <p className="text-sm text-ink-2 leading-relaxed">
         Got something to add? Sign in and join the thread.
       </p>
-      <button
-        type="button"
-        onClick={onClick}
-        className="group inline-flex items-center gap-2 h-10 px-4 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.98] transition-all duration-200 motion-reduce:transition-none shadow-soft"
-      >
+      <PrimaryButton type="button" onClick={onClick}>
         Sign in to reply
         <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none">&rarr;</span>
-      </button>
+      </PrimaryButton>
     </div>
   );
 }

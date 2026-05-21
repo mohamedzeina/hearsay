@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { PrimaryLink } from '@/components/common/primary-button';
 
 export default function NotFound() {
   return (
@@ -22,10 +22,7 @@ export default function NotFound() {
         never existed in the first place.
       </p>
       <div className="mt-7 flex items-center gap-3">
-        <Link
-          href="/"
-          className="group inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon active:scale-[0.98] transition-all duration-200 motion-reduce:transition-none shadow-soft"
-        >
+        <PrimaryLink href="/">
           <span
             aria-hidden
             className="transition-transform duration-200 group-hover:-translate-x-0.5 motion-reduce:transition-none"
@@ -33,7 +30,7 @@ export default function NotFound() {
             &larr;
           </span>
           Back to the front page
-        </Link>
+        </PrimaryLink>
       </div>
     </div>
   );
