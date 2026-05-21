@@ -13,7 +13,7 @@ import {
   useDisclosure,
 } from '@heroui/react';
 import { signIn } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { IconSpinner } from '@/components/icons';
 
 interface SignInPromptCtx {
@@ -39,6 +39,7 @@ export default function SignInPromptProvider({
   const [reason, setReason] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const open = useCallback(
     (r?: string) => {
@@ -51,7 +52,10 @@ export default function SignInPromptProvider({
 
   const handleGithub = () => {
     setPending(true);
-    signIn('github', { callbackUrl: pathname || '/' });
+    const query = searchParams?.toString();
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const callbackUrl = `${pathname || '/'}${query ? `?${query}` : ''}${hash}`;
+    signIn('github', { callbackUrl });
   };
 
   return (

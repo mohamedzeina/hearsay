@@ -1,17 +1,9 @@
-import type { Post } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { db } from '@/db';
 import { cache } from 'react';
 import { getViewerId } from '@/lib/server-utils';
 
-export type PostWithData = Post & {
-	topic: { slug: string };
-	user: { name: string | null; image: string | null; username: string | null };
-	_count: { comments: number; votes: number };
-	votes: { id: string }[];
-	saves: { id: string }[];
-};
-
-function postInclude(viewerId: string | null) {
+export function postInclude(viewerId: string | null) {
 	return {
 		topic: { select: { slug: true } },
 		user: { select: { name: true, image: true, username: true } },
@@ -31,8 +23,12 @@ function postInclude(viewerId: string | null) {
 			select: { id: true },
 			take: 1,
 		},
-	} as const;
+	} satisfies Prisma.PostInclude;
 }
+
+export type PostWithData = Prisma.PostGetPayload<{
+	include: ReturnType<typeof postInclude>;
+}>;
 
 export const fetchPostById = cache(async (postId: string) => {
 	const viewerId = await getViewerId();

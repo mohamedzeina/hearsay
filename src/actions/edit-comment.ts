@@ -13,7 +13,7 @@ const editCommentSchema = z.object({
 
 export async function editComment(
   commentId: string,
-  formState: FormState,
+  _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
   const result = editCommentSchema.safeParse({

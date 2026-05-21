@@ -10,7 +10,7 @@ import {
   useDisclosure,
 } from '@heroui/react';
 import { useSession } from 'next-auth/react';
-import FormButton from '../common/formButton';
+import FormButton from '../common/form-button';
 import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
 import { inputClassNames } from '@/lib/form-classes';

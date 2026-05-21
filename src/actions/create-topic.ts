@@ -16,7 +16,7 @@ const createTopicSchema = z.object({
 
 import type { FormState } from '@/lib/types';
 
-export async function createTopic(formState: FormState,
+export async function createTopic(_prev: FormState,
   formData: FormData): Promise<FormState> {
 
 

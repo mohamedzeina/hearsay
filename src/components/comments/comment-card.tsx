@@ -5,12 +5,11 @@ import CommentCreateForm from '@/components/comments/comment-create-form';
 import CommentEditForm from '@/components/comments/comment-edit-form';
 import DeleteButton from '@/components/common/delete-button';
 import Avatar from '@/components/common/avatar';
+import AuthorName from '@/components/common/author-name';
 import VoteButton from '@/components/votes/vote-button';
 import Markdown from '@/components/common/markdown';
-import Link from 'next/link';
 import { deleteComment } from '@/actions';
-import { slugifyName, timeAgo } from '@/lib/utils';
-import paths from '@/paths';
+import { timeAgo } from '@/lib/utils';
 import { IconPencil, IconLink, IconCheck } from '@/components/icons';
 
 interface CommentCardProps {
@@ -102,7 +101,10 @@ export default function CommentCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-baseline flex-wrap gap-x-2">
-              <AuthorName user={comment.user} />
+              <AuthorName
+                user={comment.user}
+                className="text-sm font-semibold text-ink hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
+              />
               <span className="w-0.5 h-0.5 rounded-full bg-ink-3" aria-hidden />
               <time
                 dateTime={comment.createdAt.toISOString()}
@@ -217,25 +219,5 @@ function ThreadChildren({ children }: { children: React.ReactNode }) {
     <div className="pl-5 pr-4 pb-4 pt-1">
       <div className="pl-4 border-l-2 border-rule space-y-3">{children}</div>
     </div>
-  );
-}
-
-function AuthorName({
-  user,
-}: {
-  user: { name: string | null; username: string | null };
-}) {
-  const display = user.name ?? 'anon';
-  const slug = user.username ?? (user.name ? slugifyName(user.name) : null);
-  if (!slug) {
-    return <span className="text-sm font-semibold text-ink">{display}</span>;
-  }
-  return (
-    <Link
-      href={paths.userProfile(slug)}
-      className="text-sm font-semibold text-ink hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
-    >
-      {display}
-    </Link>
   );
 }

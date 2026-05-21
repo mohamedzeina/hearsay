@@ -6,12 +6,12 @@ import { Input, Textarea } from '@heroui/react';
 import * as actions from '@/actions';
 import Avatar from '@/components/common/avatar';
 import DeleteButton from '@/components/common/delete-button';
-import FormButton from '@/components/common/formButton';
+import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
 import Markdown from '@/components/common/markdown';
 import { IconPencil } from '@/components/icons';
 import paths from '@/paths';
-import { slugifyName, timeAgo } from '@/lib/utils';
+import { resolveAuthorSlug, timeAgo } from '@/lib/utils';
 import {
   inputClassNamesLg,
   textareaClassNamesLg,
@@ -168,7 +168,7 @@ function AuthorMeta({
   author: { name: string | null; image: string | null; username: string | null };
 }) {
   const display = author.name ?? 'anon';
-  const slug = author.username ?? (author.name ? slugifyName(author.name) : null);
+  const slug = resolveAuthorSlug(author);
   if (!slug) {
     return (
       <div className="flex items-center gap-2">

@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { Textarea } from '@heroui/react';
 import { useSession } from 'next-auth/react';
-import FormButton from '@/components/common/formButton';
+import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
 import SurfacePanel from '@/components/common/surface-panel';
@@ -39,7 +39,7 @@ export default function CommentCreateForm({
         setOpen(false);
       }
     }
-  }, [formState, startOpen]);
+  }, [formState.success, startOpen]);
 
   const form = (
     <form action={action} ref={ref}>

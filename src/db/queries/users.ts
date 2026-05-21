@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { db } from '@/db';
 import { getViewerId } from '@/lib/server-utils';
-import type { PostWithData } from '@/db/queries/posts';
+import { postInclude, type PostWithData } from '@/db/queries/posts';
 
 export type UserProfileComment = {
   id: string;
@@ -51,26 +51,7 @@ export const fetchUserProfileByUsername = cache(
         where: { userId: user.id },
         orderBy: { createdAt: 'desc' },
         take: 20,
-        include: {
-          topic: { select: { slug: true } },
-          user: { select: { name: true, image: true, username: true } },
-          _count: {
-            select: {
-              comments: { where: { deleted: false } },
-              votes: true,
-            },
-          },
-          votes: {
-            where: { userId: viewerId ?? '' },
-            select: { id: true },
-            take: 1,
-          },
-          saves: {
-            where: { userId: viewerId ?? '' },
-            select: { id: true },
-            take: 1,
-          },
-        },
+        include: postInclude(viewerId),
       }),
       db.comment.findMany({
         where: { userId: user.id, deleted: false },

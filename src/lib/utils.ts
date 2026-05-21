@@ -62,3 +62,15 @@ export function slugifyName(name: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
+
+/**
+ * Resolve the URL slug for an author profile link. Prefers the stored
+ * `username`; falls back to slugifying the display name for legacy rows.
+ * Returns null when there's nothing to link to.
+ */
+export function resolveAuthorSlug(user: {
+  name: string | null;
+  username?: string | null;
+}): string | null {
+  return user.username ?? (user.name ? slugifyName(user.name) : null);
+}

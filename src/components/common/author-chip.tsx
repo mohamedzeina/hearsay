@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Avatar from '@/components/common/avatar';
 import paths from '@/paths';
-import { slugifyName } from '@/lib/utils';
+import { resolveAuthorSlug } from '@/lib/utils';
 
 interface AuthorChipProps {
   user: { name: string | null; image: string | null; username?: string | null };
@@ -16,7 +16,7 @@ interface AuthorChipProps {
  */
 export default function AuthorChip({ user }: AuthorChipProps) {
   const router = useRouter();
-  const slug = user.username ?? (user.name ? slugifyName(user.name) : null);
+  const slug = resolveAuthorSlug(user);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();

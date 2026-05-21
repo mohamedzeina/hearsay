@@ -14,7 +14,7 @@ const editPostSchema = z.object({
 
 export async function editPost(
   postId: string,
-  formState: FormState,
+  _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
   const result = editPostSchema.safeParse({

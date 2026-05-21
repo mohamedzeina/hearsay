@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import FormButton from '@/components/common/formButton';
+import FormButton from '@/components/common/form-button';
 
 const useFormStatusMock = vi.fn();
 

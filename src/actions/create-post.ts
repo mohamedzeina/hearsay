@@ -16,7 +16,7 @@ const createPostSchema = z.object({
 
 export async function createPost(
   slug: string,
-  formState: FormState,
+  _prev: FormState,
   formData: FormData):
   Promise<FormState> {
 

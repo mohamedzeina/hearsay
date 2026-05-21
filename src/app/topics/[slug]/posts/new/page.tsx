@@ -2,7 +2,7 @@
 
 import { use, useActionState } from 'react';
 import { Input, Textarea } from '@heroui/react';
-import FormButton from '@/components/common/formButton';
+import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
 import Link from 'next/link';

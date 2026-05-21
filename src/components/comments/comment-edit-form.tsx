@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef } from 'react';
 import { Textarea } from '@heroui/react';
 import * as actions from '@/actions';
-import FormButton from '@/components/common/formButton';
+import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
 import { inputClassNames as textareaClassNames } from '@/lib/form-classes';
 

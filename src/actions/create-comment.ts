@@ -13,7 +13,7 @@ const createCommentSchema = z.object({
 
 export async function createComment(
   { postId, parentId }: { postId: string; parentId?: string },
-  formState: FormState,
+  _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
   const result = createCommentSchema.safeParse({
@@ -31,6 +31,15 @@ export async function createComment(
     return { errors: { _form: ["You must sign in to do this."] } };
   }
 
+  const post = await db.post.findFirst({
+    where: { id: postId },
+    select: { topic: { select: { slug: true } } },
+  });
+
+  if (!post) {
+    return { errors: { _form: ["Post not found."] } };
+  }
+
   try {
     await db.comment.create({
       data: {
@@ -41,34 +50,13 @@ export async function createComment(
       },
     });
   } catch (err) {
-    if (err instanceof Error) {
-      return {
-        errors: {
-          _form: [err.message],
-        },
-      };
-    } else {
-      return {
-        errors: {
-          _form: ["Something went wrong..."],
-        },
-      };
-    }
-  }
-
-  const topic = await db.topic.findFirst({
-    where: { posts: { some: { id: postId } } },
-  });
-
-  if (!topic) {
+    console.error("createComment failed", err);
     return {
-      errors: {
-        _form: ["Failed to revalidate topic"],
-      },
+      errors: { _form: ["Failed to post comment. Please try again."] },
     };
   }
 
-  revalidatePath(paths.postShow(topic.slug, postId));
+  revalidatePath(paths.postShow(post.topic.slug, postId));
   return {
     errors: {},
     success: true,

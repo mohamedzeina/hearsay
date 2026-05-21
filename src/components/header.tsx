@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import SearchInput from './search-input';
-import HeaderAuth from './headerAuth';
+import HeaderAuth from './header-auth';
 import { Suspense } from 'react';
 
 export default function Header() {

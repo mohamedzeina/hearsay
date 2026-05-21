@@ -2,10 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import type { PostWithData } from '@/db/queries/posts';
-import PostCard from './post-card';
+import PostCardList from './post-card-list';
 import PostEmpty from './post-empty';
-import PostPagination from './post-pagination';
-import { usePaginated } from '@/lib/use-paginated';
 
 type Sort = 'top' | 'new';
 
@@ -27,13 +25,6 @@ export default function PostFeed({ posts }: { posts: PostWithData[] }) {
       }),
     [posts, sort]
   );
-
-  const { page, setPage, totalPages, paginated } = usePaginated(sorted);
-
-  const handleSort = (s: Sort) => {
-    setSort(s);
-    setPage(1);
-  };
 
   if (posts.length === 0) {
     return <PostEmpty />;
@@ -60,7 +51,7 @@ export default function PostFeed({ posts }: { posts: PostWithData[] }) {
               key={s}
               role="tab"
               aria-selected={sort === s}
-              onClick={() => handleSort(s)}
+              onClick={() => setSort(s)}
               className={`inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-xs font-semibold capitalize transition-all duration-200 motion-reduce:transition-none ${
                 sort === s
                   ? 'bg-surface text-ink shadow-soft'
@@ -83,15 +74,7 @@ export default function PostFeed({ posts }: { posts: PostWithData[] }) {
         </div>
       </header>
 
-      <ul className="space-y-3">
-        {paginated.map((post) => (
-          <li key={post.id} className="rise">
-            <PostCard post={post} />
-          </li>
-        ))}
-      </ul>
-
-      <PostPagination page={page} totalPages={totalPages} onChange={setPage} />
+      <PostCardList posts={sorted} resetKey={sort} />
     </div>
   );
 }
