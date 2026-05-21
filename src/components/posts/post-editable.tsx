@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Input, Textarea } from '@heroui/react';
 import * as actions from '@/actions';
 import Avatar from '@/components/common/avatar';
+import DeleteButton from '@/components/common/delete-button';
 import FormButton from '@/components/common/formButton';
 import FormError from '@/components/common/form-error';
 import Markdown from '@/components/common/markdown';
@@ -102,14 +103,20 @@ export default function PostEditable({
           {initialTitle}
         </h1>
         {isOwner && (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2 hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none shrink-0 mt-2"
-          >
-            <IconPencil className="w-3.5 h-3.5" />
-            Edit
-          </button>
+          <div className="flex items-center gap-1 shrink-0 mt-2">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2 hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
+            >
+              <IconPencil className="w-3.5 h-3.5" />
+              Edit
+            </button>
+            <DeleteButton
+              action={actions.deletePost.bind(null, postId)}
+              confirmMessage="Delete this post? All comments will also be removed."
+            />
+          </div>
         )}
       </div>
 

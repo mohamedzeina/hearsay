@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/auth';
-import { deletePost } from '@/actions';
-import DeleteButton from '@/components/common/delete-button';
 import VoteButton from '@/components/votes/vote-button';
 import SaveButton from '@/components/posts/save-button';
 import { fetchPostById } from '@/db/queries/posts';
@@ -34,7 +32,7 @@ export default async function PostShow({ postId }: PostShowProps) {
       <div className={`h-1.5 ${tone.dot}`} aria-hidden />
 
       <div className="px-6 sm:px-8 py-7 sm:py-8">
-        <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="mb-4">
           <Link
             href={paths.topicShow(post.topic.slug)}
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${tone.bg} ${tone.text} hover:shadow-soft hover:-translate-y-0.5 transition-all duration-200 motion-reduce:transition-none`}
@@ -42,12 +40,6 @@ export default async function PostShow({ postId }: PostShowProps) {
             <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} />
             <span className="lowercase">{post.topic.slug}</span>
           </Link>
-          {isOwner && (
-            <DeleteButton
-              action={deletePost.bind(null, post.id)}
-              confirmMessage="Delete this post? All comments will also be removed."
-            />
-          )}
         </div>
 
         <PostEditable
