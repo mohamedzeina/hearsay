@@ -43,16 +43,18 @@ export default function SaveButton({
     }
 
     const prev = saved;
-    setSaved(!prev);
+    const next = !prev;
+    setSaved(next);
+    // Drop the card from /saved up-front so the unsave feels instant even on
+    // slow Neon roundtrips. If the server rejects, we don't restore — the
+    // card-state hint to the list is one-way to keep this simple.
+    if (!next) savedList?.removePost(postId);
 
     startTransition(async () => {
       try {
         const result = await toggleSavedPost(postId);
         setSaved(result.saved);
         onToggle?.(result.saved);
-        // If we're rendered inside the /saved page's list, an unsave should
-        // drop the card from the page — that's what the user is asking for.
-        if (!result.saved) savedList?.removePost(postId);
       } catch {
         setSaved(prev);
       }
@@ -65,11 +67,11 @@ export default function SaveButton({
     <button
       type="button"
       onClick={onClick}
-      disabled={isPending}
       aria-pressed={saved}
+      aria-busy={isPending}
       aria-label={saved ? 'Unsave post' : 'Save post'}
       title={saved ? 'Saved' : 'Save'}
-      className={`group inline-flex items-center justify-center rounded-full ${s.box} transition-all duration-150 motion-reduce:transition-none disabled:cursor-not-allowed ${
+      className={`group inline-flex items-center justify-center rounded-full ${s.box} transition-all duration-150 motion-reduce:transition-none ${
         saved
           ? 'text-persimmon-deep hover:bg-persimmon-soft'
           : 'text-ink-3 hover:text-persimmon-deep hover:bg-persimmon-soft'
