@@ -37,7 +37,7 @@ A community discussion platform where every voice gets a thread — topics, post
 - Create posts inside a topic with title + content (large-variant Tailwind/NextUI inputs)
 - Per-topic-tone color band across the top of the post card
 - Big serif headline, author avatar with ring, mono timestamp, hairline divider, generous-leading body
-- Top/New sort tabs as a pill segmented control (star + clock icons); **Top now sorts by upvote count** (was comment count)
+- Top/New sort tabs as a pill segmented control (star + clock icons); Top sorts by upvote count
 - 5-per-page pagination via a shared `usePaginated` hook
 - Full-text search across title and content
 - Owner-only delete with two-stage inline confirm (no browser dialogs)
@@ -51,6 +51,7 @@ A community discussion platform where every voice gets a thread — topics, post
 - Soft delete for comments with children — renders `[comment deleted]` to preserve thread context; childless deletes hide entirely
 - Instant client UI on delete; counts in the header exclude soft-deleted comments
 - **Owner-only inline edit**: pencil button alongside Delete swaps the markdown body for a Textarea form; saves stamp `editedAt` and surface a "edited Xm ago" hint next to the timestamp
+- **Per-comment permalink**: every comment — top-level or nested — wraps in an `id="c-{id}"` anchor with the `comment-anchor` class. A "Link" button (with `IconLink` / `IconCheck` swap) on every card copies `<post-url>#c-{id}` via `navigator.clipboard.writeText`, flips to "Copied" for 1.5s, and swallows clipboard failures silently. Loading the URL with that hash smooth-scrolls to the comment and triggers the existing 1.8s persimmon `:target` flash. `html { scroll-behavior: smooth }` is set globally with a `prefers-reduced-motion` opt-out.
 
 ### Markdown rendering
 - Post bodies and comments render through `react-markdown` + `remark-gfm`
@@ -73,7 +74,7 @@ A community discussion platform where every voice gets a thread — topics, post
 - **Main column**: post card → reply form → comment thread
 - **Sticky sidebar**:
   - **Author card** — avatar, "writes on hearsay" label, two-up stats grid (posts / replies) using real database counts
-  - **Thread map** — numbered list (01, 02, …) of top-level comments. Click a row → anchor jumps to that comment via `#c-{id}`, with a **persimmon `:target` flash** as arrival feedback (1.8s box-shadow fade)
+  - **Thread map** — numbered list (01, 02, …) of top-level comments. Click a row → anchor jumps to that comment via `#c-{id}`, smooth-scrolls, and triggers the persimmon `:target` flash. (The same anchor pattern now backs the per-comment copy-link button.)
   - **Related posts** — top 4 other recent posts in the same topic with an "all →" link
   - "Jump to reply" anchor pill at the bottom
 - Each sidebar panel streams independently via its own Suspense boundary
@@ -92,6 +93,7 @@ A community discussion platform where every voice gets a thread — topics, post
 - Custom 404 page with hand-drawn underline
 - Route-level loading skeletons for `/`, `/search`, `/auth/signin`, `/topics/[slug]`, and `/topics/[slug]/posts/[postId]`
 - Subtle animations: `.rise` (fade + slide-up), `.dot-live` (persimmon glow pulse), `.ink-link` (hover underline reveal), `:target` flash on anchor arrival, bouncy logo period on hover, rotating `+` glyph on the topic-create trigger
+- Global smooth scroll for hash-jumps (used by the thread map and comment permalinks); disabled under `prefers-reduced-motion`
 - All animations honor `prefers-reduced-motion`
 
 ## Tech Stack
@@ -142,7 +144,7 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **`FormError`** — accessible `role="alert"` error banner.
 - **`DeleteButton`** — trash icon → inline persimmon "Are you sure?" pill with Yes/Cancel.
 - **`Markdown`** (`src/components/common/markdown.tsx`) — `react-markdown` + `remark-gfm` wrapper with `body` and `comment` variants. Strict allowlist; no raw HTML; external links auto-set `target="_blank" rel="noopener noreferrer nofollow"`.
-- **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`.
+- **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`, `IconLink` (permalink button), `IconCheck` ("Copied" affordance).
 - **`topicTone(slug)`** (`src/lib/utils.ts`) — deterministic hash → 1 of 8 muted color triples (bg / text / dot).
 - **Form classNames** (`src/lib/form-classes.ts`) — `inputClassNames`, `inputClassNamesLg`, `textareaClassNamesLg` for consistent NextUI styling.
 - **`usePaginated`** (`src/lib/use-paginated.ts`) — shared client pagination hook returning `{ page, setPage, totalPages, paginated }`.
@@ -150,22 +152,23 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 ## Architecture
 
 - **Server Components** handle all data fetching — posts, comments, topics, suggestions, and auth resolve on the server before streaming.
-- **Client Components** are scoped to interactivity only: form state, sort toggles, delete confirmation, search dropdown, modal state, vote toggling.
+- **Client Components** are scoped to interactivity only: form state, sort toggles, delete confirmation, search dropdown, modal state, vote toggling, comment-card permalink/edit UI.
 - **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`.
 - **Suspense boundaries** on the post detail page stream the post, comments, author card, thread map, and related posts in parallel.
 - **Request memoization** via React `cache()` deduplicates `fetchPostById` and `fetchCommentsByPostId` when multiple components in the same render need them.
 - **Soft delete** on comments preserves thread context — comments with replies become `[deleted]`; childless ones disappear entirely.
 - **Vote queries are viewer-aware**: every post/comment include uses `votes: { where: { userId: viewerId }, take: 1 }` so the UI knows the viewer's vote state without a round-trip. Unauthenticated viewers pass an empty-string sentinel so the filter never matches.
 - **Auth gating via Context modal**, not redirects: protected client buttons (upvote, reply, write a post, create a topic) call `useSignInPrompt().open()` instead of `router.push('/auth/signin')`, keeping the user on their current page.
+- **Comment anchors are unified**: `CommentShow` wraps every recursive comment in `<div id="c-{id}" className="scroll-mt-24 comment-anchor">`, so both the sidebar thread map and the per-comment copy-link button hit the same `:target`-flash code path regardless of nesting depth.
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **166 tests** total.
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **174 tests** total.
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
 | Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `usePaginated`, `paths`) | 35 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, Markdown, SignInPromptProvider, all auth-gated create forms | 64 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), all auth-gated create forms | 72 |
 | Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema; truncate-per-test isolation; `setViewer()` helper for auth | 62 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
@@ -186,7 +189,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── loading.tsx        # Home skeleton
 │   │   ├── not-found.tsx      # Custom 404
 │   │   ├── providers.tsx      # SessionProvider + NextUI + SignInPromptProvider
-│   │   ├── globals.css        # CSS vars, animations
+│   │   ├── globals.css        # CSS vars, animations, smooth-scroll w/ reduced-motion guard
 │   │   ├── api/
 │   │   │   ├── auth/[...nextauth]/   # NextAuth handler
 │   │   │   └── search/suggestions/   # Live-suggestions route
@@ -207,7 +210,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── header.tsx              # Sticky masthead with persimmon hairline
 │   │   ├── headerAuth.tsx          # Avatar dropdown / Sign-in button
 │   │   ├── search-input.tsx        # Live-suggestions combobox
-│   │   ├── icons.tsx               # Shared SVG icons
+│   │   ├── icons.tsx               # Shared SVG icons (incl. IconLink, IconCheck)
 │   │   ├── auth/
 │   │   │   └── signin-prompt.tsx   # Modal context for protected actions
 │   │   ├── common/
@@ -226,8 +229,9 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   │   ├── thread-map.tsx / related-posts.tsx
 │   │   │   └── *-loading.tsx, *-skeleton.tsx
 │   │   ├── comments/
-│   │   │   ├── comment-list.tsx / comment-show.tsx
-│   │   │   ├── comment-card.tsx        # Card with collapse rail + inline edit
+│   │   │   ├── comment-list.tsx
+│   │   │   ├── comment-show.tsx        # Wraps every comment in a #c-{id} anchor
+│   │   │   ├── comment-card.tsx        # Card with collapse rail, inline edit, copy-link button
 │   │   │   ├── comment-create-form.tsx
 │   │   │   ├── comment-edit-form.tsx
 │   │   │   └── comment-list-loading.tsx
@@ -253,7 +257,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 ├── tests/
 │   ├── setup.ts                        # jsdom + react-dom form-hook stubs
 │   ├── unit/                           # Pure-function tests
-│   ├── components/                     # RTL component tests
+│   ├── components/                     # RTL component tests (incl. comment-card, comment-show)
 │   ├── integration/                    # Real-PG queries + actions
 │   │   ├── setup.ts                    # Schema push + truncate-per-test
 │   │   └── factories.ts                # makeUser/Topic/Post/Comment helpers
