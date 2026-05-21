@@ -2,7 +2,7 @@
 
 > *All opinions welcome. Even yours.*
 
-A community discussion platform where every voice gets a thread — topics, posts, nested comments, upvotes, bookmarks, live search. Built with Next.js 14 App Router, Postgres, and a hand-tuned warm-modern design system.
+A community discussion platform where every voice gets a thread — topics, posts, nested comments, upvotes, bookmarks, live search. Built with Next.js 15 App Router on React 19, Postgres, and a hand-tuned warm-modern design system.
 
 **Live:** [hearsay-community.vercel.app](https://hearsay-community.vercel.app)
 
@@ -46,9 +46,10 @@ A community discussion platform where every voice gets a thread — topics, post
 
 ### Saved posts
 - **Bookmark button** in the top-right corner of every `PostCard` (`absolute top-3 right-3`). `IconBookmark` toggles between outline (unsaved) and filled persimmon (saved); `aria-pressed`/`aria-label` swap between "Save post" and "Unsave post".
-- **Optimistic toggle** with rollback on server error, mirroring the upvote pattern. Click bubbling is suppressed so the bookmark never triggers the card's outer `<Link>`.
+- **Optimistic toggle via React 19's `useOptimistic`** — the in-flight icon state layers on top of the server-confirmed state and auto-reverts on failure, no manual rollback bookkeeping. Click bubbling is suppressed so the bookmark never triggers the card's outer `<Link>`.
 - **Auth-gated** via the standard sign-in modal — signed-out users see "Sign in to save posts." instead of being redirected away.
-- **`/saved` page** (auth-required; unauthenticated users redirect to signin with a `callbackUrl=/saved`) lists every bookmarked post newest-save-first, reusing `PostCard`. Empty state shows a centered `IconBookmark` halo with "Nothing saved yet" + "Tap the bookmark on any post and it'll land here, in the order you saved them." and a "Browse posts →" CTA.
+- **`/saved` page** (auth-required; unauthenticated users redirect to signin with a `callbackUrl=/saved`) lists every bookmarked post newest-save-first, reusing `PostCard`. Paginates 5 at a time via the shared `usePaginated` hook; the underlying query caps at the 100 most-recent saves so the round-trip stays bounded. Empty state shows a centered `IconBookmark` halo with "Nothing saved yet" + "Tap the bookmark on any post and it'll land here, in the order you saved them." and a "Browse posts →" CTA.
+- **Unsaving on `/saved` drops the card immediately.** A small `SavedListContext` lets `SaveButton` tell the page-level list to remove the post on toggle-off, so the view doesn't lie about which bookmarks still exist. The toggle action also `revalidatePath('/saved')` to bust the Next.js Router Cache when you unsave somewhere else.
 - **Header dropdown link**: the user-menu dropdown gains a "Saved posts" entry above sign-out so the page is reachable from anywhere.
 - Backed by a `SavedPost` join table with `@@unique([userId, postId])` (prevents double-saves at the DB level) and `@@index([userId])` (cheap `/saved` listing). Toggle action wraps find/delete-or-create in a Prisma `$transaction`.
 - Each post query also surfaces a viewer-aware `saves: { id: string }[]` (same pattern as `votes`), so the bookmark renders in the correct state on first paint without a follow-up roundtrip.
@@ -116,11 +117,12 @@ A community discussion platform where every voice gets a thread — topics, post
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14.2 (App Router) |
+| Framework | Next.js 15.5 (App Router) |
+| Runtime | React 19 |
 | Language | TypeScript 5 (strict) |
 | Database | PostgreSQL (Neon) via Prisma 5.11 |
-| Auth | NextAuth v5 (beta 3) + GitHub OAuth + Prisma adapter |
-| UI | NextUI 2.2 + Tailwind CSS 3.3 |
+| Auth | NextAuth v5 (beta 25) + GitHub OAuth + Prisma adapter |
+| UI | HeroUI 2.7 + Tailwind CSS 3.4 |
 | Fonts | Plus Jakarta Sans + JetBrains Mono (`next/font/google`) |
 | Validation | Zod 3.22 |
 | Motion | Framer Motion 11 |
@@ -170,8 +172,10 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 ## Architecture
 
 - **Server Components** handle all data fetching — posts, comments, topics, suggestions, saved-posts listing, and auth resolve on the server before streaming.
+- **Next 15 async dynamic APIs**: every dynamic route (`/topics/[slug]`, `/topics/[slug]/posts/[postId]`, `/u/[username]`, `/search?term=…`) receives `params` / `searchParams` as Promises and `await`s them at the top of the page. The one client-component dynamic route (`/topics/[slug]/posts/new`) unwraps with `React.use(params)`.
 - **Client Components** are scoped to interactivity only: form state, sort toggles, delete confirmation, search dropdown, modal state, vote toggling, save toggling, comment-card permalink/edit UI.
-- **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`, `toggleSavedPost`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`. Toggle actions wrap their find/upsert in a Prisma `$transaction`.
+- **React 19 form hooks**: form actions use `useActionState` (renamed from `useFormState`); pending button states use `useFormStatus` from `react-dom`. The `SaveButton` uses `useOptimistic` for in-flight bookmark state — the overlay auto-reverts on action failure, so there's no manual rollback branch.
+- **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`, `toggleSavedPost`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`. Toggle actions wrap their find/upsert in a Prisma `$transaction`. `toggleSavedPost` calls `revalidatePath('/saved')` so the bookmark page stays in sync after toggles on the feed.
 - **Suspense boundaries** on the post detail page stream the post, comments, author card, thread map, and related posts in parallel.
 - **Request memoization** via React `cache()` deduplicates `fetchPostById` and `fetchCommentsByPostId` when multiple components in the same render need them.
 - **Soft delete** on comments preserves thread context — comments with replies become `[deleted]`; childless ones disappear entirely.
@@ -182,13 +186,13 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **198 tests** total (+ 5 E2E).
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **203 tests** total (+ 5 E2E).
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
 | Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `paths`) | 41 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, all auth-gated create forms | 83 |
-| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts`, `fetchUserProfileByUsername`); truncate-per-test isolation; `setViewer()` helper for auth | 74 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, all auth-gated create forms | 87 |
+| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts` with viewer scope + 100-row cap, `fetchUserProfileByUsername`); truncate-per-test isolation; `setViewer()` helper for auth | 75 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
 Run everything with `npm run test:everything` — it starts the Docker test PG, runs all Vitest projects, then Playwright. Granular scripts (`test`, `test:integration`, `test:e2e`) exist for fast iteration on a single layer.
@@ -207,7 +211,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── page.tsx           # Home — hero, signed-in greeting, post feed, sidebar
 │   │   ├── loading.tsx        # Home skeleton
 │   │   ├── not-found.tsx      # Custom 404
-│   │   ├── providers.tsx      # SessionProvider + NextUI + SignInPromptProvider
+│   │   ├── providers.tsx      # SessionProvider + HeroUIProvider + SignInPromptProvider
 │   │   ├── globals.css        # CSS vars, animations, smooth-scroll w/ reduced-motion guard
 │   │   ├── api/
 │   │   │   ├── auth/[...nextauth]/   # NextAuth handler
@@ -302,7 +306,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 18.18+ (Next.js 15 minimum; 20 recommended)
 - A PostgreSQL database (free Neon plan works)
 - A GitHub OAuth app ([create one](https://github.com/settings/developers))
   - Homepage URL: `http://localhost:3000`
