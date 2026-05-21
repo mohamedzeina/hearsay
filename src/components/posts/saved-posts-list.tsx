@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PostWithData } from '@/db/queries/posts';
 import { IconBookmark } from '@/components/icons';
 import PostCard from '@/components/posts/post-card';
+import PostPagination from '@/components/posts/post-pagination';
 import { SavedListProvider } from '@/components/posts/saved-list-context';
+import { usePaginated } from '@/lib/use-paginated';
 
 interface SavedPostsListProps {
   initialPosts: PostWithData[];
@@ -24,6 +26,14 @@ export default function SavedPostsList({ initialPosts }: SavedPostsListProps) {
   }, []);
 
   const value = useMemo(() => ({ removePost }), [removePost]);
+
+  const { page, setPage, totalPages, paginated } = usePaginated(posts);
+
+  // Unsaving on the last page can shrink the list past the current page —
+  // snap back to the new last page so the user doesn't land on a blank view.
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages, setPage]);
 
   return (
     <>
@@ -66,12 +76,13 @@ export default function SavedPostsList({ initialPosts }: SavedPostsListProps) {
       ) : (
         <SavedListProvider value={value}>
           <ul className="space-y-3">
-            {posts.map((post) => (
+            {paginated.map((post) => (
               <li key={post.id}>
                 <PostCard post={post} />
               </li>
             ))}
           </ul>
+          <PostPagination page={page} totalPages={totalPages} onChange={setPage} />
         </SavedListProvider>
       )}
     </>

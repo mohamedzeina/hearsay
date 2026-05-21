@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fetchSavedPosts } from '@/db/queries/saved-posts';
+import { SAVED_POSTS_LIMIT, fetchSavedPosts } from '@/db/queries/saved-posts';
 import { makePost, makeTopic, makeUser } from './factories';
 import { testDb } from './setup';
 
@@ -58,5 +58,35 @@ describe('fetchSavedPosts', () => {
 
     expect(await fetchSavedPosts(viewerA.id)).toEqual([]);
     expect(await fetchSavedPosts(viewerB.id)).toHaveLength(1);
+  });
+
+  it(`caps the result at SAVED_POSTS_LIMIT (${SAVED_POSTS_LIMIT}) saves, newest first`, async () => {
+    const author = await makeUser();
+    const viewer = await makeUser();
+    const topic = await makeTopic();
+    const totalToCreate = SAVED_POSTS_LIMIT + 5;
+
+    // Create N posts + N saves (oldest save first → newest last).
+    const postIds: string[] = [];
+    for (let i = 0; i < totalToCreate; i++) {
+      const post = await makePost({
+        userId: author.id,
+        topicId: topic.id,
+        title: `post ${i}`,
+      });
+      postIds.push(post.id);
+      await testDb.savedPost.create({
+        data: {
+          userId: viewer.id,
+          postId: post.id,
+          createdAt: new Date(Date.now() - (totalToCreate - i) * 60_000),
+        },
+      });
+    }
+
+    const saved = await fetchSavedPosts(viewer.id);
+    expect(saved).toHaveLength(SAVED_POSTS_LIMIT);
+    // Newest save first — the last postId we created should be index 0.
+    expect(saved[0].id).toBe(postIds[totalToCreate - 1]);
   });
 });
