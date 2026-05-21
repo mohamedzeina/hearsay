@@ -5,6 +5,7 @@ import { timeAgo, topicTone, stripMarkdown } from '@/lib/utils';
 import { IconReply } from '@/components/icons';
 import AuthorChip from '@/components/common/author-chip';
 import VoteButton from '@/components/votes/vote-button';
+import SaveButton from '@/components/posts/save-button';
 
 interface PostCardProps {
   post: PostWithData;
@@ -26,6 +27,14 @@ export default function PostCard({ post, hideTopic }: PostCardProps) {
         className="absolute left-0 top-0 bottom-0 w-[3px] bg-persimmon scale-y-0 group-hover:scale-y-100 origin-top transition-transform duration-300 motion-reduce:transition-none"
       />
 
+      {/* Bookmark — top-right corner */}
+      <div className="absolute top-3 right-3 z-10">
+        <SaveButton
+          postId={post.id}
+          initialSaved={post.saves.length > 0}
+        />
+      </div>
+
       <div className="p-5 sm:p-6">
         {!hideTopic && (
           <div className="mb-3 flex items-center gap-2">
@@ -38,7 +47,7 @@ export default function PostCard({ post, hideTopic }: PostCardProps) {
           </div>
         )}
 
-        <h3 className="font-display text-lg sm:text-xl font-bold text-ink leading-snug group-hover:text-persimmon-deep transition-colors duration-200 motion-reduce:transition-none">
+        <h3 className="font-display text-lg sm:text-xl font-bold text-ink leading-snug pr-10 group-hover:text-persimmon-deep transition-colors duration-200 motion-reduce:transition-none">
           {post.title}
         </h3>
 
