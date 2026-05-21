@@ -85,4 +85,30 @@ export const {
       return session;
     },
   },
+  events: {
+    // Backfill username on every GitHub signin so existing users (who pre-date
+    // the column) and any signups the adapter didn't propagate land on their
+    // actual GitHub login rather than a slugified display name. Skips silently
+    // on persona-handle collisions.
+    async signIn({ user, profile }) {
+      if (!user.id || !profile) return;
+      const login =
+        typeof profile.login === 'string' ? profile.login.trim() : '';
+      if (!login) return;
+      const existing = await db.user.findUnique({
+        where: { id: user.id },
+        select: { username: true },
+      });
+      if (!existing || existing.username === login) return;
+      const collision = await db.user.findUnique({
+        where: { username: login },
+        select: { id: true },
+      });
+      if (collision && collision.id !== user.id) return;
+      await db.user.update({
+        where: { id: user.id },
+        data: { username: login },
+      });
+    },
+  },
 });
