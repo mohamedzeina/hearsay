@@ -49,13 +49,16 @@ export default function SaveButton({
       return;
     }
 
-    startTransition(async () => {
-      const next = !confirmed;
-      addOptimistic(next);
-      // Drop the card from /saved up-front so the unsave feels instant even on
-      // slow Neon roundtrips. One-way hint to the list; we don't restore.
-      if (!next) savedList?.removePost(postId);
+    const next = !confirmed;
+    // Drop the card from /saved up-front so the unsave feels instant even on
+    // slow Neon roundtrips. Runs OUTSIDE startTransition because React marks
+    // transition-scoped updates as non-urgent and can defer them — the card
+    // would visibly linger for a frame. One-way hint to the list; we don't
+    // restore on server error.
+    if (!next) savedList?.removePost(postId);
 
+    startTransition(async () => {
+      addOptimistic(next);
       try {
         const result = await toggleSavedPost(postId);
         setConfirmed(result.saved);
