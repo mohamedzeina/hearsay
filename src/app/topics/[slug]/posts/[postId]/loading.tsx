@@ -1,3 +1,5 @@
+'use client';
+
 import PostShowLoading from '@/components/posts/post-show-loading';
 import CommentListLoading from '@/components/comments/comment-list-loading';
 import { Skeleton } from '@heroui/react';

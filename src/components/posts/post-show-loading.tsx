@@ -1,3 +1,5 @@
+'use client';
+
 import { Skeleton } from '@heroui/react';
 import SurfacePanel from '@/components/common/surface-panel';
 

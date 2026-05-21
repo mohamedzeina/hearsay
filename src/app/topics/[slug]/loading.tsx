@@ -1,3 +1,5 @@
+'use client';
+
 import { Skeleton } from '@heroui/react';
 import PostListSkeleton from '@/components/posts/post-list-skeleton';
 

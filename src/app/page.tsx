@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Divider } from '@heroui/react';
 import TopicCreateForm from '@/components/topics/topic-create-form';
 import TopicList from '@/components/topics/topic-list';
 import { fetchRecentPosts } from '@/db/queries/posts';
@@ -254,7 +253,7 @@ function SidebarPanel({
           </span>
         )}
       </header>
-      <Divider className="bg-rule" />
+      <hr className="border-0 h-px bg-rule" />
       <div className="p-4">{children}</div>
     </SurfacePanel>
   );
