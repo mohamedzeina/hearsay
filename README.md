@@ -44,6 +44,13 @@ A community discussion platform where every voice gets a thread — topics, post
 - **Owner-only inline edit**: a small pencil button appears next to the title; clicking swaps the title and body for a validated form ("Tidy up · not rewrite"). Saves stamp `editedAt`; a muted "edited Xm ago" pip appears in the meta row.
 - Empty state cards with persimmon-soft icon halo
 
+### User profiles
+- `/u/[username]` route with a decorated header (avatar, name, `@username`, joined-on month, two-up stats), the user's 20 most-recent posts (reusing `PostCard`), and a sticky "Recent replies" sidebar that backlinks each comment to its source post via `paths.postShow(...) + '#c-{id}'`
+- **Indexed `User.username` lookup** — `@unique` Postgres index, O(1) `db.user.findUnique({ where: { username } })`; no slug-scanning
+- **GitHub login → Hearsay username** wired in the `profile()` callback on `src/auth.ts` — new signins land at `/u/<github-login>` automatically
+- **`slugifyName` fallback** for legacy rows that pre-date the `username` column (rare path; mostly cosmetic)
+- **Clickable author attribution everywhere**: `AuthorChip` (new client primitive) inside `<Link>`-wrapped cards like `PostCard`, plus direct Next `<Link>` wrapping in `CommentCard`, `PostAuthor`, and `PostEditable`. All four resolve `user.username` first, slugify the name as a fallback.
+
 ### Comments
 - Threaded replies (nested via `parentId`)
 - Each comment is its own bordered card with an avatar column
@@ -144,6 +151,7 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **`FormError`** — accessible `role="alert"` error banner.
 - **`DeleteButton`** — trash icon → inline persimmon "Are you sure?" pill with Yes/Cancel.
 - **`Markdown`** (`src/components/common/markdown.tsx`) — `react-markdown` + `remark-gfm` wrapper with `body` and `comment` variants. Strict allowlist; no raw HTML; external links auto-set `target="_blank" rel="noopener noreferrer nofollow"`.
+- **`AuthorChip`** (`src/components/common/author-chip.tsx`) — client primitive that's safe to render inside an outer `<Link>` (renders as `<button>`, intercepts clicks, navigates via `router.push`). Resolves `user.username` → falls back to `slugifyName(user.name)` → renders inert text if both are missing.
 - **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`, `IconLink` (permalink button), `IconCheck` ("Copied" affordance).
 - **`topicTone(slug)`** (`src/lib/utils.ts`) — deterministic hash → 1 of 8 muted color triples (bg / text / dot).
 - **Form classNames** (`src/lib/form-classes.ts`) — `inputClassNames`, `inputClassNamesLg`, `textareaClassNamesLg` for consistent NextUI styling.
@@ -160,16 +168,17 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **Vote queries are viewer-aware**: every post/comment include uses `votes: { where: { userId: viewerId }, take: 1 }` so the UI knows the viewer's vote state without a round-trip. Unauthenticated viewers pass an empty-string sentinel so the filter never matches.
 - **Auth gating via Context modal**, not redirects: protected client buttons (upvote, reply, write a post, create a topic) call `useSignInPrompt().open()` instead of `router.push('/auth/signin')`, keeping the user on their current page.
 - **Comment anchors are unified**: `CommentShow` wraps every recursive comment in `<div id="c-{id}" className="scroll-mt-24 comment-anchor">`, so both the sidebar thread map and the per-comment copy-link button hit the same `:target`-flash code path regardless of nesting depth.
+- **Username resolution is single-pass and indexed**: `User.username` is unique-indexed so profile lookups go through `findUnique` (O(1)) rather than scanning slugified names. The GitHub OAuth `profile()` callback in `src/auth.ts` is augmented (via `declare module 'next-auth'`) so the Prisma adapter forwards `profile.login` straight into the column on first signin. `slugifyName` is only used as a fallback for legacy rows that pre-date the column.
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **174 tests** total.
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **189 tests** total.
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
-| Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `usePaginated`, `paths`) | 35 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), all auth-gated create forms | 72 |
-| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema; truncate-per-test isolation; `setViewer()` helper for auth | 62 |
+| Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `paths`) | 41 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip (profile navigation), all auth-gated create forms | 77 |
+| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `fetchUserProfileByUsername`); truncate-per-test isolation; `setViewer()` helper for auth | 66 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
 Run everything with `npm run test:everything` — it starts the Docker test PG, runs all Vitest projects, then Playwright. Granular scripts (`test`, `test:integration`, `test:e2e`) exist for fast iteration on a single layer.
@@ -179,9 +188,9 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 ```
 .
 ├── prisma/
-│   ├── schema.prisma          # User, Topic, Post, Comment, PostVote, CommentVote (Post/Comment carry editedAt)
-│   ├── migrations/            # init → add_comment_soft_delete → add_votes → add_edited_at
-│   └── seed.ts                # 10 personas + 11 topics + threaded markdown content + pre-edited rows
+│   ├── schema.prisma          # User (+ username/createdAt), Topic, Post, Comment, PostVote, CommentVote
+│   ├── migrations/            # init → add_comment_soft_delete → add_votes → add_edited_at → add_user_profile_fields
+│   └── seed.ts                # 10 personas (with handles + spread join dates) + 11 topics + threaded markdown content + pre-edited rows
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx         # Plus Jakarta + JetBrains Mono + Header + footer
@@ -195,11 +204,12 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   │   └── search/suggestions/   # Live-suggestions route
 │   │   ├── auth/signin/       # Split-screen sign-in + loading skeleton
 │   │   ├── search/            # Search page + loading skeleton
-│   │   └── topics/[slug]/
-│   │       ├── page.tsx       # Topic show (per-topic tone hero)
-│   │       └── posts/
-│   │           ├── new/       # Post create form
-│   │           └── [postId]/  # Two-column post detail + loading
+│   │   ├── topics/[slug]/
+│   │   │   ├── page.tsx       # Topic show (per-topic tone hero)
+│   │   │   └── posts/
+│   │   │       ├── new/       # Post create form
+│   │   │       └── [postId]/  # Two-column post detail + loading
+│   │   └── u/[username]/      # User profile page + loading skeleton
 │   ├── actions/
 │   │   ├── create-post.ts / create-topic.ts / create-comment.ts
 │   │   ├── edit-post.ts / edit-comment.ts
@@ -220,6 +230,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   │   ├── form-error.tsx
 │   │   │   ├── delete-button.tsx
 │   │   │   ├── breadcrumb.tsx
+│   │   │   ├── author-chip.tsx         # Profile-nav button safe to nest inside outer <Link>
 │   │   │   └── markdown.tsx            # react-markdown wrapper (body / comment variants)
 │   │   ├── posts/
 │   │   │   ├── post-card.tsx / post-empty.tsx / post-pagination.tsx
@@ -245,19 +256,20 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   └── queries/
 │   │       ├── posts.ts                # by-id (cached), by-topic, search, recent, related
 │   │       ├── comments.ts             # by-post (cached)
+│   │       ├── users.ts                # profile-by-username (cached, indexed lookup)
 │   │       └── search-suggestions.ts
 │   ├── lib/
-│   │   ├── utils.ts                    # timeAgo(), topicTone(), TOPIC_PALETTE
+│   │   ├── utils.ts                    # timeAgo(), stripMarkdown(), topicTone(), slugifyName()
 │   │   ├── server-utils.ts             # requireAuth(), getViewerId()
 │   │   ├── form-classes.ts             # Shared NextUI input/textarea classes
 │   │   ├── use-paginated.ts            # Client pagination hook
 │   │   └── types.ts                    # FormState, ActionResult
-│   ├── auth.ts                         # NextAuth v5 config (GitHub + test creds)
-│   └── paths.ts                        # Type-safe URL builder
+│   ├── auth.ts                         # NextAuth v5 config (GitHub profile.login → User.username + test creds)
+│   └── paths.ts                        # Type-safe URL builder (topicShow, postShow, postCreate, userProfile)
 ├── tests/
 │   ├── setup.ts                        # jsdom + react-dom form-hook stubs
-│   ├── unit/                           # Pure-function tests
-│   ├── components/                     # RTL component tests (incl. comment-card, comment-show)
+│   ├── unit/                           # Pure-function tests (incl. slugifyName)
+│   ├── components/                     # RTL component tests (incl. comment-card, comment-show, author-chip)
 │   ├── integration/                    # Real-PG queries + actions
 │   │   ├── setup.ts                    # Schema push + truncate-per-test
 │   │   └── factories.ts                # makeUser/Topic/Post/Comment helpers
