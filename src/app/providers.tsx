@@ -1,6 +1,6 @@
 'use client';
 
-import { NextUIProvider } from '@nextui-org/react';
+import { HeroUIProvider } from '@heroui/react';
 import { SessionProvider } from 'next-auth/react';
 import SignInPromptProvider from '@/components/auth/signin-prompt';
 
@@ -11,9 +11,9 @@ interface ProvidersProps {
 export default function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider>
-      <NextUIProvider>
+      <HeroUIProvider>
         <SignInPromptProvider>{children}</SignInPromptProvider>
-      </NextUIProvider>
+      </HeroUIProvider>
     </SessionProvider>
   );
 }

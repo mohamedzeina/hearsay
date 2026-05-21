@@ -1,7 +1,7 @@
 'use client';
 
-import { useFormState } from 'react-dom';
-import { Input, Textarea } from '@nextui-org/react';
+import { use, useActionState } from 'react';
+import { Input, Textarea } from '@heroui/react';
 import FormButton from '@/components/common/formButton';
 import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
@@ -16,13 +16,13 @@ import {
 } from '@/lib/form-classes';
 
 interface PostCreatePageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export default function PostCreatePage({ params }: PostCreatePageProps) {
-  const { slug } = params;
+  const { slug } = use(params);
   const tone = topicTone(slug);
-  const [formState, action] = useFormState(
+  const [formState, action] = useActionState(
     actions.createPost.bind(null, slug),
     { errors: {} }
   );

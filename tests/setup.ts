@@ -2,15 +2,21 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
-// react-dom's useFormState/useFormStatus rely on React's experimental form
-// runtime which isn't wired into jsdom. Provide stubs that mimic the shape
-// without doing anything; individual tests can override via vi.mock if they
-// need finer control (see form-button.test.tsx).
+// React 19's useActionState + react-dom's useFormStatus rely on React's
+// experimental form runtime which isn't wired into jsdom. Provide stubs that
+// mimic the shape without doing anything; individual tests can override via
+// vi.mock if they need finer control (see form-button.test.tsx).
+vi.mock('react', async () => {
+  const actual = await vi.importActual<typeof import('react')>('react');
+  return {
+    ...actual,
+    useActionState: <T,>(_action: unknown, initial: T) => [initial, () => {}, false],
+  };
+});
 vi.mock('react-dom', async () => {
   const actual = await vi.importActual<typeof import('react-dom')>('react-dom');
   return {
     ...actual,
-    useFormState: <T,>(_action: unknown, initial: T) => [initial, () => {}],
     useFormStatus: () => ({ pending: false, data: null, method: null, action: null }),
   };
 });

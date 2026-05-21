@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useFormState } from 'react-dom';
-import { Textarea } from '@nextui-org/react';
+import { useActionState, useEffect, useRef } from 'react';
+import { Textarea } from '@heroui/react';
 import * as actions from '@/actions';
 import FormButton from '@/components/common/formButton';
 import FormError from '@/components/common/form-error';
@@ -22,7 +21,7 @@ export default function CommentEditForm({
   onSuccess,
 }: CommentEditFormProps) {
   const ref = useRef<HTMLFormElement | null>(null);
-  const [formState, action] = useFormState(
+  const [formState, action] = useActionState(
     actions.editComment.bind(null, commentId),
     { errors: {} }
   );

@@ -3,13 +3,13 @@ import SearchResults from '@/components/posts/search-results';
 import { fetchPostsBySearchTerm } from '@/db/queries/posts';
 
 interface SearchPageProps {
-  searchParams: {
+  searchParams: Promise<{
     term: string;
-  };
+  }>;
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { term } = searchParams;
+  const { term } = await searchParams;
 
   if (!term) {
     redirect('/');

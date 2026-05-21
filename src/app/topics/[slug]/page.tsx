@@ -7,13 +7,13 @@ import Breadcrumb from '@/components/common/breadcrumb';
 import { topicTone } from '@/lib/utils';
 
 interface TopicShowPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export default async function TopicShowPage({ params }: TopicShowPageProps) {
-  const { slug } = params;
+  const { slug } = await params;
 
   const topic = await db.topic.findUnique({
     where: { slug },

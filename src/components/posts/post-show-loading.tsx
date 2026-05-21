@@ -1,4 +1,4 @@
-import { Skeleton } from '@nextui-org/react';
+import { Skeleton } from '@heroui/react';
 import SurfacePanel from '@/components/common/surface-panel';
 
 export default function PostShowLoading() {

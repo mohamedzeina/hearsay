@@ -11,7 +11,7 @@ import {
   ModalContent,
   ModalBody,
   useDisclosure,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { signIn } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { IconSpinner } from '@/components/icons';

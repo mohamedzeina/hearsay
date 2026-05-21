@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react';
 import {
   Input,
   Textarea,
@@ -8,7 +8,7 @@ import {
   ModalContent,
   ModalBody,
   useDisclosure,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { useSession } from 'next-auth/react';
 import FormButton from '../common/formButton';
 import FormError from '@/components/common/form-error';
@@ -21,7 +21,7 @@ export default function TopicCreateForm() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const session = useSession();
   const signInPrompt = useSignInPrompt();
-  const [formState, action] = useFormState(actions.createTopic, {
+  const [formState, action] = useActionState(actions.createTopic, {
     errors: {},
   });
 

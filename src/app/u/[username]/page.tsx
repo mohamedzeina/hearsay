@@ -9,13 +9,14 @@ import { stripMarkdown, timeAgo, topicTone } from '@/lib/utils';
 import paths from '@/paths';
 
 interface UserProfilePageProps {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 }
 
 export default async function UserProfilePage({ params }: UserProfilePageProps) {
-  const username = decodeURIComponent(params.username);
+  const { username: raw } = await params;
+  const username = decodeURIComponent(raw);
   const profile = await fetchUserProfileByUsername(username);
   if (!profile) notFound();
 

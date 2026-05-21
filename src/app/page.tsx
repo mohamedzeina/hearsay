@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Divider } from '@nextui-org/react';
+import { Divider } from '@heroui/react';
 import TopicCreateForm from '@/components/topics/topic-create-form';
 import TopicList from '@/components/topics/topic-list';
 import { fetchRecentPosts } from '@/db/queries/posts';

@@ -21,6 +21,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Hearsay — all opinions welcome',
   description: 'A community discussion platform where every voice gets a thread. Talk about anything, hear what people are actually saying.',
+  icons: { icon: '/favicon.svg' },
 };
 
 export default function RootLayout({

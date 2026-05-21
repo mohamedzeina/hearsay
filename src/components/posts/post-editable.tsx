@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useFormState } from 'react-dom';
+import { useActionState, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Input, Textarea } from '@nextui-org/react';
+import { Input, Textarea } from '@heroui/react';
 import * as actions from '@/actions';
 import Avatar from '@/components/common/avatar';
 import FormButton from '@/components/common/formButton';
@@ -37,7 +36,7 @@ export default function PostEditable({
   editedAt,
 }: PostEditableProps) {
   const [editing, setEditing] = useState(false);
-  const [formState, action] = useFormState(
+  const [formState, action] = useActionState(
     actions.editPost.bind(null, postId),
     { errors: {} }
   );

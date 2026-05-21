@@ -1,4 +1,4 @@
-import { Skeleton } from '@nextui-org/react';
+import { Skeleton } from '@heroui/react';
 import PostListSkeleton from '@/components/posts/post-list-skeleton';
 
 export default function TopicShowLoading() {

@@ -1,6 +1,6 @@
 import PostShowLoading from '@/components/posts/post-show-loading';
 import CommentListLoading from '@/components/comments/comment-list-loading';
-import { Skeleton } from '@nextui-org/react';
+import { Skeleton } from '@heroui/react';
 import SurfacePanel from '@/components/common/surface-panel';
 
 function SidebarPanelSkeleton({

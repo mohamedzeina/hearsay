@@ -1,4 +1,4 @@
-import { Skeleton } from '@nextui-org/react';
+import { Skeleton } from '@heroui/react';
 
 function CommentSkeleton({ indent = false }: { indent?: boolean }) {
   return (

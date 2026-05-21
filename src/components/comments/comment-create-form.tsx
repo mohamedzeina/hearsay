@@ -1,8 +1,7 @@
 'use client';
 
-import { useFormState } from 'react-dom';
-import { useEffect, useRef, useState } from 'react';
-import { Textarea } from '@nextui-org/react';
+import { useActionState, useEffect, useRef, useState } from 'react';
+import { Textarea } from '@heroui/react';
 import { useSession } from 'next-auth/react';
 import FormButton from '@/components/common/formButton';
 import FormError from '@/components/common/form-error';
@@ -28,7 +27,7 @@ export default function CommentCreateForm({
   const session = useSession();
   const signInPrompt = useSignInPrompt();
   const isAuthed = session.status === 'authenticated';
-  const [formState, action] = useFormState(
+  const [formState, action] = useActionState(
     actions.createComment.bind(null, { postId, parentId }),
     { errors: {} }
   );

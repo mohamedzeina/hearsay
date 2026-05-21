@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import { nextui } from "@nextui-org/react";
+import { heroui } from "@heroui/react";
 import typography from "@tailwindcss/typography";
 
 const config: Config = {
@@ -8,7 +8,7 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
-    "./node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}"
+    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
     extend: {
@@ -46,6 +46,8 @@ const config: Config = {
     },
   },
   darkMode: "class",
-  plugins: [nextui(), typography],
+  // HeroUI's plugin ships its own tailwindcss type defs that don't unify with
+  // ours — runtime is fine, just a type-only skew. Cast to keep tsc clean.
+  plugins: [heroui() as unknown as Config['plugins'], typography].flat() as Config['plugins'],
 };
 export default config;
