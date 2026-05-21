@@ -26,6 +26,7 @@ async function reset() {
 	// Cascades handle most FKs, but explicit order keeps it readable.
 	await db.commentVote.deleteMany({});
 	await db.postVote.deleteMany({});
+	await db.savedPost.deleteMany({});
 	await db.comment.deleteMany({});
 	await db.post.deleteMany({});
 	await db.topic.deleteMany({});
@@ -362,8 +363,8 @@ async function main() {
 	});
 	const owner = realUsers[0] ?? null;
 
-	let ownerFoodPost: { id: string } | null = null;
-	let ownerCareerPost: { id: string } | null = null;
+	let ownerFoodPost: { id: string; userId: string } | null = null;
+	let ownerCareerPost: { id: string; userId: string } | null = null;
 	if (owner) {
 		console.log(`Adding posts by ${owner.name ?? owner.email}...`);
 		ownerFoodPost = await db.post.create({
@@ -869,6 +870,21 @@ async function main() {
 		}
 	}
 
+	console.log('Bookmarking posts...');
+	// Each persona saves 2–4 random posts so /saved isn't empty when you
+	// sign in as one of them. Owner gets a couple too if they exist.
+	for (const saver of voterPool) {
+		const targets = pick(allPosts, 2 + Math.floor(rand() * 3)); // 2–4 saves
+		for (const post of targets) {
+			if (post.userId === saver.id) continue; // don't bookmark your own
+			await db.savedPost
+				.create({ data: { userId: saver.id, postId: post.id } })
+				.catch(() => {
+					// Unique violation is fine — pick can repeat across iterations.
+				});
+		}
+	}
+
 	const stats = {
 		users: users.length + (owner ? 1 : 0),
 		topics: 11,
@@ -876,6 +892,7 @@ async function main() {
 		comments: allComments.length,
 		postVotes: await db.postVote.count(),
 		commentVotes: await db.commentVote.count(),
+		savedPosts: await db.savedPost.count(),
 	};
 	console.log('Seeding complete:', stats);
 }
