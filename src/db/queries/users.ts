@@ -65,6 +65,11 @@ export const fetchUserProfileByUsername = cache(
             select: { id: true },
             take: 1,
           },
+          saves: {
+            where: { userId: viewerId ?? '' },
+            select: { id: true },
+            take: 1,
+          },
         },
       }),
       db.comment.findMany({

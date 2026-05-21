@@ -129,3 +129,24 @@ export function IconCheck({ strokeWidth = 2.5, ...props }: IconProps) {
     </svg>
   );
 }
+
+/** Bookmark icon. Pass `filled` to render the saved state (filled persimmon). */
+export function IconBookmark({
+  filled = false,
+  strokeWidth = 2,
+  ...props
+}: IconProps & { filled?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth={filled ? 0 : strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}

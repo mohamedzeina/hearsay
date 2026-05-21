@@ -11,6 +11,9 @@ const paths = {
   userProfile(username: string) {
     return `/u/${encodeURIComponent(username)}`;
   },
+  savedPosts() {
+    return '/saved';
+  },
 };
 
 export default paths;

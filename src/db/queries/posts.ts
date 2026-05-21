@@ -8,6 +8,7 @@ export type PostWithData = Post & {
 	user: { name: string | null; image: string | null; username: string | null };
 	_count: { comments: number; votes: number };
 	votes: { id: string }[];
+	saves: { id: string }[];
 };
 
 function postInclude(viewerId: string | null) {
@@ -25,6 +26,11 @@ function postInclude(viewerId: string | null) {
 			select: { id: true },
 			take: 1,
 		},
+		saves: {
+			where: { userId: viewerId ?? '' },
+			select: { id: true },
+			take: 1,
+		},
 	} as const;
 }
 
@@ -32,21 +38,7 @@ export const fetchPostById = cache(async (postId: string) => {
 	const viewerId = await getViewerId();
 	return db.post.findFirst({
 		where: { id: postId },
-		include: {
-			user: { select: { name: true, image: true, username: true } },
-			topic: { select: { slug: true } },
-			_count: {
-				select: {
-					comments: { where: { deleted: false } },
-					votes: true,
-				},
-			},
-			votes: {
-				where: { userId: viewerId ?? '' },
-				select: { id: true },
-				take: 1,
-			},
-		},
+		include: postInclude(viewerId),
 	});
 });
 
