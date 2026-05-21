@@ -110,3 +110,22 @@ export function IconChevronRight(props: IconProps) {
     </svg>
   );
 }
+
+/** Two-link chain icon. Used by the comment permalink "copy link" button. */
+export function IconLink({ strokeWidth = 2, ...props }: IconProps) {
+  return (
+    <svg {...outlineBase} strokeWidth={strokeWidth} {...props}>
+      <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5" />
+      <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5" />
+    </svg>
+  );
+}
+
+/** Small checkmark. Used to confirm transient actions like "Copied!". */
+export function IconCheck({ strokeWidth = 2.5, ...props }: IconProps) {
+  return (
+    <svg {...outlineBase} strokeWidth={strokeWidth} {...props}>
+      <path d="m5 12 5 5L20 7" />
+    </svg>
+  );
+}

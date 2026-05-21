@@ -25,12 +25,14 @@ export default function CommentShow({
   ));
 
   return (
-    <CommentCard
-      comment={comment}
-      isOwner={isOwner}
-      hasReplies={children.length > 0}
-    >
-      {rendered.length > 0 ? rendered : null}
-    </CommentCard>
+    <div id={`c-${comment.id}`} className="scroll-mt-24 comment-anchor">
+      <CommentCard
+        comment={comment}
+        isOwner={isOwner}
+        hasReplies={children.length > 0}
+      >
+        {rendered.length > 0 ? rendered : null}
+      </CommentCard>
+    </div>
   );
 }
