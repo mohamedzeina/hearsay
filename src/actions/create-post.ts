@@ -1,72 +1,54 @@
 'use server';
 
-import { db } from '@/db'
-import type { Post } from '@prisma/client'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { z } from 'zod'
-import { requireAuth } from '@/lib/server-utils'
-import paths from '@/paths'
-import type { FormState } from '@/lib/types'
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+import { db } from '@/db';
+import paths from '@/paths';
+import type { ActionResult } from '@/lib/types';
+import {
+  formError,
+  ok,
+  parseFormData,
+  requireUserOr,
+} from '@/lib/actions';
 
 const createPostSchema = z.object({
   title: z.string().min(3),
-  content: z.string().min(10)
+  content: z.string().min(10),
 });
+
+const FIELDS = ['title', 'content'] as const;
 
 export async function createPost(
   slug: string,
-  _prev: FormState,
-  formData: FormData):
-  Promise<FormState> {
+  _prev: ActionResult,
+  formData: FormData
+): Promise<ActionResult> {
+  const parsed = parseFormData(createPostSchema, formData, FIELDS);
+  if (!parsed.ok) return parsed.result;
 
-  const result = createPostSchema.safeParse({
-    title: formData.get('title'),
-    content: formData.get('content')
-  });
+  const authed = await requireUserOr('You must be signed in to create a post.');
+  if (!authed.ok) return authed.result;
 
-  if (!result.success) {
-    return {
-      errors: result.error.flatten().fieldErrors
-    }
-  }
+  const topic = await db.topic.findFirst({ where: { slug } });
+  if (!topic) return formError('Cannot find topic.');
 
-  const user = await requireAuth();
-  if (!user) {
-    return { errors: { _form: ['You must be signed in to create a post'] } };
-  }
-
-  const topic = await db.topic.findFirst({
-    where: { slug }
-  });
-
-  if (!topic) {
-    return {
-      errors: {
-        _form: ['Cannot find topic'],
-      }
-    }
-  }
-
-  let post: Post;
+  let postId: string;
   try {
-
-    post = await db.post.create({
+    const post = await db.post.create({
       data: {
-        title: result.data.title,
-        content: result.data.content,
-        userId: user.id,
-        topicId: topic.id
-      }
-    })
-  } catch (err: unknown) {
+        title: parsed.data.title,
+        content: parsed.data.content,
+        userId: authed.user.id,
+        topicId: topic.id,
+      },
+    });
+    postId = post.id;
+  } catch (err) {
     console.error('createPost failed', err);
-    return {
-      errors: {
-        _form: ['Failed to create post. Please try again.']
-      }
-    }
+    return formError('Failed to create post. Please try again.');
   }
+
   revalidatePath(paths.topicShow(slug));
-  redirect(paths.postShow(slug, post.id));
+  return ok({ redirectTo: paths.postShow(slug, postId) });
 }

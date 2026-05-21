@@ -1,7 +1,8 @@
 'use client';
 
-import { use, useActionState } from 'react';
+import { use, useActionState, useEffect } from 'react';
 import { Input, Textarea } from '@heroui/react';
+import { useRouter } from 'next/navigation';
 import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
@@ -10,6 +11,11 @@ import paths from '@/paths';
 import { topicTone } from '@/lib/utils';
 import SurfacePanel from '@/components/common/surface-panel';
 import { IconPencil } from '@/components/icons';
+import {
+  fieldError,
+  formMessage,
+  INITIAL_ACTION_STATE,
+} from '@/lib/types';
 import {
   inputClassNamesLg as inputClassNames,
   textareaClassNamesLg as textareaClassNames,
@@ -22,10 +28,17 @@ interface PostCreatePageProps {
 export default function PostCreatePage({ params }: PostCreatePageProps) {
   const { slug } = use(params);
   const tone = topicTone(slug);
+  const router = useRouter();
   const [formState, action] = useActionState(
     actions.createPost.bind(null, slug),
-    { errors: {} }
+    INITIAL_ACTION_STATE
   );
+
+  useEffect(() => {
+    if (formState.ok && formState.redirectTo) {
+      router.push(formState.redirectTo);
+    }
+  }, [formState, router]);
 
   return (
     <div className="max-w-2xl mx-auto py-8 sm:py-10">
@@ -68,8 +81,8 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
               label="Title"
               labelPlacement="outside"
               placeholder="What's your post about?"
-              isInvalid={!!formState.errors.title}
-              errorMessage={formState.errors.title?.join(', ')}
+              isInvalid={!!fieldError(formState, 'title')}
+              errorMessage={fieldError(formState, 'title')?.join(', ')}
               classNames={inputClassNames}
             />
             <Textarea
@@ -78,11 +91,11 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
               labelPlacement="outside"
               placeholder="Share your thoughts, questions, or ideas..."
               minRows={8}
-              isInvalid={!!formState.errors.content}
-              errorMessage={formState.errors.content?.join(', ')}
+              isInvalid={!!fieldError(formState, 'content')}
+              errorMessage={fieldError(formState, 'content')?.join(', ')}
               classNames={textareaClassNames}
             />
-            <FormError messages={formState.errors._form} />
+            <FormError message={formMessage(formState)} />
 
             <div className="flex items-center justify-between pt-2 border-t border-rule">
               <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">

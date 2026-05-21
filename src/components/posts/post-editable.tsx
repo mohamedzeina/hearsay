@@ -13,6 +13,11 @@ import { IconPencil } from '@/components/icons';
 import paths from '@/paths';
 import { resolveAuthorSlug, timeAgo } from '@/lib/utils';
 import {
+  fieldError,
+  formMessage,
+  INITIAL_ACTION_STATE,
+} from '@/lib/types';
+import {
   inputClassNamesLg,
   textareaClassNamesLg,
 } from '@/lib/form-classes';
@@ -40,14 +45,14 @@ export default function PostEditable({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [formState, action] = useActionState(
     actions.editPost.bind(null, postId),
-    { errors: {} }
+    INITIAL_ACTION_STATE
   );
 
   useEffect(() => {
-    if (formState.success) {
+    if (formState.ok) {
       setEditing(false);
     }
-  }, [formState.success]);
+  }, [formState.ok]);
 
   const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {
     month: 'short',
@@ -63,8 +68,8 @@ export default function PostEditable({
           label="Title"
           labelPlacement="outside"
           defaultValue={initialTitle}
-          isInvalid={!!formState.errors.title}
-          errorMessage={formState.errors.title?.join(', ')}
+          isInvalid={!!fieldError(formState, 'title')}
+          errorMessage={fieldError(formState, 'title')?.join(', ')}
           classNames={inputClassNamesLg}
         />
         <Textarea
@@ -73,11 +78,11 @@ export default function PostEditable({
           labelPlacement="outside"
           defaultValue={initialContent}
           minRows={8}
-          isInvalid={!!formState.errors.content}
-          errorMessage={formState.errors.content?.join(', ')}
+          isInvalid={!!fieldError(formState, 'content')}
+          errorMessage={fieldError(formState, 'content')?.join(', ')}
           classNames={textareaClassNamesLg}
         />
-        <FormError messages={formState.errors._form} />
+        <FormError message={formMessage(formState)} />
         <div className="flex items-center justify-between gap-3 pt-2 border-t border-rule">
           <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">
             Tidy up &middot; not rewrite

@@ -6,6 +6,11 @@ import * as actions from '@/actions';
 import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
 import { inputClassNames as textareaClassNames } from '@/lib/form-classes';
+import {
+  fieldError,
+  formMessage,
+  INITIAL_ACTION_STATE,
+} from '@/lib/types';
 
 interface CommentEditFormProps {
   commentId: string;
@@ -23,14 +28,14 @@ export default function CommentEditForm({
   const ref = useRef<HTMLFormElement | null>(null);
   const [formState, action] = useActionState(
     actions.editComment.bind(null, commentId),
-    { errors: {} }
+    INITIAL_ACTION_STATE
   );
 
   useEffect(() => {
-    if (formState.success) {
+    if (formState.ok) {
       onSuccess();
     }
-  }, [formState.success, onSuccess]);
+  }, [formState.ok, onSuccess]);
 
   return (
     <form action={action} ref={ref} className="space-y-3">
@@ -38,11 +43,11 @@ export default function CommentEditForm({
         name="content"
         defaultValue={initialContent}
         minRows={3}
-        isInvalid={!!formState.errors.content}
-        errorMessage={formState.errors.content?.join(', ')}
+        isInvalid={!!fieldError(formState, 'content')}
+        errorMessage={fieldError(formState, 'content')?.join(', ')}
         classNames={textareaClassNames}
       />
-      <FormError messages={formState.errors._form} />
+      <FormError message={formMessage(formState)} />
       <div className="flex items-center justify-end gap-2">
         <button
           type="button"

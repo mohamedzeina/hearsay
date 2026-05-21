@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ActionResult } from '@/lib/types';
 
 interface DeleteButtonProps {
-  action: () => Promise<ActionResult | void>;
+  action: () => Promise<ActionResult>;
   label?: string;
   confirmMessage?: string;
   onSuccess?: () => void;
@@ -20,6 +21,7 @@ export default function DeleteButton({
   onSuccess,
   onConfirmingChange,
 }: DeleteButtonProps) {
+  const router = useRouter();
   const [confirming, setConfirmingState] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -32,13 +34,16 @@ export default function DeleteButton({
   const handleConfirm = async () => {
     setPending(true);
     const result = await action();
-    if (result?.error) {
-      setError(result.error);
+    if (!result.ok) {
+      setError(result.message ?? 'Something went wrong.');
       setConfirming(false);
       setPending(false);
-    } else {
-      onSuccess?.();
+      return;
     }
+    if (result.redirectTo) {
+      router.push(result.redirectTo);
+    }
+    onSuccess?.();
   };
 
   if (confirming) {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createComment, createPost, createTopic } from '@/actions';
+import { INITIAL_ACTION_STATE } from '@/lib/types';
 import { buildFormData, makePost, makeTopic, makeUser } from './factories';
 import { setViewer, testDb } from './setup';
 
@@ -7,47 +8,57 @@ describe('createTopic', () => {
   it('rejects when not signed in (after validation)', async () => {
     setViewer(null);
     const result = await createTopic(
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ name: 'cooking', description: 'A topic about food.' })
     );
-    expect(result.errors._form).toContain(
-      'You must be signed in to create a topic'
-    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('You must be signed in to create a topic');
+    }
   });
 
   it('returns field errors when slug has uppercase', async () => {
     const user = await makeUser();
     setViewer({ id: user.id });
     const result = await createTopic(
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ name: 'Cooking', description: 'A topic about food.' })
     );
-    expect(result.errors.name).toBeDefined();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.name).toBeDefined();
+    }
   });
 
   it('returns field errors when description is too short', async () => {
     const user = await makeUser();
     setViewer({ id: user.id });
     const result = await createTopic(
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ name: 'cooking', description: 'short' })
     );
-    expect(result.errors.description).toBeDefined();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.description).toBeDefined();
+    }
   });
 
-  it('creates the topic and redirects on success', async () => {
+  it('creates the topic and returns a redirect on success', async () => {
     const user = await makeUser();
     setViewer({ id: user.id });
 
-    await expect(
-      createTopic(
-        { errors: {} },
-        buildFormData({
-          name: 'cooking',
-          description: 'A topic about food, recipes, and tips.',
-        })
-      )
-    ).rejects.toThrow(/NEXT_REDIRECT/);
+    const result = await createTopic(
+      INITIAL_ACTION_STATE,
+      buildFormData({
+        name: 'cooking',
+        description: 'A topic about food, recipes, and tips.',
+      })
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.redirectTo).toBe('/topics/cooking');
+    }
 
     const topic = await testDb.topic.findUnique({ where: { slug: 'cooking' } });
     expect(topic).not.toBeNull();
@@ -60,14 +71,16 @@ describe('createTopic', () => {
     setViewer({ id: user.id });
 
     const result = await createTopic(
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({
         name: 'cooking',
         description: 'A duplicate slug attempt.',
       })
     );
-    expect(result.errors._form).toBeDefined();
-    expect(result.errors._form?.[0]).toMatch(/slug may already be taken/i);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toMatch(/slug may already be taken/i);
+    }
   });
 });
 
@@ -78,15 +91,16 @@ describe('createPost', () => {
 
     const result = await createPost(
       topic.slug,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({
         title: 'A new post',
         content: 'Some content for the post.',
       })
     );
-    expect(result?.errors._form).toContain(
-      'You must be signed in to create a post'
-    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('You must be signed in to create a post');
+    }
   });
 
   it('returns field errors when title is too short', async () => {
@@ -96,10 +110,13 @@ describe('createPost', () => {
 
     const result = await createPost(
       topic.slug,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ title: 'a', content: 'Some content for the post.' })
     );
-    expect(result?.errors.title).toBeDefined();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.title).toBeDefined();
+    }
   });
 
   it('returns form error when topic does not exist', async () => {
@@ -108,30 +125,36 @@ describe('createPost', () => {
 
     const result = await createPost(
       'nonexistent-slug',
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({
         title: 'A new post',
         content: 'Some content for the post.',
       })
     );
-    expect(result?.errors._form).toContain('Cannot find topic');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('Cannot find topic');
+    }
   });
 
-  it('creates a post and redirects on success', async () => {
+  it('creates a post and returns a redirect on success', async () => {
     const user = await makeUser();
     const topic = await makeTopic({ slug: 'cooking' });
     setViewer({ id: user.id });
 
-    await expect(
-      createPost(
-        topic.slug,
-        { errors: {} },
-        buildFormData({
-          title: 'Pasta tips',
-          content: 'Boil water then add salt.',
-        })
-      )
-    ).rejects.toThrow(/NEXT_REDIRECT/);
+    const result = await createPost(
+      topic.slug,
+      INITIAL_ACTION_STATE,
+      buildFormData({
+        title: 'Pasta tips',
+        content: 'Boil water then add salt.',
+      })
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.redirectTo).toMatch(/^\/topics\/cooking\/posts\//);
+    }
 
     const post = await testDb.post.findFirst({
       where: { title: 'Pasta tips' },
@@ -151,10 +174,13 @@ describe('createComment', () => {
 
     const result = await createComment(
       { postId: post.id },
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ content: 'A comment body' })
     );
-    expect(result.errors._form).toContain('You must sign in to do this.');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('You must sign in to do this.');
+    }
   });
 
   it('returns field errors when content is too short', async () => {
@@ -165,10 +191,13 @@ describe('createComment', () => {
 
     const result = await createComment(
       { postId: post.id },
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ content: 'x' })
     );
-    expect(result.errors.content).toBeDefined();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.content).toBeDefined();
+    }
   });
 
   it('creates a top-level comment', async () => {
@@ -179,12 +208,11 @@ describe('createComment', () => {
 
     const result = await createComment(
       { postId: post.id },
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ content: 'A thoughtful reply' })
     );
 
-    expect(result.success).toBe(true);
-    expect(result.errors).toEqual({});
+    expect(result.ok).toBe(true);
     const comments = await testDb.comment.findMany({
       where: { postId: post.id },
     });
@@ -204,11 +232,11 @@ describe('createComment', () => {
 
     const result = await createComment(
       { postId: post.id, parentId: parent.id },
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ content: 'A nested reply here' })
     );
 
-    expect(result.success).toBe(true);
+    expect(result.ok).toBe(true);
     const child = await testDb.comment.findFirst({
       where: { parentId: parent.id },
     });

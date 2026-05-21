@@ -1,9 +1,9 @@
 interface FormErrorProps {
-  messages?: string[];
+  message?: string;
 }
 
-export default function FormError({ messages }: FormErrorProps) {
-  if (!messages || messages.length === 0) return null;
+export default function FormError({ message }: FormErrorProps) {
+  if (!message) return null;
 
   return (
     <div
@@ -22,7 +22,7 @@ export default function FormError({ messages }: FormErrorProps) {
           clipRule="evenodd"
         />
       </svg>
-      <span>{messages.join(', ')}</span>
+      <span>{message}</span>
     </div>
   );
 }

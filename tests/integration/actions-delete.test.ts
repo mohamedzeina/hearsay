@@ -11,9 +11,10 @@ describe('deletePost', () => {
     setViewer(null);
 
     const result = await deletePost(post.id);
-    expect(result).toEqual({
-      error: 'You must be signed in to delete a post.',
-    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('You must be signed in to delete a post.');
+    }
   });
 
   it('rejects when post not found', async () => {
@@ -21,7 +22,10 @@ describe('deletePost', () => {
     setViewer({ id: user.id });
 
     const result = await deletePost('nonexistent');
-    expect(result).toEqual({ error: 'Post not found.' });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('Post not found.');
+    }
   });
 
   it('rejects when caller is not the post author', async () => {
@@ -32,22 +36,27 @@ describe('deletePost', () => {
 
     setViewer({ id: other.id });
     const result = await deletePost(post.id);
-    expect(result).toEqual({
-      error: 'You can only delete your own posts.',
-    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('You can only delete your own posts.');
+    }
 
     // Post still exists.
     const stillThere = await testDb.post.findUnique({ where: { id: post.id } });
     expect(stillThere).not.toBeNull();
   });
 
-  it('deletes the post and redirects when caller is the author', async () => {
+  it('deletes the post and returns a redirect when caller is the author', async () => {
     const author = await makeUser();
     const topic = await makeTopic({ slug: 'cooking' });
     const post = await makePost({ userId: author.id, topicId: topic.id });
 
     setViewer({ id: author.id });
-    await expect(deletePost(post.id)).rejects.toThrow(/NEXT_REDIRECT/);
+    const result = await deletePost(post.id);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.redirectTo).toBe('/topics/cooking');
+    }
 
     const stillThere = await testDb.post.findUnique({ where: { id: post.id } });
     expect(stillThere).toBeNull();
@@ -63,15 +72,20 @@ describe('deleteComment', () => {
 
     setViewer(null);
     const result = await deleteComment(comment.id);
-    expect(result.error).toMatch(/signed in/);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toMatch(/signed in/);
+    }
   });
 
   it('rejects when comment not found', async () => {
     const user = await makeUser();
     setViewer({ id: user.id });
-    expect(await deleteComment('nonexistent')).toEqual({
-      error: 'Comment not found.',
-    });
+    const result = await deleteComment('nonexistent');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('Comment not found.');
+    }
   });
 
   it('rejects when caller is not the comment author', async () => {
@@ -83,7 +97,10 @@ describe('deleteComment', () => {
 
     setViewer({ id: other.id });
     const result = await deleteComment(comment.id);
-    expect(result.error).toMatch(/own comments/);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toMatch(/own comments/);
+    }
 
     const stillThere = await testDb.comment.findUnique({
       where: { id: comment.id },
@@ -100,7 +117,7 @@ describe('deleteComment', () => {
 
     setViewer({ id: author.id });
     const result = await deleteComment(comment.id);
-    expect(result).toEqual({});
+    expect(result.ok).toBe(true);
 
     const stillThere = await testDb.comment.findUnique({
       where: { id: comment.id },
@@ -121,7 +138,7 @@ describe('deleteComment', () => {
 
     setViewer({ id: author.id });
     const result = await deleteComment(parent.id);
-    expect(result).toEqual({});
+    expect(result.ok).toBe(true);
 
     const stillThere = await testDb.comment.findUnique({
       where: { id: parent.id },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import {
   Input,
   Textarea,
@@ -10,20 +10,34 @@ import {
   useDisclosure,
 } from '@heroui/react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import FormButton from '../common/form-button';
 import FormError from '@/components/common/form-error';
 import * as actions from '@/actions';
 import { inputClassNames } from '@/lib/form-classes';
 import { IconPlus } from '@/components/icons';
+import {
+  fieldError,
+  formMessage,
+  INITIAL_ACTION_STATE,
+} from '@/lib/types';
 import { useSignInPrompt } from '@/components/auth/signin-prompt';
 
 export default function TopicCreateForm() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const session = useSession();
   const signInPrompt = useSignInPrompt();
-  const [formState, action] = useActionState(actions.createTopic, {
-    errors: {},
-  });
+  const router = useRouter();
+  const [formState, action] = useActionState(
+    actions.createTopic,
+    INITIAL_ACTION_STATE
+  );
+
+  useEffect(() => {
+    if (formState.ok && formState.redirectTo) {
+      router.push(formState.redirectTo);
+    }
+  }, [formState, router]);
 
   const handleTrigger = () => {
     if (session.status !== 'authenticated') {
@@ -96,8 +110,8 @@ export default function TopicCreateForm() {
                     label="Slug"
                     labelPlacement="outside"
                     placeholder="e.g. cooking-tips"
-                    isInvalid={!!formState.errors.name}
-                    errorMessage={formState.errors.name?.join(', ')}
+                    isInvalid={!!fieldError(formState, 'name')}
+                    errorMessage={fieldError(formState, 'name')?.join(', ')}
                     classNames={inputClassNames}
                   />
                   <Textarea
@@ -106,12 +120,12 @@ export default function TopicCreateForm() {
                     labelPlacement="outside"
                     placeholder="What is this topic about?"
                     minRows={3}
-                    isInvalid={!!formState.errors.description}
-                    errorMessage={formState.errors.description?.join(', ')}
+                    isInvalid={!!fieldError(formState, 'description')}
+                    errorMessage={fieldError(formState, 'description')?.join(', ')}
                     classNames={inputClassNames}
                   />
 
-                  <FormError messages={formState.errors._form} />
+                  <FormError message={formMessage(formState)} />
                 </div>
 
                 <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-rule bg-cream-2/40">

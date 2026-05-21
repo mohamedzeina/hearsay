@@ -1,60 +1,53 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { requireAuth } from '@/lib/server-utils';
-import type { Topic } from '@prisma/client';
-import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import paths from '@/paths';
-import { revalidatePath } from 'next/cache';
-
+import type { ActionResult } from '@/lib/types';
+import {
+  formError,
+  ok,
+  parseFormData,
+  requireUserOr,
+} from '@/lib/actions';
 
 const createTopicSchema = z.object({
-  name: z.string().min(3).regex(/^[a-z-]+$/, { message: 'Must be lowercase letters or dashes without spaces' }),
+  name: z
+    .string()
+    .min(3)
+    .regex(/^[a-z-]+$/, {
+      message: 'Must be lowercase letters or dashes without spaces',
+    }),
   description: z.string().min(10),
 });
 
-import type { FormState } from '@/lib/types';
+const FIELDS = ['name', 'description'] as const;
 
-export async function createTopic(_prev: FormState,
-  formData: FormData): Promise<FormState> {
+export async function createTopic(
+  _prev: ActionResult,
+  formData: FormData
+): Promise<ActionResult> {
+  const parsed = parseFormData(createTopicSchema, formData, FIELDS);
+  if (!parsed.ok) return parsed.result;
 
+  const authed = await requireUserOr('You must be signed in to create a topic.');
+  if (!authed.ok) return authed.result;
 
-  const result = createTopicSchema.safeParse({
-    name: formData.get('name'),
-    description: formData.get('description'),
-  });
-
-  if (!result.success) {
-    return {
-      errors: result.error.flatten().fieldErrors
-    }
-  }
-
-  const user = await requireAuth();
-  if (!user) {
-    return { errors: { _form: ['You must be signed in to create a topic'] } };
-  }
-
-  let topic: Topic;
+  let slug: string;
   try {
-    topic = await db.topic.create({
+    const topic = await db.topic.create({
       data: {
-        slug: result.data.name,
-        description: result.data.description
-
-      }
-    })
-  } catch (err: unknown) {
+        slug: parsed.data.name,
+        description: parsed.data.description,
+      },
+    });
+    slug = topic.slug;
+  } catch (err) {
     console.error('createTopic failed', err);
-    return {
-      errors: {
-        _form: ['Failed to create topic. The slug may already be taken.']
-      }
-    }
+    return formError('Failed to create topic. The slug may already be taken.');
   }
 
   revalidatePath('/');
-  redirect(paths.topicShow(topic.slug));
-
+  return ok({ redirectTo: paths.topicShow(slug) });
 }

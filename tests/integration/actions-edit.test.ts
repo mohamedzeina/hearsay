@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { editComment, editPost } from '@/actions';
+import { INITIAL_ACTION_STATE } from '@/lib/types';
 import {
   buildFormData,
   makeComment,
@@ -18,13 +19,14 @@ describe('editPost', () => {
 
     const result = await editPost(
       post.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ title: 'Updated title', content: 'Updated content body.' })
     );
 
-    expect(result.errors._form).toContain(
-      'You must be signed in to edit a post.'
-    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('You must be signed in to edit a post.');
+    }
   });
 
   it('returns field errors when title is too short', async () => {
@@ -35,11 +37,14 @@ describe('editPost', () => {
 
     const result = await editPost(
       post.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ title: 'no', content: 'Updated content body.' })
     );
 
-    expect(result.errors.title).toBeDefined();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.title).toBeDefined();
+    }
   });
 
   it('returns field errors when content is too short', async () => {
@@ -50,11 +55,14 @@ describe('editPost', () => {
 
     const result = await editPost(
       post.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ title: 'A reasonable title', content: 'too short' })
     );
 
-    expect(result.errors.content).toBeDefined();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.content).toBeDefined();
+    }
   });
 
   it('rejects when the post does not exist', async () => {
@@ -63,11 +71,14 @@ describe('editPost', () => {
 
     const result = await editPost(
       'nonexistent',
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ title: 'A title that fits', content: 'Body content here.' })
     );
 
-    expect(result.errors._form).toContain('Post not found.');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('Post not found.');
+    }
   });
 
   it('rejects when caller is not the post author', async () => {
@@ -79,11 +90,14 @@ describe('editPost', () => {
 
     const result = await editPost(
       post.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ title: 'A title that fits', content: 'Body content here.' })
     );
 
-    expect(result.errors._form).toContain('You can only edit your own posts.');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('You can only edit your own posts.');
+    }
 
     const unchanged = await testDb.post.findUnique({ where: { id: post.id } });
     expect(unchanged?.title).toBe(post.title);
@@ -104,7 +118,7 @@ describe('editPost', () => {
     const before = Date.now();
     const result = await editPost(
       post.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({
         title: 'A cleaner title',
         content: 'Cleaner content body, fixing typos.',
@@ -112,7 +126,7 @@ describe('editPost', () => {
     );
     const after = Date.now();
 
-    expect(result.success).toBe(true);
+    expect(result.ok).toBe(true);
 
     const fresh = await testDb.post.findUnique({ where: { id: post.id } });
     expect(fresh?.title).toBe('A cleaner title');
@@ -134,13 +148,14 @@ describe('editComment', () => {
 
     const result = await editComment(
       comment.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ content: 'Updated content.' })
     );
 
-    expect(result.errors._form).toContain(
-      'You must be signed in to edit a comment.'
-    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('You must be signed in to edit a comment.');
+    }
   });
 
   it('returns field errors when content is too short', async () => {
@@ -152,11 +167,14 @@ describe('editComment', () => {
 
     const result = await editComment(
       comment.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ content: 'no' })
     );
 
-    expect(result.errors.content).toBeDefined();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.content).toBeDefined();
+    }
   });
 
   it('rejects when caller is not the comment author', async () => {
@@ -169,13 +187,14 @@ describe('editComment', () => {
 
     const result = await editComment(
       comment.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ content: 'Trying to edit someone else.' })
     );
 
-    expect(result.errors._form).toContain(
-      'You can only edit your own comments.'
-    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('You can only edit your own comments.');
+    }
 
     const unchanged = await testDb.comment.findUnique({
       where: { id: comment.id },
@@ -197,11 +216,14 @@ describe('editComment', () => {
 
     const result = await editComment(
       comment.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ content: 'Trying to resurrect.' })
     );
 
-    expect(result.errors._form).toContain('This comment has been deleted.');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('This comment has been deleted.');
+    }
   });
 
   it('updates the comment and stamps editedAt when caller is the author', async () => {
@@ -218,12 +240,12 @@ describe('editComment', () => {
     const before = Date.now();
     const result = await editComment(
       comment.id,
-      { errors: {} },
+      INITIAL_ACTION_STATE,
       buildFormData({ content: 'Tidier comment text.' })
     );
     const after = Date.now();
 
-    expect(result.success).toBe(true);
+    expect(result.ok).toBe(true);
 
     const fresh = await testDb.comment.findUnique({
       where: { id: comment.id },

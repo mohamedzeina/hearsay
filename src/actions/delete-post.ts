@@ -1,14 +1,14 @@
-"use server";
+'use server';
 
-import { redirect } from "next/navigation";
-import { db } from "@/db";
-import paths from "@/paths";
-import { requireAuth } from "@/lib/server-utils";
-import type { ActionResult } from "@/lib/types";
+import { revalidatePath } from 'next/cache';
+import { db } from '@/db';
+import paths from '@/paths';
+import type { ActionResult } from '@/lib/types';
+import { formError, ok, requireUserOr } from '@/lib/actions';
 
-export async function deletePost(postId: string): Promise<ActionResult | void> {
-  const user = await requireAuth();
-  if (!user) return { error: "You must be signed in to delete a post." };
+export async function deletePost(postId: string): Promise<ActionResult> {
+  const authed = await requireUserOr('You must be signed in to delete a post.');
+  if (!authed.ok) return authed.result;
 
   const post = await db.post.findFirst({
     where: { id: postId },
@@ -17,16 +17,18 @@ export async function deletePost(postId: string): Promise<ActionResult | void> {
       topic: { select: { slug: true } },
     },
   });
-
-  if (!post) {
-    return { error: "Post not found." };
+  if (!post) return formError('Post not found.');
+  if (post.userId !== authed.user.id) {
+    return formError('You can only delete your own posts.');
   }
 
-  if (post.userId !== user.id) {
-    return { error: "You can only delete your own posts." };
+  try {
+    await db.post.delete({ where: { id: postId } });
+  } catch (err) {
+    console.error('deletePost failed', err);
+    return formError('Failed to delete post. Please try again.');
   }
 
-  await db.post.delete({ where: { id: postId } });
-
-  redirect(paths.topicShow(post.topic.slug));
+  revalidatePath(paths.topicShow(post.topic.slug));
+  return ok({ redirectTo: paths.topicShow(post.topic.slug) });
 }

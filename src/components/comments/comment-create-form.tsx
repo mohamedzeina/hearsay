@@ -9,6 +9,11 @@ import * as actions from '@/actions';
 import SurfacePanel from '@/components/common/surface-panel';
 import { IconReply } from '@/components/icons';
 import { inputClassNames as textareaClassNames } from '@/lib/form-classes';
+import {
+  fieldError,
+  formMessage,
+  INITIAL_ACTION_STATE,
+} from '@/lib/types';
 import { useSignInPrompt } from '@/components/auth/signin-prompt';
 
 interface CommentCreateFormProps {
@@ -29,17 +34,17 @@ export default function CommentCreateForm({
   const isAuthed = session.status === 'authenticated';
   const [formState, action] = useActionState(
     actions.createComment.bind(null, { postId, parentId }),
-    { errors: {} }
+    INITIAL_ACTION_STATE
   );
 
   useEffect(() => {
-    if (formState.success) {
+    if (formState.ok) {
       ref.current?.reset();
       if (!startOpen) {
         setOpen(false);
       }
     }
-  }, [formState.success, startOpen]);
+  }, [formState.ok, startOpen]);
 
   const form = (
     <form action={action} ref={ref}>
@@ -50,12 +55,12 @@ export default function CommentCreateForm({
             startOpen ? 'Share your thoughts...' : 'Write a reply...'
           }
           minRows={startOpen ? 3 : 2}
-          isInvalid={!!formState.errors.content}
-          errorMessage={formState.errors.content?.join(', ')}
+          isInvalid={!!fieldError(formState, 'content')}
+          errorMessage={fieldError(formState, 'content')?.join(', ')}
           classNames={textareaClassNames}
         />
 
-        <FormError messages={formState.errors._form} />
+        <FormError message={formMessage(formState)} />
 
         <div className="flex items-center justify-between gap-3">
           <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-ink-3">

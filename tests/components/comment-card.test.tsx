@@ -7,6 +7,10 @@ vi.mock('next-auth/react', () => ({
   useSession: () => ({ status: 'authenticated' }),
 }));
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+}));
+
 vi.mock('@/components/auth/signin-prompt', () => ({
   useSignInPrompt: () => ({ open: vi.fn() }),
 }));
