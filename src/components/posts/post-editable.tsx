@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useFormState } from 'react-dom';
+import Link from 'next/link';
 import { Input, Textarea } from '@nextui-org/react';
 import * as actions from '@/actions';
 import Avatar from '@/components/common/avatar';
@@ -9,7 +10,8 @@ import FormButton from '@/components/common/formButton';
 import FormError from '@/components/common/form-error';
 import Markdown from '@/components/common/markdown';
 import { IconPencil } from '@/components/icons';
-import { timeAgo } from '@/lib/utils';
+import paths from '@/paths';
+import { slugifyName, timeAgo } from '@/lib/utils';
 import {
   inputClassNamesLg,
   textareaClassNamesLg,
@@ -20,7 +22,7 @@ interface PostEditableProps {
   initialTitle: string;
   initialContent: string;
   isOwner: boolean;
-  author: { name: string | null; image: string | null };
+  author: { name: string | null; image: string | null; username: string | null };
   createdAt: Date;
   editedAt: Date | null;
 }
@@ -113,10 +115,7 @@ export default function PostEditable({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-ink-2">
-        <div className="flex items-center gap-2">
-          <Avatar user={author} size="sm" />
-          <span className="font-semibold text-ink">{author.name}</span>
-        </div>
+        <AuthorMeta author={author} />
         <span className="w-1 h-1 rounded-full bg-ink-3" aria-hidden />
         <time
           dateTime={new Date(createdAt).toISOString()}
@@ -152,5 +151,33 @@ export default function PostEditable({
 
       <Markdown content={initialContent} variant="body" className="mt-6" />
     </>
+  );
+}
+
+function AuthorMeta({
+  author,
+}: {
+  author: { name: string | null; image: string | null; username: string | null };
+}) {
+  const display = author.name ?? 'anon';
+  const slug = author.username ?? (author.name ? slugifyName(author.name) : null);
+  if (!slug) {
+    return (
+      <div className="flex items-center gap-2">
+        <Avatar user={author} size="sm" />
+        <span className="font-semibold text-ink">{display}</span>
+      </div>
+    );
+  }
+  return (
+    <Link
+      href={paths.userProfile(slug)}
+      className="flex items-center gap-2 rounded-full -mx-1 px-1 py-0.5 hover:bg-cream-2/60 transition-colors duration-150 motion-reduce:transition-none"
+    >
+      <Avatar user={author} size="sm" />
+      <span className="font-semibold text-ink hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none">
+        {display}
+      </span>
+    </Link>
   );
 }

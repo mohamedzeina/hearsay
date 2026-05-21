@@ -39,17 +39,43 @@ async function main() {
   await reset();
 
   console.log(`Creating ${SEED_USERS.length} personas...`);
+  // Spread joined-on dates across the past ~3 years so profile pages show
+  // realistic variety instead of "everyone joined just now".
+  const joinAnchor = Date.now();
+  const monthMs = 30 * 24 * 60 * 60 * 1000;
+  const joinSpread = [
+    36, 30, 24, 18, 14, 10, 7, 4, 2, 0.5,
+  ] as const;
   const users = await Promise.all(
-    SEED_USERS.map((u) =>
+    SEED_USERS.map((u, i) =>
       db.user.create({
         data: {
           name: u.name,
+          username: u.handle,
           email: `${u.handle}@${SEED_EMAIL_DOMAIN}`,
           image: avatar(u.handle),
+          createdAt: new Date(joinAnchor - joinSpread[i] * monthMs),
         },
       })
     )
   );
+  // Backfill username for any non-persona users (e.g. real GitHub accounts
+  // that pre-date the username column) using their slugified name. Skip on
+  // collision so we never overwrite a persona that already owns the slug.
+  const orphans = await db.user.findMany({ where: { username: null } });
+  for (const u of orphans) {
+    if (!u.name) continue;
+    const base = u.name
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    if (!base) continue;
+    const taken = await db.user.findUnique({ where: { username: base } });
+    if (taken) continue;
+    await db.user.update({ where: { id: u.id }, data: { username: base } });
+  }
   const byHandle = Object.fromEntries(
     users.map((u, i) => [SEED_USERS[i].handle, u])
   );

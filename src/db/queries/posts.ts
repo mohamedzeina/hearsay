@@ -5,7 +5,7 @@ import { getViewerId } from '@/lib/server-utils';
 
 export type PostWithData = Post & {
 	topic: { slug: string };
-	user: { name: string | null; image: string | null };
+	user: { name: string | null; image: string | null; username: string | null };
 	_count: { comments: number; votes: number };
 	votes: { id: string }[];
 };
@@ -13,7 +13,7 @@ export type PostWithData = Post & {
 function postInclude(viewerId: string | null) {
 	return {
 		topic: { select: { slug: true } },
-		user: { select: { name: true, image: true } },
+		user: { select: { name: true, image: true, username: true } },
 		_count: {
 			select: {
 				comments: { where: { deleted: false } },
@@ -33,7 +33,7 @@ export const fetchPostById = cache(async (postId: string) => {
 	return db.post.findFirst({
 		where: { id: postId },
 		include: {
-			user: { select: { name: true, image: true } },
+			user: { select: { name: true, image: true, username: true } },
 			topic: { select: { slug: true } },
 			_count: {
 				select: {

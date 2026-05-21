@@ -1,7 +1,10 @@
+import Link from 'next/link';
 import { fetchPostById } from '@/db/queries/posts';
 import { db } from '@/db';
 import SurfacePanel from '@/components/common/surface-panel';
 import Avatar from '@/components/common/avatar';
+import paths from '@/paths';
+import { slugifyName } from '@/lib/utils';
 
 interface PostAuthorProps {
   postId: string;
@@ -38,9 +41,7 @@ export default async function PostAuthor({ postId }: PostAuthorProps) {
         <div className="flex items-center gap-3">
           <Avatar user={post.user} size="lg" className="shrink-0" />
           <div className="min-w-0">
-            <p className="font-display font-bold text-ink truncate">
-              {post.user.name ?? 'anon'}
-            </p>
+            <AuthorName user={post.user} />
             <p className="text-[11px] font-mono text-ink-2 uppercase tracking-[0.1em]">
               writes on hearsay
             </p>
@@ -53,6 +54,26 @@ export default async function PostAuthor({ postId }: PostAuthorProps) {
         </div>
       </div>
     </SurfacePanel>
+  );
+}
+
+function AuthorName({
+  user,
+}: {
+  user: { name: string | null; username: string | null };
+}) {
+  const display = user.name ?? 'anon';
+  const slug = user.username ?? (user.name ? slugifyName(user.name) : null);
+  if (!slug) {
+    return <p className="font-display font-bold text-ink truncate">{display}</p>;
+  }
+  return (
+    <Link
+      href={paths.userProfile(slug)}
+      className="font-display font-bold text-ink truncate block hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
+    >
+      {display}
+    </Link>
   );
 }
 

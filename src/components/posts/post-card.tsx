@@ -3,7 +3,7 @@ import paths from '@/paths';
 import type { PostWithData } from '@/db/queries/posts';
 import { timeAgo, topicTone, stripMarkdown } from '@/lib/utils';
 import { IconReply } from '@/components/icons';
-import Avatar from '@/components/common/avatar';
+import AuthorChip from '@/components/common/author-chip';
 import VoteButton from '@/components/votes/vote-button';
 
 interface PostCardProps {
@@ -57,10 +57,7 @@ export default function PostCard({ post, hideTopic }: PostCardProps) {
 
           <span className="w-1 h-1 rounded-full bg-ink-3" aria-hidden />
 
-          <div className="flex items-center gap-1.5">
-            <Avatar user={post.user} size="xs" />
-            <span className="font-medium text-ink">{post.user.name}</span>
-          </div>
+          <AuthorChip user={post.user} />
 
           <span className="w-1 h-1 rounded-full bg-ink-3" aria-hidden />
 

@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { getViewerId } from '@/lib/server-utils';
 
 export type CommentWithAuthor = Comment & {
-  user: { name: string | null; image: string | null };
+  user: { name: string | null; image: string | null; username: string | null };
   _count: { votes: number };
   votes: { id: string }[];
 };
@@ -15,7 +15,7 @@ export const fetchCommentsByPostId = cache(
     return db.comment.findMany({
       where: { postId },
       include: {
-        user: { select: { name: true, image: true } },
+        user: { select: { name: true, image: true, username: true } },
         _count: { select: { votes: true } },
         votes: {
           where: { userId: viewerId ?? '' },

@@ -53,7 +53,7 @@ export const fetchUserProfileByUsername = cache(
         take: 20,
         include: {
           topic: { select: { slug: true } },
-          user: { select: { name: true, image: true } },
+          user: { select: { name: true, image: true, username: true } },
           _count: {
             select: {
               comments: { where: { deleted: false } },
