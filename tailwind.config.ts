@@ -2,6 +2,10 @@ import type { Config } from "tailwindcss";
 import { heroui } from "@heroui/react";
 import typography from "@tailwindcss/typography";
 
+// Brand persimmon. Single source for both the `persimmon` Tailwind colour
+// and HeroUI's keyboard-focus ring — they must stay in lockstep.
+const PERSIMMON = '#E5533D';
+
 const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -31,7 +35,7 @@ const config: Config = {
         'ink-3': '#A8A29E',
         rule: '#EAE4D7',
         'rule-2': '#DDD5C5',
-        persimmon: '#E5533D',
+        persimmon: PERSIMMON,
         'persimmon-soft': '#FBE8E3',
         'persimmon-deep': '#C2402B',
         teal: '#0F6E64',
@@ -73,7 +77,7 @@ const config: Config = {
       themes: {
         light: {
           colors: {
-            focus: '#E5533D',
+            focus: PERSIMMON,
           },
         },
       },
