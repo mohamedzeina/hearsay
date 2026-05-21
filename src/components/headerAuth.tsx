@@ -1,10 +1,17 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
-import { IconChevronDown, IconSignOut, IconSpinner } from '@/components/icons';
+import {
+  IconBookmark,
+  IconChevronDown,
+  IconSignOut,
+  IconSpinner,
+} from '@/components/icons';
 import Avatar from '@/components/common/avatar';
+import paths from '@/paths';
 
 export default function HeaderAuth() {
   const session = useSession();
@@ -56,6 +63,18 @@ export default function HeaderAuth() {
               <p className="font-semibold text-sm text-ink truncate">{user.name}</p>
               <p className="text-xs text-ink-2 truncate font-mono">{user.email}</p>
             </div>
+            <Link
+              href={paths.savedPosts()}
+              onClick={() => setOpen(false)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-ink hover:bg-persimmon-soft hover:text-persimmon-deep transition-colors duration-150 motion-reduce:transition-none border-b border-rule"
+              role="menuitem"
+            >
+              <span className="flex items-center gap-2">
+                <IconBookmark className="w-4 h-4" />
+                Saved posts
+              </span>
+              <span aria-hidden className="text-ink-3">&rarr;</span>
+            </Link>
             <button
               onClick={() => {
                 setAuthPending('out');
