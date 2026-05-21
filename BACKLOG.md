@@ -19,14 +19,11 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Full test suite — Vitest unit + component, integration vs Docker Postgres, Playwright E2E (138 tests)
 - ✅ Multi-persona seed with DiceBear avatars; idempotent reset on rerun
 - ✅ Markdown rendering on posts and comments (react-markdown + remark-gfm, restricted); seed enriched with bold/lists/code-blocks/links/blockquotes
+- ✅ Edit posts and comments — `editedAt` column, inline edit forms, and a muted "edited Xm ago" hint
 
 ---
 
 ## Tier 1 — highest leverage
-
-- **Edit posts and comments** (S)
-  You can delete but not fix a typo. Add `editedAt` to the rows and an
-  "edited Xm ago" hint in the UI.
 
 - **User profile pages** (M)
   `/u/[name]` showing posts and comments, joined-on date, post/reply
@@ -141,4 +138,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-21 (after markdown ship + seed refresh). Update or trash as priorities shift._
+_Last touched 2026-05-21 (after post/comment edit ship). Update or trash as priorities shift._
