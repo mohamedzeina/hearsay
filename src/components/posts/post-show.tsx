@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { deletePost } from '@/actions';
 import DeleteButton from '@/components/common/delete-button';
 import VoteButton from '@/components/votes/vote-button';
+import SaveButton from '@/components/posts/save-button';
 import { fetchPostById } from '@/db/queries/posts';
 import paths from '@/paths';
 import { topicTone } from '@/lib/utils';
@@ -70,6 +71,13 @@ export default async function PostShow({ postId }: PostShowProps) {
           <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
             {post._count.votes === 1 ? 'upvote' : 'upvotes'} &middot; agree out loud
           </span>
+          <div className="ml-auto">
+            <SaveButton
+              postId={post.id}
+              initialSaved={post.saves.length > 0}
+              size="md"
+            />
+          </div>
         </div>
       </div>
     </SurfacePanel>
