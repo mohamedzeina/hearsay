@@ -37,6 +37,7 @@ export default function PostEditable({
   editedAt,
 }: PostEditableProps) {
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [formState, action] = useActionState(
     actions.editPost.bind(null, postId),
     { errors: {} }
@@ -98,12 +99,9 @@ export default function PostEditable({
 
   return (
     <>
-      <div className="flex items-start justify-between gap-3">
-        <h1 className="font-display font-extrabold tracking-tight text-3xl sm:text-4xl text-ink leading-[1.1]">
-          {initialTitle}
-        </h1>
-        {isOwner && (
-          <div className="flex items-center gap-1 shrink-0 mt-2">
+      {isOwner && (
+        <div className="flex justify-end items-center gap-1 mb-2 min-h-[1.75rem]">
+          {!confirmingDelete && (
             <button
               type="button"
               onClick={() => setEditing(true)}
@@ -112,13 +110,17 @@ export default function PostEditable({
               <IconPencil className="w-3.5 h-3.5" />
               Edit
             </button>
-            <DeleteButton
-              action={actions.deletePost.bind(null, postId)}
-              confirmMessage="Delete this post? All comments will also be removed."
-            />
-          </div>
-        )}
-      </div>
+          )}
+          <DeleteButton
+            action={actions.deletePost.bind(null, postId)}
+            confirmMessage="Delete post?"
+            onConfirmingChange={setConfirmingDelete}
+          />
+        </div>
+      )}
+      <h1 className="font-display font-extrabold tracking-tight text-3xl sm:text-4xl text-ink leading-[1.1]">
+        {initialTitle}
+      </h1>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-ink-2">
         <AuthorMeta author={author} />

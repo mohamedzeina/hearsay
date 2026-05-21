@@ -8,6 +8,9 @@ interface DeleteButtonProps {
   label?: string;
   confirmMessage?: string;
   onSuccess?: () => void;
+  /** Fires when the confirm pill opens or closes, so parents can hide
+   * sibling controls (e.g. an Edit button) for mutual exclusivity. */
+  onConfirmingChange?: (confirming: boolean) => void;
 }
 
 export default function DeleteButton({
@@ -15,10 +18,16 @@ export default function DeleteButton({
   label = 'Delete',
   confirmMessage = 'Are you sure?',
   onSuccess,
+  onConfirmingChange,
 }: DeleteButtonProps) {
-  const [confirming, setConfirming] = useState(false);
+  const [confirming, setConfirmingState] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  const setConfirming = (next: boolean) => {
+    setConfirmingState(next);
+    onConfirmingChange?.(next);
+  };
 
   const handleConfirm = async () => {
     setPending(true);
