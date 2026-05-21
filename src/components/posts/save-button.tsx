@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useOptimistic, useState, useTransition } from 'react';
 import { useSession } from 'next-auth/react';
 import { toggleSavedPost } from '@/actions';
 import { useSignInPrompt } from '@/components/auth/signin-prompt';
@@ -26,7 +26,14 @@ export default function SaveButton({
   size = 'sm',
   onToggle,
 }: SaveButtonProps) {
-  const [saved, setSaved] = useState(initialSaved);
+  // The base state is what the server confirmed. useOptimistic layers an
+  // in-flight overlay on top during a transition and auto-reverts on failure
+  // — no manual rollback bookkeeping the way the useState version needed.
+  const [confirmed, setConfirmed] = useState(initialSaved);
+  const [saved, addOptimistic] = useOptimistic(
+    confirmed,
+    (_current, next: boolean) => next
+  );
   const [isPending, startTransition] = useTransition();
   const session = useSession();
   const signInPrompt = useSignInPrompt();
@@ -42,21 +49,20 @@ export default function SaveButton({
       return;
     }
 
-    const prev = saved;
-    const next = !prev;
-    setSaved(next);
-    // Drop the card from /saved up-front so the unsave feels instant even on
-    // slow Neon roundtrips. If the server rejects, we don't restore — the
-    // card-state hint to the list is one-way to keep this simple.
-    if (!next) savedList?.removePost(postId);
-
     startTransition(async () => {
+      const next = !confirmed;
+      addOptimistic(next);
+      // Drop the card from /saved up-front so the unsave feels instant even on
+      // slow Neon roundtrips. One-way hint to the list; we don't restore.
+      if (!next) savedList?.removePost(postId);
+
       try {
         const result = await toggleSavedPost(postId);
-        setSaved(result.saved);
+        setConfirmed(result.saved);
         onToggle?.(result.saved);
       } catch {
-        setSaved(prev);
+        // No setConfirmed → useOptimistic auto-reverts when the transition
+        // settles, snapping the icon back to its server-confirmed state.
       }
     });
   };
