@@ -20,6 +20,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Multi-persona seed with DiceBear avatars; idempotent reset on rerun
 - ✅ Markdown rendering on posts and comments (react-markdown + remark-gfm, restricted); seed enriched with bold/lists/code-blocks/links/blockquotes
 - ✅ Edit posts and comments — `editedAt` column, inline edit forms, and a muted "edited Xm ago" hint
+- ✅ Comment permalinks — "copy link" button on every comment (top-level + nested) with smooth-scroll + flash on load
 
 ---
 
@@ -29,11 +30,6 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
   `/u/[name]` showing posts and comments, joined-on date, post/reply
   counts (already computed in `PostAuthor`). Usernames in `PostCard` /
   `CommentCard` become links.
-
-- **Comment permalinks with context** (S)
-  Each comment already has a `c-{id}` anchor. Add a small "link" button
-  on the comment card that copies `<post-url>#c-{id}`, and on load
-  smooth-scrolls + briefly highlights.
 
 ## Tier 2 — engagement & retention
 
@@ -138,4 +134,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-21 (after post/comment edit ship). Update or trash as priorities shift._
+_Last touched 2026-05-21 (after comment-permalinks ship). Update or trash as priorities shift._
