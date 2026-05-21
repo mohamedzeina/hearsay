@@ -53,6 +53,21 @@ const config: Config = {
   darkMode: "class",
   // HeroUI's plugin ships its own tailwindcss type defs that don't unify with
   // ours — runtime is fine, just a type-only skew. Cast to keep tsc clean.
-  plugins: [heroui() as unknown as Config['plugins'], typography].flat() as Config['plugins'],
+  plugins: [
+    // Make HeroUI's focus ring use our brand persimmon instead of its default
+    // blue. Inputs/textareas get a coherent persimmon halo on keyboard focus
+    // that matches our border-persimmon focus state, so the two indicators
+    // read as one designed focus look rather than competing colours.
+    heroui({
+      themes: {
+        light: {
+          colors: {
+            focus: '#E5533D',
+          },
+        },
+      },
+    }) as unknown as Config['plugins'],
+    typography,
+  ].flat() as Config['plugins'],
 };
 export default config;
