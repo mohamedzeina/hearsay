@@ -3,12 +3,18 @@ import { testDb } from './setup';
 let userCounter = 0;
 let topicCounter = 0;
 
-export async function makeUser(overrides: { name?: string; email?: string } = {}) {
+export async function makeUser(
+  overrides: { name?: string; email?: string; username?: string | null } = {}
+) {
   userCounter += 1;
   return testDb.user.create({
     data: {
       name: overrides.name ?? `User ${userCounter}`,
       email: overrides.email ?? `user${userCounter}@example.com`,
+      username:
+        overrides.username === null
+          ? null
+          : overrides.username ?? `user-${userCounter}`,
     },
   });
 }

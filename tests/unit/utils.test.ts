@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { timeAgo, topicTone, stripMarkdown } from '@/lib/utils';
+import { timeAgo, topicTone, stripMarkdown, slugifyName } from '@/lib/utils';
 
 describe('timeAgo', () => {
   beforeEach(() => {
@@ -139,5 +139,31 @@ describe('stripMarkdown', () => {
     expect(out).not.toMatch(/[*#`>-]/);
     expect(out).toContain('No more naming things.');
     expect(out).toContain('Colocation wins');
+  });
+});
+
+describe('slugifyName', () => {
+  it('lowercases and hyphenates a simple two-word name', () => {
+    expect(slugifyName('Maya Chen')).toBe('maya-chen');
+  });
+
+  it('collapses runs of whitespace and punctuation into single hyphens', () => {
+    expect(slugifyName('Sasha   Volkov!!')).toBe('sasha-volkov');
+  });
+
+  it('strips diacritics so accented names become ASCII', () => {
+    expect(slugifyName('Théo Nakámura')).toBe('theo-nakamura');
+  });
+
+  it('trims leading and trailing separators', () => {
+    expect(slugifyName('  --Lin Park-- ')).toBe('lin-park');
+  });
+
+  it('returns an empty string for input with no alphanumerics', () => {
+    expect(slugifyName('   ~~~  ')).toBe('');
+  });
+
+  it('preserves digits inside the name', () => {
+    expect(slugifyName('User 42')).toBe('user-42');
   });
 });
