@@ -80,7 +80,7 @@ function SignedOutHero({
         className="absolute inset-0 pointer-events-none opacity-70"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 12% 0%, rgba(229, 83, 61, 0.10), transparent 50%), radial-gradient(circle at 100% 100%, rgba(15, 110, 100, 0.08), transparent 55%)',
+            'radial-gradient(circle at 12% 0%, rgba(var(--persimmon-rgb), 0.10), transparent 50%), radial-gradient(circle at 100% 100%, rgba(15, 110, 100, 0.08), transparent 55%)',
         }}
       />
 

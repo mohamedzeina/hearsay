@@ -36,6 +36,17 @@ const config: Config = {
         'persimmon-deep': '#C2402B',
         teal: '#0F6E64',
         'teal-soft': '#DDEFEC',
+        // Topic chip palette — 8 hashed-by-slug tones. Each tone exposes
+        // 50 (chip background), 500 (dot), 700 (label text). See topicTone()
+        // in lib/utils.ts for the mapping.
+        'topic-terracotta': { 50: '#FDE8E0', 500: '#C25636', 700: '#9C3D24' },
+        'topic-sage':       { 50: '#E4EBDF', 500: '#5F7A4D', 700: '#3F5733' },
+        'topic-plum':       { 50: '#EDE2EE', 500: '#8A5790', 700: '#6B3D6E' },
+        'topic-teal':       { 50: '#DBEDEB', 500: '#357973', 700: '#1F5A55' },
+        'topic-mustard':    { 50: '#F5EDD3', 500: '#9A7B30', 700: '#6B5421' },
+        'topic-periwinkle': { 50: '#E2E5F2', 500: '#5B679F', 700: '#3F4878' },
+        'topic-rust':       { 50: '#F3DCC9', 500: '#A1582E', 700: '#7A3F1C' },
+        'topic-rose':       { 50: '#F4E0E1', 500: '#A05A66', 700: '#7C3F49' },
       },
       boxShadow: {
         'soft': '0 1px 2px rgba(26, 22, 20, 0.04), 0 0 0 1px rgba(26, 22, 20, 0.04)',

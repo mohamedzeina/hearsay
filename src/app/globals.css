@@ -11,6 +11,7 @@
   --ink-3: #A8A29E;
   --rule: #EAE4D7;
   --persimmon: #E5533D;
+  --persimmon-rgb: 229, 83, 61;
   --persimmon-soft: #FBE8E3;
   --persimmon-deep: #C2402B;
   --teal: #0F6E64;
@@ -80,8 +81,8 @@ a:focus {
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 83, 61, 0.3); }
-  50% { box-shadow: 0 0 0 6px rgba(229, 83, 61, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--persimmon-rgb), 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(var(--persimmon-rgb), 0); }
 }
 
 .dot-live {
@@ -91,7 +92,7 @@ a:focus {
 /* Anchor target flash for thread-map navigation */
 @keyframes target-flash {
   0% {
-    box-shadow: 0 0 0 4px rgba(229, 83, 61, 0.3);
+    box-shadow: 0 0 0 4px rgba(var(--persimmon-rgb), 0.3);
     border-radius: 1rem;
   }
   100% {

@@ -29,14 +29,14 @@ export function stripMarkdown(input: string): string {
 }
 
 const TOPIC_PALETTE = [
-  { bg: 'bg-[#FDE8E0]', text: 'text-[#9C3D24]', dot: 'bg-[#C25636]' }, // terracotta
-  { bg: 'bg-[#E4EBDF]', text: 'text-[#3F5733]', dot: 'bg-[#5F7A4D]' }, // sage
-  { bg: 'bg-[#EDE2EE]', text: 'text-[#6B3D6E]', dot: 'bg-[#8A5790]' }, // plum
-  { bg: 'bg-[#DBEDEB]', text: 'text-[#1F5A55]', dot: 'bg-[#357973]' }, // teal
-  { bg: 'bg-[#F5EDD3]', text: 'text-[#6B5421]', dot: 'bg-[#9A7B30]' }, // mustard
-  { bg: 'bg-[#E2E5F2]', text: 'text-[#3F4878]', dot: 'bg-[#5B679F]' }, // periwinkle
-  { bg: 'bg-[#F3DCC9]', text: 'text-[#7A3F1C]', dot: 'bg-[#A1582E]' }, // rust
-  { bg: 'bg-[#F4E0E1]', text: 'text-[#7C3F49]', dot: 'bg-[#A05A66]' }, // dusty rose
+  { bg: 'bg-topic-terracotta-50', text: 'text-topic-terracotta-700', dot: 'bg-topic-terracotta-500' },
+  { bg: 'bg-topic-sage-50',       text: 'text-topic-sage-700',       dot: 'bg-topic-sage-500' },
+  { bg: 'bg-topic-plum-50',       text: 'text-topic-plum-700',       dot: 'bg-topic-plum-500' },
+  { bg: 'bg-topic-teal-50',       text: 'text-topic-teal-700',       dot: 'bg-topic-teal-500' },
+  { bg: 'bg-topic-mustard-50',    text: 'text-topic-mustard-700',    dot: 'bg-topic-mustard-500' },
+  { bg: 'bg-topic-periwinkle-50', text: 'text-topic-periwinkle-700', dot: 'bg-topic-periwinkle-500' },
+  { bg: 'bg-topic-rust-50',       text: 'text-topic-rust-700',       dot: 'bg-topic-rust-500' },
+  { bg: 'bg-topic-rose-50',       text: 'text-topic-rose-700',       dot: 'bg-topic-rose-500' },
 ] as const;
 
 export type TopicTone = (typeof TOPIC_PALETTE)[number];
