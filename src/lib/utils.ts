@@ -48,3 +48,17 @@ export function topicTone(slug: string): TopicTone {
   }
   return TOPIC_PALETTE[hash % TOPIC_PALETTE.length];
 }
+
+/**
+ * Turn a display name like "Maya Chen" into a URL-safe slug "maya-chen".
+ * Used as a fallback when a user has no stored `username` (mostly legacy
+ * rows pre-dating the username column).
+ */
+export function slugifyName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}

@@ -8,6 +8,9 @@ const paths = {
   postShow(topicSlug: string, postId: string) {
     return `/topics/${topicSlug}/posts/${postId}`;
   },
+  userProfile(username: string) {
+    return `/u/${encodeURIComponent(username)}`;
+  },
 };
 
 export default paths;
