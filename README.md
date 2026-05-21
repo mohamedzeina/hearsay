@@ -41,6 +41,7 @@ A community discussion platform where every voice gets a thread — topics, post
 - 5-per-page pagination via a shared `usePaginated` hook
 - Full-text search across title and content
 - Owner-only delete with two-stage inline confirm (no browser dialogs)
+- **Owner-only inline edit**: a small pencil button appears next to the title; clicking swaps the title and body for a validated form ("Tidy up · not rewrite"). Saves stamp `editedAt`; a muted "edited Xm ago" pip appears in the meta row.
 - Empty state cards with persimmon-soft icon halo
 
 ### Comments
@@ -49,6 +50,15 @@ A community discussion platform where every voice gets a thread — topics, post
 - **Collapse rail**: the thin column between avatar and replies is a clickable pill that toggles a "+ show replies" footer for the subtree
 - Soft delete for comments with children — renders `[comment deleted]` to preserve thread context; childless deletes hide entirely
 - Instant client UI on delete; counts in the header exclude soft-deleted comments
+- **Owner-only inline edit**: pencil button alongside Delete swaps the markdown body for a Textarea form; saves stamp `editedAt` and surface a "edited Xm ago" hint next to the timestamp
+
+### Markdown rendering
+- Post bodies and comments render through `react-markdown` + `remark-gfm`
+- Restricted allowlist: **bold, italic, links, ordered/unordered lists, inline + fenced code, blockquotes, tables**; raw HTML and images are dropped
+- External links auto-set `target="_blank" rel="noopener noreferrer nofollow"`
+- Code blocks use the cream-2 / mono stack; inline code gets a softer pill
+- Two prose variants: `body` (generous leading, used on post show) and `comment` (tighter, zero-margin paragraphs)
+- Post card previews use `stripMarkdown()` so the line-clamped excerpt doesn't show raw syntax
 
 ### Voting
 - **Upvote-only** on posts and comments — disagreement goes in replies; no karma scores
@@ -96,6 +106,7 @@ A community discussion platform where every voice gets a thread — topics, post
 | Fonts | Plus Jakarta Sans + JetBrains Mono (`next/font/google`) |
 | Validation | Zod 3.22 |
 | Motion | Framer Motion |
+| Markdown | react-markdown 10 + remark-gfm 4 (restricted allowlist) |
 | Testing | Vitest 3.2 + React Testing Library + Playwright 1.60 |
 
 ## Design System
@@ -130,6 +141,7 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **`FormButton`** — ink pill with built-in `useFormStatus()` spinner and "Working…" state.
 - **`FormError`** — accessible `role="alert"` error banner.
 - **`DeleteButton`** — trash icon → inline persimmon "Are you sure?" pill with Yes/Cancel.
+- **`Markdown`** (`src/components/common/markdown.tsx`) — `react-markdown` + `remark-gfm` wrapper with `body` and `comment` variants. Strict allowlist; no raw HTML; external links auto-set `target="_blank" rel="noopener noreferrer nofollow"`.
 - **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`.
 - **`topicTone(slug)`** (`src/lib/utils.ts`) — deterministic hash → 1 of 8 muted color triples (bg / text / dot).
 - **Form classNames** (`src/lib/form-classes.ts`) — `inputClassNames`, `inputClassNamesLg`, `textareaClassNamesLg` for consistent NextUI styling.
@@ -139,7 +151,7 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 - **Server Components** handle all data fetching — posts, comments, topics, suggestions, and auth resolve on the server before streaming.
 - **Client Components** are scoped to interactivity only: form state, sort toggles, delete confirmation, search dropdown, modal state, vote toggling.
-- **Server Actions** (`'use server'`) handle every mutation: `createPost`, `createTopic`, `createComment`, `deletePost`, `deleteComment`, `togglePostVote`, `toggleCommentVote`. All write actions go through Zod validation and `requireAuth()`.
+- **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`.
 - **Suspense boundaries** on the post detail page stream the post, comments, author card, thread map, and related posts in parallel.
 - **Request memoization** via React `cache()` deduplicates `fetchPostById` and `fetchCommentsByPostId` when multiple components in the same render need them.
 - **Soft delete** on comments preserves thread context — comments with replies become `[deleted]`; childless ones disappear entirely.
@@ -148,13 +160,13 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **130 tests** total.
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **166 tests** total.
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
-| Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `usePaginated`, `paths`) | 23 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SignInPromptProvider, all auth-gated create forms | 51 |
-| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema; truncate-per-test isolation; `setViewer()` helper for auth | 51 |
+| Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `usePaginated`, `paths`) | 35 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, Markdown, SignInPromptProvider, all auth-gated create forms | 64 |
+| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema; truncate-per-test isolation; `setViewer()` helper for auth | 62 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
 Run everything with `npm run test:everything` — it starts the Docker test PG, runs all Vitest projects, then Playwright. Granular scripts (`test`, `test:integration`, `test:e2e`) exist for fast iteration on a single layer.
@@ -164,8 +176,9 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 ```
 .
 ├── prisma/
-│   ├── schema.prisma          # User, Topic, Post, Comment, PostVote, CommentVote
-│   └── seed.ts                # 10 personas + DiceBear avatars + nested threads
+│   ├── schema.prisma          # User, Topic, Post, Comment, PostVote, CommentVote (Post/Comment carry editedAt)
+│   ├── migrations/            # init → add_comment_soft_delete → add_votes → add_edited_at
+│   └── seed.ts                # 10 personas + 11 topics + threaded markdown content + pre-edited rows
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx         # Plus Jakarta + JetBrains Mono + Header + footer
@@ -186,6 +199,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │           └── [postId]/  # Two-column post detail + loading
 │   ├── actions/
 │   │   ├── create-post.ts / create-topic.ts / create-comment.ts
+│   │   ├── edit-post.ts / edit-comment.ts
 │   │   ├── delete-post.ts / delete-comment.ts
 │   │   ├── toggle-post-vote.ts / toggle-comment-vote.ts
 │   │   └── index.ts
@@ -202,17 +216,20 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   │   ├── formButton.tsx
 │   │   │   ├── form-error.tsx
 │   │   │   ├── delete-button.tsx
-│   │   │   └── breadcrumb.tsx
+│   │   │   ├── breadcrumb.tsx
+│   │   │   └── markdown.tsx            # react-markdown wrapper (body / comment variants)
 │   │   ├── posts/
 │   │   │   ├── post-card.tsx / post-empty.tsx / post-pagination.tsx
 │   │   │   ├── post-feed.tsx           # Top/New sort + pagination
 │   │   │   ├── post-show.tsx / post-author.tsx
+│   │   │   ├── post-editable.tsx       # Inline edit form + "edited" hint
 │   │   │   ├── thread-map.tsx / related-posts.tsx
 │   │   │   └── *-loading.tsx, *-skeleton.tsx
 │   │   ├── comments/
 │   │   │   ├── comment-list.tsx / comment-show.tsx
-│   │   │   ├── comment-card.tsx        # Card with collapse rail
+│   │   │   ├── comment-card.tsx        # Card with collapse rail + inline edit
 │   │   │   ├── comment-create-form.tsx
+│   │   │   ├── comment-edit-form.tsx
 │   │   │   └── comment-list-loading.tsx
 │   │   ├── topics/
 │   │   │   ├── topic-list.tsx
