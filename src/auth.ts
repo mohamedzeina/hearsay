@@ -10,6 +10,9 @@ declare module 'next-auth' {
       id: string;
     } & DefaultSession['user'];
   }
+  interface User {
+    username?: string | null;
+  }
 }
 
 const githubClientId = process.env.GITHUB_CLIENT_ID;
@@ -50,6 +53,7 @@ const providers = playwrightTest
           return {
             id: profile.id.toString(),
             name,
+            username: profile.login?.trim() || null,
             email: profile.email?.trim() || null,
             image: profile.avatar_url,
           };
