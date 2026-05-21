@@ -8,7 +8,12 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
-    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}"
+    // HeroUI hoists @heroui/theme under nested packages with npm, so we need
+    // both globs — the top-level one for pnpm/yarn layouts, the nested one
+    // for npm. Without this, modal positioning classes get purged in prod
+    // and modals render inline at the bottom instead of as an overlay.
+    "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
+    "./node_modules/@heroui/**/node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
     extend: {
