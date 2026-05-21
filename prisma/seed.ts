@@ -788,6 +788,33 @@ async function main() {
     }
   }
 
+  console.log('Marking a few rows as edited...');
+  const now = Date.now();
+  const minutesAgo = (n: number) => new Date(now - n * 60 * 1000);
+  const hoursAgo = (n: number) => new Date(now - n * 60 * 60 * 1000);
+  const daysAgo = (n: number) => new Date(now - n * 24 * 60 * 60 * 1000);
+
+  await db.post.update({
+    where: { id: posts[4].id },
+    data: { editedAt: hoursAgo(2) },
+  });
+  await db.post.update({
+    where: { id: posts[15].id },
+    data: { editedAt: daysAgo(6) },
+  });
+  await db.comment.update({
+    where: { id: p0c0.id },
+    data: { editedAt: minutesAgo(10) },
+  });
+  await db.comment.update({
+    where: { id: p8c0.id },
+    data: { editedAt: daysAgo(3) },
+  });
+  await db.comment.update({
+    where: { id: p15c0.id },
+    data: { editedAt: daysAgo(1) },
+  });
+
   console.log('Sprinkling votes...');
 
   // Deterministic-ish PRNG so reruns look similar.
