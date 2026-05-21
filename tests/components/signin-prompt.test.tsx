@@ -6,17 +6,18 @@ import SignInPromptProvider, {
 } from '@/components/auth/signin-prompt';
 
 const signInMock = vi.fn();
-const usePathnameMock = vi.fn();
-const useSearchParamsMock = vi.fn();
 
 vi.mock('next-auth/react', () => ({
   signIn: (...args: unknown[]) => signInMock(...args),
 }));
 
-vi.mock('next/navigation', () => ({
-  usePathname: () => usePathnameMock(),
-  useSearchParams: () => useSearchParamsMock(),
-}));
+function setLocation(url: string) {
+  Object.defineProperty(window, 'location', {
+    value: new URL(url),
+    configurable: true,
+    writable: true,
+  });
+}
 
 function Trigger({ reason }: { reason?: string }) {
   const { open } = useSignInPrompt();
@@ -30,10 +31,7 @@ function Trigger({ reason }: { reason?: string }) {
 describe('SignInPromptProvider', () => {
   beforeEach(() => {
     signInMock.mockReset();
-    usePathnameMock.mockReset();
-    useSearchParamsMock.mockReset();
-    usePathnameMock.mockReturnValue('/topics/javascript');
-    useSearchParamsMock.mockReturnValue(new URLSearchParams());
+    setLocation('https://hearsay.test/topics/javascript');
   });
 
   it('renders children', () => {
@@ -120,7 +118,7 @@ describe('SignInPromptProvider', () => {
   });
 
   it('includes search params in callbackUrl when present', async () => {
-    useSearchParamsMock.mockReturnValue(new URLSearchParams('term=hello'));
+    setLocation('https://hearsay.test/topics/javascript?term=hello');
     const user = userEvent.setup();
     render(
       <SignInPromptProvider>
@@ -138,8 +136,8 @@ describe('SignInPromptProvider', () => {
     });
   });
 
-  it('falls back to "/" when pathname is null', async () => {
-    usePathnameMock.mockReturnValue(null);
+  it('preserves the hash fragment in callbackUrl', async () => {
+    setLocation('https://hearsay.test/topics/javascript#c-abc123');
     const user = userEvent.setup();
     render(
       <SignInPromptProvider>
@@ -152,6 +150,8 @@ describe('SignInPromptProvider', () => {
       await screen.findByRole('button', { name: /continue with github/i })
     );
 
-    expect(signInMock).toHaveBeenCalledWith('github', { callbackUrl: '/' });
+    expect(signInMock).toHaveBeenCalledWith('github', {
+      callbackUrl: '/topics/javascript#c-abc123',
+    });
   });
 });

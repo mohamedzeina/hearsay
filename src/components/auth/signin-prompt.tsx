@@ -13,7 +13,6 @@ import {
   useDisclosure,
 } from '@heroui/react';
 import { signIn } from 'next-auth/react';
-import { usePathname, useSearchParams } from 'next/navigation';
 import { IconSpinner } from '@/components/icons';
 
 interface SignInPromptCtx {
@@ -38,8 +37,6 @@ export default function SignInPromptProvider({
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [reason, setReason] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   const open = useCallback(
     (r?: string) => {
@@ -50,12 +47,14 @@ export default function SignInPromptProvider({
     [onOpen]
   );
 
+  // Read window.location at click time instead of via useSearchParams/usePathname.
+  // The hook variants force any tree that renders this provider to be wrapped in
+  // <Suspense>, which broke the prerender of /_not-found on Vercel. The click
+  // handler always runs in the browser, so window.location is fine here.
   const handleGithub = () => {
     setPending(true);
-    const query = searchParams?.toString();
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    const callbackUrl = `${pathname || '/'}${query ? `?${query}` : ''}${hash}`;
-    signIn('github', { callbackUrl });
+    const { pathname, search, hash } = window.location;
+    signIn('github', { callbackUrl: `${pathname}${search}${hash}` });
   };
 
   return (
