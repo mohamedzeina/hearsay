@@ -4,12 +4,15 @@ import { useState, useTransition } from 'react';
 import { useSession } from 'next-auth/react';
 import { toggleSavedPost } from '@/actions';
 import { useSignInPrompt } from '@/components/auth/signin-prompt';
+import { useSavedListContext } from '@/components/posts/saved-list-context';
 import { IconBookmark } from '@/components/icons';
 
 interface SaveButtonProps {
   postId: string;
   initialSaved: boolean;
   size?: 'sm' | 'md';
+  /** Fires after a successful server toggle, with the new saved state. */
+  onToggle?: (saved: boolean) => void;
 }
 
 const SIZES = {
@@ -21,11 +24,13 @@ export default function SaveButton({
   postId,
   initialSaved,
   size = 'sm',
+  onToggle,
 }: SaveButtonProps) {
   const [saved, setSaved] = useState(initialSaved);
   const [isPending, startTransition] = useTransition();
   const session = useSession();
   const signInPrompt = useSignInPrompt();
+  const savedList = useSavedListContext();
 
   const onClick = (e: React.MouseEvent) => {
     // PostCard wraps this in <Link> — don't navigate.
@@ -44,6 +49,10 @@ export default function SaveButton({
       try {
         const result = await toggleSavedPost(postId);
         setSaved(result.saved);
+        onToggle?.(result.saved);
+        // If we're rendered inside the /saved page's list, an unsave should
+        // drop the card from the page — that's what the user is asking for.
+        if (!result.saved) savedList?.removePost(postId);
       } catch {
         setSaved(prev);
       }
