@@ -9,7 +9,7 @@ import VoteButton from '@/components/votes/vote-button';
 import Markdown from '@/components/common/markdown';
 import { deleteComment } from '@/actions';
 import { timeAgo } from '@/lib/utils';
-import { IconPencil } from '@/components/icons';
+import { IconPencil, IconLink, IconCheck } from '@/components/icons';
 
 interface CommentCardProps {
   comment: {
@@ -39,12 +39,24 @@ export default function CommentCard({
   const [hidden, setHidden] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleSuccess = () => {
     if (hasReplies) {
       setDeleted(true);
     } else {
       setHidden(true);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}#c-${comment.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API can fail on insecure origins or denied permissions; do nothing.
     }
   };
 
@@ -117,21 +129,44 @@ export default function CommentCard({
                 </>
               )}
             </div>
-            {isOwner && !editing && (
+            {!editing && (
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditing(true)}
+                  onClick={handleCopyLink}
+                  aria-label="Copy link to this comment"
+                  title={copied ? 'Copied!' : 'Copy link to this comment'}
                   className="inline-flex items-center gap-1 text-[11px] font-semibold text-ink-2 hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
                 >
-                  <IconPencil className="w-3 h-3" />
-                  Edit
+                  {copied ? (
+                    <>
+                      <IconCheck className="w-3 h-3" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <IconLink className="w-3 h-3" />
+                      Link
+                    </>
+                  )}
                 </button>
-                <DeleteButton
-                  action={deleteComment.bind(null, comment.id)}
-                  confirmMessage="Delete this comment?"
-                  onSuccess={handleSuccess}
-                />
+                {isOwner && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setEditing(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-ink-2 hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
+                    >
+                      <IconPencil className="w-3 h-3" />
+                      Edit
+                    </button>
+                    <DeleteButton
+                      action={deleteComment.bind(null, comment.id)}
+                      confirmMessage="Delete this comment?"
+                      onSuccess={handleSuccess}
+                    />
+                  </>
+                )}
               </div>
             )}
           </div>
