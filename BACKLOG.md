@@ -22,6 +22,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Edit posts and comments — `editedAt` column, inline edit forms, and a muted "edited Xm ago" hint
 - ✅ Comment permalinks — "copy link" button on every comment (top-level + nested) with smooth-scroll + flash on load
 - ✅ User profile pages — `/u/[username]` with posts, recent replies, joined-on date, stats; indexed `User.username` (GitHub `login` on signin); clickable usernames across `PostCard` / `CommentCard` / `PostAuthor`
+- ✅ Saved posts — bookmark button on `PostCard`, `/saved` page (newest-save first), header dropdown link, indexed `SavedPost` join table
 
 ---
 
@@ -35,9 +36,6 @@ _All Tier 1 items have shipped. See Tier 2 for the next-best pick._
   When someone replies to a post or comment you authored, or upvotes
   your content. A `Notification` model, dropdown in the header,
   mark-as-read. No email yet — keep it self-contained.
-
-- **Saved posts** (S)
-  Bookmark button on `PostCard`; `/saved` page. Single join table.
 
 - **Mentions** (M)
   `@username` autolinks to profile and sends a notification. Detect in
@@ -132,4 +130,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-21 (after user-profile-pages ship). Update or trash as priorities shift._
+_Last touched 2026-05-21 (after saved-posts ship). Update or trash as priorities shift._
