@@ -2,7 +2,7 @@
 
 > *All opinions welcome. Even yours.*
 
-A community discussion platform where every voice gets a thread — topics, posts, nested comments, upvotes, live search. Built with Next.js 14 App Router, Postgres, and a hand-tuned warm-modern design system.
+A community discussion platform where every voice gets a thread — topics, posts, nested comments, upvotes, bookmarks, live search. Built with Next.js 14 App Router, Postgres, and a hand-tuned warm-modern design system.
 
 **Live:** [hearsay-community.vercel.app](https://hearsay-community.vercel.app)
 
@@ -25,7 +25,7 @@ A community discussion platform where every voice gets a thread — topics, post
 - **Split-screen sign-in page**: oversized `hearsay.` wordmark, three numbered value props, a live topic-chip constellation pulled from the database, and an auth card whose GitHub button has a persimmon wash that sweeps up from the bottom on hover
 - "Why only GitHub?" `<details>` disclosure with rotating chevron
 - Real social proof (avatar stack + member count) from `db.user.count()`
-- **Reddit-style sign-in modal** instead of redirects. Clicking any protected action (upvote, reply, write a post, create a topic) opens a centered modal with a single "Continue with GitHub" button and a contextual reason ("Sign in to upvote.", "Sign in to start a topic.", …). Loading state on the GitHub button — the persimmon wash slides up and the label switches to "Connecting to GitHub…" with a spinner.
+- **Reddit-style sign-in modal** instead of redirects. Clicking any protected action (upvote, save, reply, write a post, create a topic) opens a centered modal with a single "Continue with GitHub" button and a contextual reason ("Sign in to upvote.", "Sign in to save posts.", "Sign in to start a topic.", …). Loading state on the GitHub button — the persimmon wash slides up and the label switches to "Connecting to GitHub…" with a spinner.
 
 ### Topics
 - Create topics via a centered modal (Cancel + Create-topic footer bar, autofocus, slug-pattern validation `^[a-z-]+$`)
@@ -44,12 +44,21 @@ A community discussion platform where every voice gets a thread — topics, post
 - **Owner-only inline edit**: a small pencil button appears next to the title; clicking swaps the title and body for a validated form ("Tidy up · not rewrite"). Saves stamp `editedAt`; a muted "edited Xm ago" pip appears in the meta row.
 - Empty state cards with persimmon-soft icon halo
 
+### Saved posts
+- **Bookmark button** in the top-right corner of every `PostCard` (`absolute top-3 right-3`). `IconBookmark` toggles between outline (unsaved) and filled persimmon (saved); `aria-pressed`/`aria-label` swap between "Save post" and "Unsave post".
+- **Optimistic toggle** with rollback on server error, mirroring the upvote pattern. Click bubbling is suppressed so the bookmark never triggers the card's outer `<Link>`.
+- **Auth-gated** via the standard sign-in modal — signed-out users see "Sign in to save posts." instead of being redirected away.
+- **`/saved` page** (auth-required; unauthenticated users redirect to signin with a `callbackUrl=/saved`) lists every bookmarked post newest-save-first, reusing `PostCard`. Empty state shows a centered `IconBookmark` halo with "Nothing saved yet" + "Tap the bookmark on any post and it'll land here, in the order you saved them." and a "Browse posts →" CTA.
+- **Header dropdown link**: the user-menu dropdown gains a "Saved posts" entry above sign-out so the page is reachable from anywhere.
+- Backed by a `SavedPost` join table with `@@unique([userId, postId])` (prevents double-saves at the DB level) and `@@index([userId])` (cheap `/saved` listing). Toggle action wraps find/delete-or-create in a Prisma `$transaction`.
+- Each post query also surfaces a viewer-aware `saves: { id: string }[]` (same pattern as `votes`), so the bookmark renders in the correct state on first paint without a follow-up roundtrip.
+
 ### User profiles
 - `/u/[username]` route with a decorated header (avatar, name, `@username`, joined-on month, two-up stats), the user's 20 most-recent posts (reusing `PostCard`), and a sticky "Recent replies" sidebar that backlinks each comment to its source post via `paths.postShow(...) + '#c-{id}'`
 - **Indexed `User.username` lookup** — `@unique` Postgres index, O(1) `db.user.findUnique({ where: { username } })`; no slug-scanning
-- **GitHub login → Hearsay username** wired in the `profile()` callback on `src/auth.ts` — new signins land at `/u/<github-login>` automatically
+- **GitHub login → Hearsay username** wired in the `profile()` callback on `src/auth.ts` — new signins land at `/u/<github-login>` automatically. Legacy rows that pre-date the column are backfilled by a `events.signIn` hook that only writes when `username` is currently `null`, so a later GitHub rename can't silently steal someone's profile URL.
 - **`slugifyName` fallback** for legacy rows that pre-date the `username` column (rare path; mostly cosmetic)
-- **Clickable author attribution everywhere**: `AuthorChip` (new client primitive) inside `<Link>`-wrapped cards like `PostCard`, plus direct Next `<Link>` wrapping in `CommentCard`, `PostAuthor`, and `PostEditable`. All four resolve `user.username` first, slugify the name as a fallback.
+- **Clickable author attribution everywhere**: `AuthorChip` (client primitive) inside `<Link>`-wrapped cards like `PostCard`, plus direct Next `<Link>` wrapping in `CommentCard`, `PostAuthor`, and `PostEditable`. All four resolve `user.username` first, slugify the name as a fallback.
 
 ### Comments
 - Threaded replies (nested via `parentId`)
@@ -98,7 +107,7 @@ A community discussion platform where every voice gets a thread — topics, post
 ### UX & Motion
 - Streaming UI via Suspense — post card, comment list, and sidebar panels load independently
 - Custom 404 page with hand-drawn underline
-- Route-level loading skeletons for `/`, `/search`, `/auth/signin`, `/topics/[slug]`, and `/topics/[slug]/posts/[postId]`
+- Route-level loading skeletons for `/`, `/saved`, `/search`, `/auth/signin`, `/topics/[slug]`, `/topics/[slug]/posts/[postId]`, and `/u/[username]`
 - Subtle animations: `.rise` (fade + slide-up), `.dot-live` (persimmon glow pulse), `.ink-link` (hover underline reveal), `:target` flash on anchor arrival, bouncy logo period on hover, rotating `+` glyph on the topic-create trigger
 - Global smooth scroll for hash-jumps (used by the thread map and comment permalinks); disabled under `prefers-reduced-motion`
 - All animations honor `prefers-reduced-motion`
@@ -114,7 +123,7 @@ A community discussion platform where every voice gets a thread — topics, post
 | UI | NextUI 2.2 + Tailwind CSS 3.3 |
 | Fonts | Plus Jakarta Sans + JetBrains Mono (`next/font/google`) |
 | Validation | Zod 3.22 |
-| Motion | Framer Motion |
+| Motion | Framer Motion 11 |
 | Markdown | react-markdown 10 + remark-gfm 4 (restricted allowlist) |
 | Testing | Vitest 3.2 + React Testing Library + Playwright 1.60 |
 
@@ -144,41 +153,42 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 - **`Avatar`** (`src/components/common/avatar.tsx`) — single component covering image and fallback-initial variants. Sizes `xs`/`sm`/`md`/`lg`, optional `tone` for topic-colored backgrounds, configurable ring.
 - **`SurfacePanel`** (`src/components/common/surface-panel.tsx`) — polymorphic card with `as` (section/article/aside) and `size` (md = `rounded-2xl` sidebars, lg = `rounded-3xl` content). Single source of truth for bordered surfaces.
-- **`PostCard`** (`src/components/posts/post-card.tsx`) — shared by feed, topic list, and search; reveals a persimmon left rail on hover.
+- **`PostCard`** (`src/components/posts/post-card.tsx`) — shared by feed, topic list, search, profile, and `/saved`; reveals a persimmon left rail on hover and hosts the top-right bookmark.
 - **`VoteButton`** (`src/components/votes/vote-button.tsx`) — optimistic upvote toggle with auth-gate via signin modal.
+- **`SaveButton`** (`src/components/posts/save-button.tsx`) — optimistic bookmark toggle with the same auth-gate. Safe to nest inside `<Link>`-wrapped cards (intercepts clicks).
 - **`SignInPromptProvider`** (`src/components/auth/signin-prompt.tsx`) — Context-based modal trigger. Any client component calls `useSignInPrompt().open(reason)` to surface the auth modal without losing the user's place.
 - **`FormButton`** — ink pill with built-in `useFormStatus()` spinner and "Working…" state.
 - **`FormError`** — accessible `role="alert"` error banner.
 - **`DeleteButton`** — trash icon → inline persimmon "Are you sure?" pill with Yes/Cancel.
 - **`Markdown`** (`src/components/common/markdown.tsx`) — `react-markdown` + `remark-gfm` wrapper with `body` and `comment` variants. Strict allowlist; no raw HTML; external links auto-set `target="_blank" rel="noopener noreferrer nofollow"`.
 - **`AuthorChip`** (`src/components/common/author-chip.tsx`) — client primitive that's safe to render inside an outer `<Link>` (renders as `<button>`, intercepts clicks, navigates via `router.push`). Resolves `user.username` → falls back to `slugifyName(user.name)` → renders inert text if both are missing.
-- **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`, `IconLink` (permalink button), `IconCheck` ("Copied" affordance).
+- **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`, `IconLink`, `IconCheck`, `IconBookmark` (accepts a `filled` prop for the saved state).
 - **`topicTone(slug)`** (`src/lib/utils.ts`) — deterministic hash → 1 of 8 muted color triples (bg / text / dot).
 - **Form classNames** (`src/lib/form-classes.ts`) — `inputClassNames`, `inputClassNamesLg`, `textareaClassNamesLg` for consistent NextUI styling.
 - **`usePaginated`** (`src/lib/use-paginated.ts`) — shared client pagination hook returning `{ page, setPage, totalPages, paginated }`.
 
 ## Architecture
 
-- **Server Components** handle all data fetching — posts, comments, topics, suggestions, and auth resolve on the server before streaming.
-- **Client Components** are scoped to interactivity only: form state, sort toggles, delete confirmation, search dropdown, modal state, vote toggling, comment-card permalink/edit UI.
-- **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`.
+- **Server Components** handle all data fetching — posts, comments, topics, suggestions, saved-posts listing, and auth resolve on the server before streaming.
+- **Client Components** are scoped to interactivity only: form state, sort toggles, delete confirmation, search dropdown, modal state, vote toggling, save toggling, comment-card permalink/edit UI.
+- **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`, `toggleSavedPost`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`. Toggle actions wrap their find/upsert in a Prisma `$transaction`.
 - **Suspense boundaries** on the post detail page stream the post, comments, author card, thread map, and related posts in parallel.
 - **Request memoization** via React `cache()` deduplicates `fetchPostById` and `fetchCommentsByPostId` when multiple components in the same render need them.
 - **Soft delete** on comments preserves thread context — comments with replies become `[deleted]`; childless ones disappear entirely.
-- **Vote queries are viewer-aware**: every post/comment include uses `votes: { where: { userId: viewerId }, take: 1 }` so the UI knows the viewer's vote state without a round-trip. Unauthenticated viewers pass an empty-string sentinel so the filter never matches.
-- **Auth gating via Context modal**, not redirects: protected client buttons (upvote, reply, write a post, create a topic) call `useSignInPrompt().open()` instead of `router.push('/auth/signin')`, keeping the user on their current page.
+- **Vote and save queries are viewer-aware**: every post include uses `votes: { where: { userId: viewerId }, take: 1 }` and `saves: { where: { userId: viewerId }, take: 1 }` so the UI knows the viewer's vote/save state without a round-trip. Unauthenticated viewers pass an empty-string sentinel so the filter never matches.
+- **Auth gating via Context modal**, not redirects: protected client buttons (upvote, save, reply, write a post, create a topic) call `useSignInPrompt().open()` instead of `router.push('/auth/signin')`, keeping the user on their current page. Server-rendered protected pages (`/saved`) still redirect with a `callbackUrl` so post-signin brings the user back.
 - **Comment anchors are unified**: `CommentShow` wraps every recursive comment in `<div id="c-{id}" className="scroll-mt-24 comment-anchor">`, so both the sidebar thread map and the per-comment copy-link button hit the same `:target`-flash code path regardless of nesting depth.
-- **Username resolution is single-pass and indexed**: `User.username` is unique-indexed so profile lookups go through `findUnique` (O(1)) rather than scanning slugified names. The GitHub OAuth `profile()` callback in `src/auth.ts` is augmented (via `declare module 'next-auth'`) so the Prisma adapter forwards `profile.login` straight into the column on first signin. `slugifyName` is only used as a fallback for legacy rows that pre-date the column.
+- **Username resolution is single-pass and indexed**: `User.username` is unique-indexed so profile lookups go through `findUnique` (O(1)) rather than scanning slugified names. The GitHub OAuth `profile()` callback in `src/auth.ts` is augmented (via `declare module 'next-auth'`) so the Prisma adapter forwards `profile.login` straight into the column on first signin. An `events.signIn` hook backfills legacy rows once — but only when `username` is currently `null`, so a later GitHub rename can't silently steal an existing profile URL.
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **189 tests** total.
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **198 tests** total (+ 5 E2E).
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
 | Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `paths`) | 41 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip (profile navigation), all auth-gated create forms | 77 |
-| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `fetchUserProfileByUsername`); truncate-per-test isolation; `setViewer()` helper for auth | 66 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, all auth-gated create forms | 83 |
+| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts`, `fetchUserProfileByUsername`); truncate-per-test isolation; `setViewer()` helper for auth | 74 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
 Run everything with `npm run test:everything` — it starts the Docker test PG, runs all Vitest projects, then Playwright. Granular scripts (`test`, `test:integration`, `test:e2e`) exist for fast iteration on a single layer.
@@ -188,9 +198,9 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 ```
 .
 ├── prisma/
-│   ├── schema.prisma          # User (+ username/createdAt), Topic, Post, Comment, PostVote, CommentVote
-│   ├── migrations/            # init → add_comment_soft_delete → add_votes → add_edited_at → add_user_profile_fields
-│   └── seed.ts                # 10 personas (with handles + spread join dates) + 11 topics + threaded markdown content + pre-edited rows
+│   ├── schema.prisma          # User, Topic, Post, Comment, PostVote, CommentVote, SavedPost
+│   ├── migrations/            # init → soft_delete → votes → edited_at → user_profile_fields → saved_post
+│   └── seed.ts                # 10 personas (with handles + spread join dates) + 11 topics + threaded markdown content + pre-edited rows + pre-saved bookmarks
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx         # Plus Jakarta + JetBrains Mono + Header + footer
@@ -203,6 +213,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   │   ├── auth/[...nextauth]/   # NextAuth handler
 │   │   │   └── search/suggestions/   # Live-suggestions route
 │   │   ├── auth/signin/       # Split-screen sign-in + loading skeleton
+│   │   ├── saved/             # /saved — viewer's bookmarks (auth-gated) + loading skeleton
 │   │   ├── search/            # Search page + loading skeleton
 │   │   ├── topics/[slug]/
 │   │   │   ├── page.tsx       # Topic show (per-topic tone hero)
@@ -215,12 +226,13 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── edit-post.ts / edit-comment.ts
 │   │   ├── delete-post.ts / delete-comment.ts
 │   │   ├── toggle-post-vote.ts / toggle-comment-vote.ts
+│   │   ├── toggle-saved-post.ts
 │   │   └── index.ts
 │   ├── components/
 │   │   ├── header.tsx              # Sticky masthead with persimmon hairline
-│   │   ├── headerAuth.tsx          # Avatar dropdown / Sign-in button
+│   │   ├── headerAuth.tsx          # Avatar dropdown / Sign-in button (incl. "Saved posts" entry)
 │   │   ├── search-input.tsx        # Live-suggestions combobox
-│   │   ├── icons.tsx               # Shared SVG icons (incl. IconLink, IconCheck)
+│   │   ├── icons.tsx               # Shared SVG icons (incl. IconBookmark, IconLink, IconCheck)
 │   │   ├── auth/
 │   │   │   └── signin-prompt.tsx   # Modal context for protected actions
 │   │   ├── common/
@@ -237,6 +249,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   │   ├── post-feed.tsx           # Top/New sort + pagination
 │   │   │   ├── post-show.tsx / post-author.tsx
 │   │   │   ├── post-editable.tsx       # Inline edit form + "edited" hint
+│   │   │   ├── save-button.tsx         # Bookmark toggle (optimistic + auth-gated)
 │   │   │   ├── thread-map.tsx / related-posts.tsx
 │   │   │   └── *-loading.tsx, *-skeleton.tsx
 │   │   ├── comments/
@@ -254,9 +267,10 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   ├── db/
 │   │   ├── index.ts                    # Prisma singleton
 │   │   └── queries/
-│   │       ├── posts.ts                # by-id (cached), by-topic, search, recent, related
+│   │       ├── posts.ts                # by-id (cached), by-topic, search, recent, related — viewer-aware votes + saves include
 │   │       ├── comments.ts             # by-post (cached)
 │   │       ├── users.ts                # profile-by-username (cached, indexed lookup)
+│   │       ├── saved-posts.ts          # fetchSavedPosts(userId)
 │   │       └── search-suggestions.ts
 │   ├── lib/
 │   │   ├── utils.ts                    # timeAgo(), stripMarkdown(), topicTone(), slugifyName()
@@ -264,13 +278,13 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── form-classes.ts             # Shared NextUI input/textarea classes
 │   │   ├── use-paginated.ts            # Client pagination hook
 │   │   └── types.ts                    # FormState, ActionResult
-│   ├── auth.ts                         # NextAuth v5 config (GitHub profile.login → User.username + test creds)
-│   └── paths.ts                        # Type-safe URL builder (topicShow, postShow, postCreate, userProfile)
+│   ├── auth.ts                         # NextAuth v5 config (GitHub profile.login → User.username + events.signIn backfill + test creds)
+│   └── paths.ts                        # Type-safe URL builder (topicShow, postShow, postCreate, userProfile, savedPosts)
 ├── tests/
 │   ├── setup.ts                        # jsdom + react-dom form-hook stubs
 │   ├── unit/                           # Pure-function tests (incl. slugifyName)
-│   ├── components/                     # RTL component tests (incl. comment-card, comment-show, author-chip)
-│   ├── integration/                    # Real-PG queries + actions
+│   ├── components/                     # RTL component tests (incl. save-button, comment-card, comment-show, author-chip)
+│   ├── integration/                    # Real-PG queries + actions (incl. actions-saved, queries-saved-posts)
 │   │   ├── setup.ts                    # Schema push + truncate-per-test
 │   │   └── factories.ts                # makeUser/Topic/Post/Comment helpers
 │   └── e2e/
@@ -309,7 +323,7 @@ Set up the database:
 
 ```bash
 npx prisma migrate dev
-npx prisma db seed   # creates 10 personas + topics + posts + comments + votes
+npx prisma db seed   # creates 10 personas + topics + posts + comments + votes + bookmarks
 ```
 
 Run the dev server:
