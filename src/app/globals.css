@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* HeroUI Input/Textarea show a default focus-visible ring that, after fixing
+   the Tailwind purge of @heroui/theme, started layering visibly on top of our
+   custom border-persimmon focus state — producing a double-line outline. The
+   utility-class override in form-classes.ts (!ring-0) does not always win
+   cascade order, so we strip the ring outright on the wrapper, and kill the
+   browser-native focus outline on the inner input element while we're here. */
+[data-slot="input-wrapper"] {
+  box-shadow: none !important;
+}
+[data-slot="input-wrapper"]:focus-within,
+[data-slot="input-wrapper"][data-focus-visible="true"],
+.group[data-focus-visible="true"] [data-slot="input-wrapper"] {
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 transparent !important;
+  --tw-ring-offset-shadow: 0 0 transparent !important;
+}
+[data-slot="input"]:focus,
+[data-slot="input"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 :root {
   --cream: #FAF7F2;
   --cream-2: #F2EDE3;
