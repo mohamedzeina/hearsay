@@ -86,10 +86,10 @@ export const {
     },
   },
   events: {
-    // Backfill username on every GitHub signin so existing users (who pre-date
-    // the column) and any signups the adapter didn't propagate land on their
-    // actual GitHub login rather than a slugified display name. Skips silently
-    // on persona-handle collisions.
+    // One-time username backfill for users whose row pre-dates the column.
+    // Intentionally NOT a sync: we never overwrite a non-null username, so a
+    // later GitHub rename can't silently break external links to the profile.
+    // Skips on persona-handle collisions.
     async signIn({ user, profile }) {
       if (!user.id || !profile) return;
       const login =
@@ -99,7 +99,7 @@ export const {
         where: { id: user.id },
         select: { username: true },
       });
-      if (!existing || existing.username === login) return;
+      if (!existing || existing.username !== null) return;
       const collision = await db.user.findUnique({
         where: { username: login },
         select: { id: true },
