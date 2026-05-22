@@ -330,7 +330,7 @@ async function main() {
 				title:
 					'Home espresso rabbit hole — worth it, or just buy good beans and a V60?',
 				content:
-					"I'm one click away from spending way too much on an espresso setup. My partner thinks I've lost the plot and that a pour-over with great beans is 90% of the experience for 10% of the cost.\n\nThey're probably right. But the *probably* is doing a lot of work in that sentence. Talk me out of it, or into it.",
+					"I'm one click away from spending way too much on an espresso setup. My partner thinks I've lost the plot and that a pour-over with great beans is 90% of the experience for 10% of the cost.\n\n@maya you seem like someone who'd have a strong opinion on this — they're probably right. But the *probably* is doing a lot of work in that sentence. Talk me out of it, or into it.",
 			},
 		}),
 		db.post.create({
@@ -414,7 +414,7 @@ async function main() {
 			parentId: p0c0.id,
 			userId: byHandle.kai.id,
 			content:
-				'Good point on Astro. I used it for a marketing site and the zero-JS-by-default approach was a game changer for Lighthouse scores.',
+				'@maya good point on Astro. I used it for a marketing site and the zero-JS-by-default approach was a game changer for Lighthouse scores.',
 		},
 	});
 	await db.comment.create({
@@ -440,7 +440,7 @@ async function main() {
 			parentId: p0c1.id,
 			userId: byHandle.nadia.id,
 			content:
-				'Same. The mental model is different but once it clicks, going back to the Pages Router feels like a step backwards.',
+				"Same here @theo — the mental model is different but once it clicks, going back to the Pages Router feels like a step backwards.",
 		},
 	});
 
@@ -459,7 +459,7 @@ async function main() {
 			parentId: p1c0.id,
 			userId: byHandle.maya.id,
 			content:
-				'Exactly. And with the VS Code extension showing you the actual CSS on hover, the readability concern basically disappears.',
+				'@lin exactly. And with the VS Code extension showing you the actual CSS on hover, the readability concern basically disappears.',
 		},
 	});
 	await db.comment.create({
