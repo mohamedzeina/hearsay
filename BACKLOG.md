@@ -23,6 +23,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Comment permalinks — "copy link" button on every comment (top-level + nested) with smooth-scroll + flash on load
 - ✅ User profile pages — `/u/[username]` with posts, recent replies, joined-on date, stats; indexed `User.username` (GitHub `login` on signin); clickable usernames across `PostCard` / `CommentCard` / `PostAuthor`
 - ✅ Saved posts — bookmark button on `PostCard`, `/saved` page (newest-save first), header dropdown link, indexed `SavedPost` join table
+- ✅ Better empty states — topics with zero posts show a "start the discussion" CTA card with the embedded post-create button; seed includes an empty topic to demo it
 
 ---
 
@@ -44,10 +45,6 @@ _All Tier 1 items have shipped. See Tier 2 for the next-best pick._
 - **Drafts via localStorage** (S)
   Auto-save the comment/post form contents keyed by route. No server
   work; survives accidental reloads.
-
-- **Better empty states with prompts** (S)
-  A topic with zero posts should show a "start the discussion" CTA with
-  prefilled topic context. Comments already do this; extend to posts.
 
 ## Tier 3 — content quality
 
@@ -130,4 +127,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-21 (after saved-posts ship). Update or trash as priorities shift._
+_Last touched 2026-05-22 (after better-empty-states ship). Update or trash as priorities shift._
