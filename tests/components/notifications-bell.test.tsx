@@ -180,6 +180,32 @@ describe('NotificationsBell', () => {
     expect(screen.queryByText(/older unread/i)).not.toBeInTheDocument();
   });
 
+  it('renders a "See all" footer link to /notifications when there are items', async () => {
+    const user = userEvent.setup();
+    render(
+      <NotificationsBell
+        items={[makeNotification({ id: 'n1' })]}
+        unread={1}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /1 unread/i }));
+
+    const seeAll = screen.getByRole('link', { name: /see all/i });
+    expect(seeAll).toHaveAttribute('href', '/notifications');
+  });
+
+  it('hides the "See all" footer when the dropdown has no items', async () => {
+    const user = userEvent.setup();
+    render(<NotificationsBell items={[]} unread={0} />);
+
+    await user.click(screen.getByRole('button'));
+
+    expect(
+      screen.queryByRole('link', { name: /see all/i })
+    ).not.toBeInTheDocument();
+  });
+
   it('renders an item with the right verb and deep-link to the comment', async () => {
     const user = userEvent.setup();
     const n = makeNotification({

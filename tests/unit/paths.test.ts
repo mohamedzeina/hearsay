@@ -20,4 +20,8 @@ describe('paths', () => {
     // App enforces slug validity upstream; paths should not mangle.
     expect(paths.topicShow('multi-word-slug')).toBe('/topics/multi-word-slug');
   });
+
+  it('builds notifications', () => {
+    expect(paths.notifications()).toBe('/notifications');
+  });
 });
