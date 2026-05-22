@@ -103,16 +103,18 @@ export default async function TopicShowPage({ params }: TopicShowPageProps) {
 
         <aside className="hidden lg:block lg:col-span-4">
           <div className="sticky top-[calc(var(--nav-h)+2rem)] space-y-5">
-            <div className="rounded-2xl border border-rule bg-surface shadow-soft p-5">
-              <h3 className="font-display font-bold text-sm text-ink mb-1">
-                Got something to say?
-              </h3>
-              <p className="text-xs text-ink-2 mb-4 leading-relaxed">
-                Drop a question, hot take, or half-formed thought into{' '}
-                <span className={`font-medium ${tone.text}`}>#{slug}</span>.
-              </p>
-              <PostCreateForm slug={slug} />
-            </div>
+            {postCount > 0 && (
+              <div className="rounded-2xl border border-rule bg-surface shadow-soft p-5">
+                <h3 className="font-display font-bold text-sm text-ink mb-1">
+                  Got something to say?
+                </h3>
+                <p className="text-xs text-ink-2 mb-4 leading-relaxed">
+                  Drop a question, hot take, or half-formed thought into{' '}
+                  <span className={`font-medium ${tone.text}`}>#{slug}</span>.
+                </p>
+                <PostCreateForm slug={slug} />
+              </div>
+            )}
 
             <div className="rounded-2xl bg-cream-2/60 border border-rule px-4 py-3.5">
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-2 mb-1">
