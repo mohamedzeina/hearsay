@@ -136,4 +136,53 @@ describe('Markdown', () => {
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.className).toMatch(/prose-p:my-0/);
   });
+
+  describe('mentions', () => {
+    it('renders @username as an internal profile link', () => {
+      render(<Markdown content="hi @maya welcome" />);
+      const link = screen.getByRole('link', { name: '@maya' });
+      expect(link).toHaveAttribute('href', '/u/maya');
+      // Mention links are internal — no target=_blank.
+      expect(link).not.toHaveAttribute('target');
+    });
+
+    it('renders mention links with mention-specific styling', () => {
+      render(<Markdown content="@kai cool point" />);
+      const link = screen.getByRole('link', { name: '@kai' });
+      // The persimmon-text + semibold class signature distinguishes mentions
+      // from generic external links (which use persimmon-deep + underline).
+      expect(link.className).toMatch(/font-semibold/);
+      expect(link.className).toMatch(/text-persimmon/);
+    });
+
+    it('does not turn email addresses into mention links', () => {
+      render(<Markdown content="email me at foo@bar.com" />);
+      // No mention link should be rendered — no /u/ href anywhere.
+      const links = screen.queryAllByRole('link');
+      expect(links.every((l) => !l.getAttribute('href')?.startsWith('/u/'))).toBe(true);
+    });
+
+    it('does not turn @user inside inline code into a link', () => {
+      const { container } = render(<Markdown content="the `@kai` literal" />);
+      expect(container.querySelector('a[href^="/u/"]')).toBeNull();
+    });
+
+    it('does not turn @user inside a fenced code block into a link', () => {
+      const md = '```\necho @maya\n```';
+      const { container } = render(<Markdown content={md} />);
+      expect(container.querySelector('a[href^="/u/"]')).toBeNull();
+    });
+
+    it('handles multiple mentions in a single message', () => {
+      render(<Markdown content="cc @theo and @nadia for context" />);
+      expect(screen.getByRole('link', { name: '@theo' })).toHaveAttribute(
+        'href',
+        '/u/theo'
+      );
+      expect(screen.getByRole('link', { name: '@nadia' })).toHaveAttribute(
+        'href',
+        '/u/nadia'
+      );
+    });
+  });
 });
