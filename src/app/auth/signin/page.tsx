@@ -1,24 +1,18 @@
 import { signIn } from '@/auth';
-import { db } from '@/db';
+import { fetchSiteStats } from '@/db/queries/stats';
+import { fetchTopTopics } from '@/db/queries/topics';
+import { fetchRecentUsers } from '@/db/queries/users';
 import { topicTone } from '@/lib/utils';
 import { IconChevronRight } from '@/components/icons';
 import Avatar from '@/components/common/avatar';
 import GithubSubmitButton from './github-submit-button';
 
 export default async function SignInPage() {
-  const [userCount, topicCount, postCount, topTopics, recentUsers] =
+  const [{ userCount, topicCount, postCount }, topTopics, recentUsers] =
     await Promise.all([
-      db.user.count(),
-      db.topic.count(),
-      db.post.count(),
-      db.topic.findMany({
-        take: 9,
-        orderBy: { posts: { _count: 'desc' } },
-      }),
-      db.user.findMany({
-        take: 4,
-        select: { id: true, name: true, image: true },
-      }),
+      fetchSiteStats(),
+      fetchTopTopics(9),
+      fetchRecentUsers(4),
     ]);
 
   return (

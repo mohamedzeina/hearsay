@@ -30,6 +30,41 @@ export type UserProfile = {
   commentCount: number;
 };
 
+export type RecentUser = {
+  id: string;
+  name: string | null;
+  image: string | null;
+};
+
+export function fetchRecentUsers(take: number): Promise<RecentUser[]> {
+  return db.user.findMany({
+    take,
+    select: { id: true, name: true, image: true },
+  });
+}
+
+export type UserStats = { postCount: number; commentCount: number };
+
+export const fetchUserStats = cache(
+  async (userId: string): Promise<UserStats> => {
+    const userStats = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        _count: {
+          select: {
+            Post: true,
+            Comment: { where: { deleted: false } },
+          },
+        },
+      },
+    });
+    return {
+      postCount: userStats?._count.Post ?? 0,
+      commentCount: userStats?._count.Comment ?? 0,
+    };
+  }
+);
+
 export const fetchUserProfileByUsername = cache(
   async (username: string): Promise<UserProfile | null> => {
     const viewerId = await getViewerId();

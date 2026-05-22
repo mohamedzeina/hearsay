@@ -1,7 +1,7 @@
 import PostCreateForm from '@/components/posts/post-create-form';
 import PostList from '@/components/posts/post-list';
 import { fetchPostByTopicSlug } from '@/db/queries/posts';
-import { db } from '@/db';
+import { fetchTopicBySlug } from '@/db/queries/topics';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/common/breadcrumb';
 import { topicTone } from '@/lib/utils';
@@ -15,10 +15,7 @@ interface TopicShowPageProps {
 export default async function TopicShowPage({ params }: TopicShowPageProps) {
   const { slug } = await params;
 
-  const topic = await db.topic.findUnique({
-    where: { slug },
-    include: { _count: { select: { posts: true } } },
-  });
+  const topic = await fetchTopicBySlug(slug);
 
   if (!topic) notFound();
 

@@ -1,5 +1,5 @@
 import { fetchPostById } from '@/db/queries/posts';
-import { db } from '@/db';
+import { fetchUserStats } from '@/db/queries/users';
 import SurfacePanel from '@/components/common/surface-panel';
 import Avatar from '@/components/common/avatar';
 import AuthorName from '@/components/common/author-name';
@@ -12,19 +12,8 @@ export default async function PostAuthor({ postId }: PostAuthorProps) {
   const post = await fetchPostById(postId);
   if (!post) return null;
 
-  const userStats = await db.user.findUnique({
-    where: { id: post.userId },
-    select: {
-      _count: {
-        select: {
-          Post: true,
-          Comment: { where: { deleted: false } },
-        },
-      },
-    },
-  });
-  const userPostCount = userStats?._count.Post ?? 0;
-  const userReplyCount = userStats?._count.Comment ?? 0;
+  const { postCount: userPostCount, commentCount: userReplyCount } =
+    await fetchUserStats(post.userId);
 
   return (
     <SurfacePanel as="section" aria-label="About the author">

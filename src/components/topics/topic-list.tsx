@@ -1,13 +1,10 @@
-import { db } from '@/db';
 import Link from 'next/link';
 import paths from '@/paths';
 import { topicTone } from '@/lib/utils';
+import { fetchAllTopicsByActivity } from '@/db/queries/topics';
 
 export default async function TopicList() {
-  const topics = await db.topic.findMany({
-    include: { _count: { select: { posts: true } } },
-    orderBy: { posts: { _count: 'desc' } },
-  });
+  const topics = await fetchAllTopicsByActivity();
 
   if (topics.length === 0) {
     return (

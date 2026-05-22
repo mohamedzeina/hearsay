@@ -1,37 +1,26 @@
 import TopicCreateForm from '@/components/topics/topic-create-form';
 import TopicList from '@/components/topics/topic-list';
 import { fetchRecentPosts } from '@/db/queries/posts';
+import { fetchSiteStats } from '@/db/queries/stats';
 import PostFeed from '@/components/posts/post-feed';
 import SurfacePanel from '@/components/common/surface-panel';
 import { PrimaryLink } from '@/components/common/primary-button';
 import { auth } from '@/auth';
-import { db } from '@/db';
 
 export default async function Home() {
   const session = await auth();
 
-  const [posts, postCount, topicCount, userCount] = await Promise.all([
+  const [posts, stats] = await Promise.all([
     fetchRecentPosts(),
-    db.post.count(),
-    db.topic.count(),
-    db.user.count(),
+    fetchSiteStats(),
   ]);
 
   return (
     <div className="py-8 sm:py-10">
       {!session?.user ? (
-        <SignedOutHero
-          postCount={postCount}
-          topicCount={topicCount}
-          userCount={userCount}
-        />
+        <SignedOutHero {...stats} />
       ) : (
-        <SignedInGreeting
-          name={session.user.name ?? 'friend'}
-          postCount={postCount}
-          topicCount={topicCount}
-          userCount={userCount}
-        />
+        <SignedInGreeting name={session.user.name ?? 'friend'} {...stats} />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-10">
@@ -50,7 +39,7 @@ export default async function Home() {
 
             <SidebarPanel
               title="Browse topics"
-              hint={`${topicCount} active`}
+              hint={`${stats.topicCount} active`}
             >
               <TopicList />
             </SidebarPanel>
