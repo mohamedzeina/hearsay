@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import SearchInput from './search-input';
 import HeaderAuth from './header-auth';
+import Notifications from './notifications/notifications';
 import { Suspense } from 'react';
 
 export default function Header() {
@@ -47,8 +48,11 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Auth — right */}
-            <div className="shrink-0">
+            {/* Notifications + auth — right */}
+            <div className="shrink-0 flex items-center gap-2 sm:gap-3">
+              <Suspense fallback={null}>
+                <Notifications />
+              </Suspense>
               <HeaderAuth />
             </div>
           </div>

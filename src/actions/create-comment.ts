@@ -71,7 +71,7 @@ export async function createComment(
           data: {
             recipientId,
             actorId: authed.user.id,
-            kind: 'REPLY',
+            kind: parentId ? 'REPLY_TO_COMMENT' : 'REPLY_TO_POST',
             postId,
             commentId: comment.id,
           },
