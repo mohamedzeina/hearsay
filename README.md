@@ -90,6 +90,16 @@ A community discussion platform where every voice gets a thread — topics, post
 - **Edit forms are intentionally excluded** — published content shouldn't shadow itself with a ghost draft after a cancelled edit. Cancel discards.
 - Backed by a small `useDraft` hook (`src/lib/use-draft.ts`) that's SSR-safe (initial render always matches server output; rehydration runs in a post-mount effect), debounce-free (writes synchronously per keystroke — small payloads, no perceivable cost), and silently survives a disabled or quota-full `localStorage` (Safari private mode, etc.). Empty strings remove the entry rather than persisting `""`, so cleared drafts don't litter storage.
 
+### Notifications
+- **Header bell with an unread badge** — pinned next to the user menu (only when authed). Persimmon dot count caps at `99+` to keep the chip a single character wide. Click opens a dropdown of the **20 most-recent notifications**, scoped to the viewer.
+- **What triggers a notification:** someone replies to your post (top-level comment), replies to your comment (nested), upvotes your post, or upvotes your comment. The notification is written inside the **same Prisma `$transaction`** as the originating reply / vote, so a write-and-notify never half-succeeds.
+- **Self-actions never notify** — you don't get a bell for replying to or upvoting your own content. Checked at write time in every emission path.
+- **`kind` discriminates the verb** — four values (`REPLY_TO_POST`, `REPLY_TO_COMMENT`, `UPVOTE_POST`, `UPVOTE_COMMENT`) so the dropdown can render "replied to your post" / "replied to your comment" / "upvoted your post" / "upvoted your comment" without a runtime lookup of the parent.
+- **Deep-link to source** — comment-targeted notifications navigate to `/topics/<slug>/posts/<id>#c-<commentId>`, riding the existing comment-anchor smooth-scroll + `:target` flash so you land directly on the thread that triggered it.
+- **Mark-as-read is optimistic** — opening the dropdown clears the badge immediately on the client and fires `markNotificationsRead()` in a `useTransition`. The server `updateMany`s every unread row for the viewer; the next server render produces a 0 count naturally.
+- **Refresh model is per-navigation, not live** — the bell server-renders on every request (header is in the root layout) and the queries are `cache()`-memoized, so it's fresh after any navigation. **No polling, no SSE** — this is the MVP. Polling and a dedicated `/notifications` history page are filed as follow-ups.
+- Backed by a `Notification` model with `(recipientId, createdAt desc)` and `(recipientId, readAt)` indexes for the recent-list and unread-count queries respectively. The model cascades on the post and comment FKs, so deleting a post / comment cleans up its notifications.
+
 ### Voting
 - **Upvote-only** on posts and comments — disagreement goes in replies; no karma scores
 - Optimistic toggle: state flips immediately on click; rolls back if the server rejects
@@ -179,7 +189,8 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **`DeleteButton`** — trash icon → inline persimmon "Are you sure?" pill with Yes/Cancel.
 - **`Markdown`** (`src/components/common/markdown.tsx`) — `react-markdown` + `remark-gfm` + `rehype-highlight` wrapper with `body` and `comment` variants. Strict allowlist; no raw HTML; external links auto-set `target="_blank" rel="noopener noreferrer nofollow"`. Highlight tokens themed in `globals.css` to the cream-and-persimmon palette.
 - **`AuthorChip`** (`src/components/common/author-chip.tsx`) — client primitive that's safe to render inside an outer `<Link>` (renders as `<button>`, intercepts clicks, navigates via `router.push`). Resolves `user.username` → falls back to `slugifyName(user.name)` → renders inert text if both are missing.
-- **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`, `IconLink`, `IconCheck`, `IconBookmark` (accepts a `filled` prop for the saved state).
+- **`NotificationsBell`** (`src/components/notifications/notifications-bell.tsx`) — client primitive rendering the bell, unread badge (caps at `99+`), and dropdown. Reconciles an optimistic local-unread state with server-rendered props via `useEffect`. Server fetch is in a sibling `notifications.tsx` server component that gates on `getViewerId()`.
+- **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`, `IconLink`, `IconCheck`, `IconBookmark` (accepts a `filled` prop for the saved state), `IconBell`.
 - **`topicTone(slug)`** (`src/lib/utils.ts`) — deterministic hash → 1 of 8 muted color triples (bg / text / dot).
 - **Form classNames** (`src/lib/form-classes.ts`) — `inputClassNames`, `inputClassNamesLg`, `textareaClassNamesLg` for consistent HeroUI styling. Focus state is just `border-persimmon` + `bg-surface`; the ring is themed at the HeroUI plugin level so no per-component override is needed.
 - **Form limits** (`src/lib/form-limits.ts`) — `POST_TITLE`, `POST_CONTENT`, `COMMENT_CONTENT`, `TOPIC_DESCRIPTION` `{ min, max }` constants. Imported by both server actions (Zod) and form components (`CharCounter`) so a number change only happens in one place.
@@ -192,9 +203,9 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **Next 15 async dynamic APIs**: every dynamic route (`/topics/[slug]`, `/topics/[slug]/posts/[postId]`, `/u/[username]`, `/search?term=…`) receives `params` / `searchParams` as Promises and `await`s them at the top of the page. The one client-component dynamic route (`/topics/[slug]/posts/new`) unwraps with `React.use(params)`.
 - **Client Components** are scoped to interactivity only: form state, sort toggles (post feed AND comment threads), delete confirmation, search dropdown, modal state, vote toggling, save toggling, comment-card permalink/edit UI.
 - **React 19 form hooks**: form actions use `useActionState` (renamed from `useFormState`); pending button states use `useFormStatus` from `react-dom`. The `SaveButton` uses `useOptimistic` for in-flight bookmark state — the overlay auto-reverts on action failure, so there's no manual rollback branch. The `SavedListContext.removePost` call runs *outside* `startTransition` so React schedules the urgent list mutation in the same frame as the click (a transition-scoped state update would visibly linger for a frame).
-- **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`, `toggleSavedPost`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`. Toggle actions wrap their find/upsert in a Prisma `$transaction`. `toggleSavedPost` calls `revalidatePath('/saved')` so the bookmark page stays in sync after toggles on the feed.
+- **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`, `toggleSavedPost`, `markNotificationsRead`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`. Toggle actions wrap their find/upsert in a Prisma `$transaction`. `toggleSavedPost` calls `revalidatePath('/saved')` so the bookmark page stays in sync after toggles on the feed. `createComment`, `togglePostVote`, and `toggleCommentVote` additionally **emit a `Notification` row inside the same transaction** (skipped for self-actions) so a successful reply / upvote and its notification are atomic.
 - **Suspense boundaries** on the post detail page stream the post, comments, author card, thread map, and related posts in parallel.
-- **Request memoization** via React `cache()` deduplicates `fetchPostById`, `fetchCommentsByPostId`, and `fetchUserProfileByUsername` when multiple components in the same render need them.
+- **Request memoization** via React `cache()` deduplicates `fetchPostById`, `fetchCommentsByPostId`, `fetchUserProfileByUsername`, `fetchRecentNotifications`, and `fetchUnreadNotificationCount` when multiple components in the same render need them.
 - **Soft delete** on comments preserves thread context — comments with replies become `[deleted]`; childless ones disappear entirely.
 - **Vote and save queries are viewer-aware**: every post include uses `votes: { where: { userId: viewerId }, take: 1 }` and `saves: { where: { userId: viewerId }, take: 1 }` so the UI knows the viewer's vote/save state without a round-trip. Unauthenticated viewers pass an empty-string sentinel so the filter never matches.
 - **Auth gating via Context modal**, not redirects: protected client buttons (upvote, save, reply, write a post, create a topic) call `useSignInPrompt().open()` instead of `router.push('/auth/signin')`, keeping the user on their current page. Server-rendered protected pages (`/saved`) still redirect with a `callbackUrl` so post-signin brings the user back.
@@ -205,13 +216,13 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **250 tests** total (+ 5 E2E).
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **271 tests** total (+ 5 E2E).
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
 | Unit | Vitest + jsdom | Pure functions and hooks (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `useDraft` — incl. SSR-safe rehydration, empty-string eviction, and storage-failure tolerance, `paths`) | 50 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown (incl. hljs token classes on fenced blocks), SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), CommentListClient (default-new ordering, top vote-count sort with newest-first tiebreak, old reverse, parent-only scoping, empty-state pill hiding, soft-deleted exclusion from the count), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), CharCounter (min hint, in-range, ≥90% persimmon, over-max), draft restore-from-storage on comment + topic forms (incl. parentId scoping for nested replies), all auth-gated create forms | 122 |
-| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts` with viewer scope + 100-row cap, `fetchUserProfileByUsername`, Zod min/max enforcement on `createTopic` / `createPost` / `createComment`); truncate-per-test isolation; `setViewer()` helper for auth | 78 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown (incl. hljs token classes on fenced blocks), SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), CommentListClient (default-new ordering, top vote-count sort with newest-first tiebreak, old reverse, parent-only scoping, empty-state pill hiding, soft-deleted exclusion from the count), NotificationsBell (badge states + 99+ cap, optimistic mark-read on open, distinct verbs per kind, comment-anchored deep-links vs post-only links), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), CharCounter (min hint, in-range, ≥90% persimmon, over-max), draft restore-from-storage on comment + topic forms (incl. parentId scoping for nested replies), all auth-gated create forms | 131 |
+| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts` with viewer scope + 100-row cap, `fetchUserProfileByUsername`, notification emission across `createComment` / `togglePostVote` / `toggleCommentVote` with self-action skip + REPLY_TO_POST vs REPLY_TO_COMMENT scoping, `markNotificationsRead` viewer-scoping and signed-out no-op, Zod min/max enforcement on `createTopic` / `createPost` / `createComment`); truncate-per-test isolation; `setViewer()` helper for auth | 90 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
 Run everything with `npm run test:everything` — it starts the Docker test PG, runs all Vitest projects, then Playwright. Granular scripts (`test`, `test:integration`, `test:e2e`) exist for fast iteration on a single layer.
@@ -221,8 +232,8 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 ```
 .
 ├── prisma/
-│   ├── schema.prisma          # User, Topic, Post, Comment, PostVote, CommentVote, SavedPost
-│   ├── migrations/            # init → soft_delete → votes → edited_at → user_profile_fields → saved_post
+│   ├── schema.prisma          # User, Topic, Post, Comment, PostVote, CommentVote, SavedPost, Notification
+│   ├── migrations/            # init → soft_delete → votes → edited_at → user_profile_fields → saved_post → notification
 │   └── seed.ts                # 10 personas (with handles + spread join dates) + 12 topics (one intentionally empty to show the topic empty-state CTA) + threaded markdown content + pre-edited rows + pre-saved bookmarks
 ├── src/
 │   ├── app/
@@ -250,12 +261,13 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── delete-post.ts / delete-comment.ts
 │   │   ├── toggle-post-vote.ts / toggle-comment-vote.ts
 │   │   ├── toggle-saved-post.ts
+│   │   ├── mark-notifications-read.ts  # Bulk mark-read on bell open
 │   │   └── index.ts
 │   ├── components/
 │   │   ├── header.tsx              # Sticky masthead with persimmon hairline
 │   │   ├── headerAuth.tsx          # Avatar dropdown / Sign-in button (incl. "Saved posts" entry)
 │   │   ├── search-input.tsx        # Live-suggestions combobox
-│   │   ├── icons.tsx               # Shared SVG icons (incl. IconBookmark, IconLink, IconCheck)
+│   │   ├── icons.tsx               # Shared SVG icons (incl. IconBookmark, IconLink, IconCheck, IconBell)
 │   │   ├── auth/
 │   │   │   └── signin-prompt.tsx   # Modal context for protected actions
 │   │   ├── common/
@@ -290,6 +302,9 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── topics/
 │   │   │   ├── topic-list.tsx
 │   │   │   └── topic-create-form.tsx
+│   │   ├── notifications/
+│   │   │   ├── notifications.tsx       # Server fetch + viewer gate
+│   │   │   └── notifications-bell.tsx  # Client bell + dropdown + optimistic mark-read
 │   │   └── votes/
 │   │       └── vote-button.tsx         # Optimistic toggle + modal gate
 │   ├── db/
@@ -299,6 +314,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │       ├── comments.ts             # by-post (cached)
 │   │       ├── users.ts                # profile-by-username (cached, indexed lookup)
 │   │       ├── saved-posts.ts          # fetchSavedPosts(userId) — SAVED_POSTS_LIMIT = 100
+│   │       ├── notifications.ts        # recent (cap 20) + unread count, both cached
 │   │       └── search-suggestions.ts
 │   ├── lib/
 │   │   ├── utils.ts                    # timeAgo(), stripMarkdown(), topicTone(), slugifyName()
