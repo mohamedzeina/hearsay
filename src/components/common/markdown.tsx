@@ -25,27 +25,21 @@ const components: Components = {
       rel="noopener noreferrer nofollow"
     />
   ),
-  code: ({ node, className, children, ...props }) => {
-    const inline = !className?.includes('language-');
-    if (inline) {
-      return (
-        <code
-          className="font-mono text-[0.875em] px-1 py-0.5 rounded bg-cream-2 text-ink border border-rule"
-          {...props}
-        >
-          {children}
-        </code>
-      );
-    }
-    return (
-      <code className={`${className ?? ''} font-mono text-[0.875em]`} {...props}>
-        {children}
-      </code>
-    );
-  },
+  // Code is styled uniformly as an inline pill. When it lives inside <pre> the
+  // pre's descendant overrides strip the pill so the block reads as a block.
+  // Avoids guessing inline-vs-block from className, which silently mis-styled
+  // unlanguaged fenced blocks (no `language-*` class) as inline.
+  code: ({ node, className, children, ...props }) => (
+    <code
+      className={`${className ?? ''} font-mono text-[0.875em] px-1 py-0.5 rounded bg-cream-2 text-ink border border-rule`.trim()}
+      {...props}
+    >
+      {children}
+    </code>
+  ),
   pre: ({ node, ...props }) => (
     <pre
-      className="my-3 p-3 rounded-xl bg-cream-2 border border-rule overflow-x-auto text-ink"
+      className="my-3 p-3 rounded-xl bg-cream-2 border border-rule overflow-x-auto text-ink [&_code]:bg-transparent [&_code]:border-0 [&_code]:p-0 [&_code]:rounded-none"
       {...props}
     />
   ),

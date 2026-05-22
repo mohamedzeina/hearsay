@@ -36,6 +36,26 @@ describe('Markdown', () => {
     expect(container.querySelector('pre code')).toHaveTextContent('const x = 1;');
   });
 
+  it('does not give unlanguaged fenced blocks the inline-pill background', () => {
+    // Regression: when the code element had no `language-*` class we used to
+    // mark it as inline and render it with bg-cream-2 + border + rounded,
+    // which looks like an inline chip floating inside the <pre> block.
+    const md = '```\nconst x = 1;\n```';
+    const { container } = render(<Markdown content={md} />);
+    const pre = container.querySelector('pre');
+    expect(pre?.className).toMatch(/bg-cream-2/);
+    // The pre must strip the inline pill styling from any nested <code>.
+    expect(pre?.className).toMatch(/\[&_code\]:bg-transparent/);
+  });
+
+  it('renders fenced blocks with a language hint', () => {
+    const md = '```js\nconst x = 1;\n```';
+    const { container } = render(<Markdown content={md} />);
+    const code = container.querySelector('pre code');
+    expect(code).not.toBeNull();
+    expect(code?.className).toMatch(/language-js/);
+  });
+
   it('renders blockquotes', () => {
     const { container } = render(<Markdown content="> a quoted line" />);
     expect(container.querySelector('blockquote')).toHaveTextContent(
