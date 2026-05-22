@@ -27,6 +27,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Syntax highlighting on code blocks — `rehype-highlight` wired into the Markdown wrapper, custom cream-and-persimmon hljs theme for keywords/strings/comments/numbers
 - ✅ Word / char counters on forms — every textarea gets a live `min N to post` / `current / max` counter; shared `form-limits.ts` keeps Zod schemas and UI in lockstep, counter flips persimmon-deep within the last 10% of the cap
 - ✅ Drafts via localStorage — every create-form textarea (post, top-level comment, nested reply, topic modal) auto-saves to `hearsay:draft:*` keys, rehydrates on remount, and clears on successful submit; new `useDraft` hook is SSR-safe and tolerates disabled storage
+- ✅ Comment sort options — Top / New / Old pill at the head of every comment thread (matches the post-feed sort pattern); top-level branches reorder client-side, nested replies keep their chronological subtree order; default is New
 
 ---
 
@@ -46,10 +47,6 @@ _All Tier 1 items have shipped. See Tier 2 for the next-best pick._
   markdown render and scan server-side on save.
 
 ## Tier 3 — content quality
-
-- **Comment sort options** (S)
-  Currently implicit newest-first. Add top / old / new toggles; reuse
-  the post-feed sort pill pattern. Top would use the new vote counts.
 
 - **Topic following + a "Following" tab on the home feed** (M)
   Follow a topic → its new posts surface in a `Following` view on home
@@ -116,4 +113,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-22 (after localStorage drafts ship). Update or trash as priorities shift._
+_Last touched 2026-05-22 (after comment sort options ship). Update or trash as priorities shift._
