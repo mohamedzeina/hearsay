@@ -73,10 +73,11 @@ A community discussion platform where every voice gets a thread — topics, post
 - **Per-comment permalink**: every comment — top-level or nested — wraps in an `id="c-{id}"` anchor with the `comment-anchor` class. A "Link" button (with `IconLink` / `IconCheck` swap) on every card copies `<post-url>#c-{id}` via `navigator.clipboard.writeText`, flips to "Copied" for 1.5s, and swallows clipboard failures silently. Loading the URL with that hash smooth-scrolls to the comment and triggers the existing 1.8s persimmon `:target` flash. `html { scroll-behavior: smooth }` is set globally with a `prefers-reduced-motion` opt-out.
 
 ### Markdown rendering
-- Post bodies and comments render through `react-markdown` + `remark-gfm`
+- Post bodies and comments render through `react-markdown` + `remark-gfm` + `rehype-highlight`
 - Restricted allowlist: **bold, italic, links, ordered/unordered lists, inline + fenced code, blockquotes, tables**; raw HTML and images are dropped
 - External links auto-set `target="_blank" rel="noopener noreferrer nofollow"`
 - Code blocks use the cream-2 / mono stack; inline code gets a softer pill
+- **Syntax highlighting** on fenced code blocks via `rehype-highlight` (highlight.js). Language is taken from the fence tag (` ```js `, ` ```json `, ` ```bash `), with `detect: true` falling back to auto-detection for unlanguaged blocks. Themed in `globals.css` with `.hljs-*` token classes mapped to the brand palette — keywords/tags/titles in persimmon-deep, strings/built-ins/types in teal, numbers/literals in persimmon, comments in ink-3 italic, params/variables in ink-2. Inline code keeps the pill style untouched (selectors are scoped to `.hljs`).
 - Two prose variants: `body` (generous leading, used on post show) and `comment` (tighter, zero-margin paragraphs)
 - Post card previews use `stripMarkdown()` so the line-clamped excerpt doesn't show raw syntax
 
@@ -128,7 +129,7 @@ A community discussion platform where every voice gets a thread — topics, post
 | Fonts | Plus Jakarta Sans + JetBrains Mono (`next/font/google`) |
 | Validation | Zod 3.22 |
 | Motion | Framer Motion 11 |
-| Markdown | react-markdown 10 + remark-gfm 4 (restricted allowlist) |
+| Markdown | react-markdown 10 + remark-gfm 4 + rehype-highlight 7 (restricted allowlist, hljs-themed code blocks) |
 | Testing | Vitest 3.2 + React Testing Library + Playwright 1.60 |
 
 ## Design System
@@ -166,7 +167,7 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **`FormButton`** — ink pill with built-in `useFormStatus()` spinner and "Working…" state.
 - **`FormError`** — accessible `role="alert"` error banner.
 - **`DeleteButton`** — trash icon → inline persimmon "Are you sure?" pill with Yes/Cancel.
-- **`Markdown`** (`src/components/common/markdown.tsx`) — `react-markdown` + `remark-gfm` wrapper with `body` and `comment` variants. Strict allowlist; no raw HTML; external links auto-set `target="_blank" rel="noopener noreferrer nofollow"`.
+- **`Markdown`** (`src/components/common/markdown.tsx`) — `react-markdown` + `remark-gfm` + `rehype-highlight` wrapper with `body` and `comment` variants. Strict allowlist; no raw HTML; external links auto-set `target="_blank" rel="noopener noreferrer nofollow"`. Highlight tokens themed in `globals.css` to the cream-and-persimmon palette.
 - **`AuthorChip`** (`src/components/common/author-chip.tsx`) — client primitive that's safe to render inside an outer `<Link>` (renders as `<button>`, intercepts clicks, navigates via `router.push`). Resolves `user.username` → falls back to `slugifyName(user.name)` → renders inert text if both are missing.
 - **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`, `IconLink`, `IconCheck`, `IconBookmark` (accepts a `filled` prop for the saved state).
 - **`topicTone(slug)`** (`src/lib/utils.ts`) — deterministic hash → 1 of 8 muted color triples (bg / text / dot).
@@ -192,12 +193,12 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **218 tests** total (+ 5 E2E).
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **221 tests** total (+ 5 E2E).
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
 | Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `paths`) | 41 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), all auth-gated create forms | 90 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown (incl. hljs token classes on fenced blocks), SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), all auth-gated create forms | 93 |
 | Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts` with viewer scope + 100-row cap, `fetchUserProfileByUsername`); truncate-per-test isolation; `setViewer()` helper for auth | 75 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
