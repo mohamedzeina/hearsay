@@ -28,6 +28,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Word / char counters on forms — every textarea gets a live `min N to post` / `current / max` counter; shared `form-limits.ts` keeps Zod schemas and UI in lockstep, counter flips persimmon-deep within the last 10% of the cap
 - ✅ Drafts via localStorage — every create-form textarea (post, top-level comment, nested reply, topic modal) auto-saves to `hearsay:draft:*` keys, rehydrates on remount, and clears on successful submit; new `useDraft` hook is SSR-safe and tolerates disabled storage
 - ✅ Comment sort options — Top / New / Old pill at the head of every comment thread (matches the post-feed sort pattern); top-level branches reorder client-side, nested replies keep their chronological subtree order; default is New
+- ✅ In-app notifications (MVP) — `Notification` model + header bell with unread badge + dropdown of the 20 most-recent items; reply / upvote actions emit notifications inside the existing write transactions (self-actions skipped); mark-as-read fires optimistically on dropdown open. No live updates yet (refreshes on navigation); no dedicated `/notifications` history page yet; no mention-triggered notifications yet
 
 ---
 
@@ -37,14 +38,18 @@ _All Tier 1 items have shipped. See Tier 2 for the next-best pick._
 
 ## Tier 2 — engagement & retention
 
-- **In-app notifications** (L)
-  When someone replies to a post or comment you authored, or upvotes
-  your content. A `Notification` model, dropdown in the header,
-  mark-as-read. No email yet — keep it self-contained.
+- **Notifications — live + history page** (S→M)
+  Follow-ups to the in-app notifications MVP that just shipped:
+  - **Light polling** every ~60s on the bell so new items appear without
+    a full navigation (S).
+  - **Dedicated `/notifications` page** with full history + pagination,
+    reusing `usePaginated` (S).
+  - **Filtering** (replies vs. upvotes) on that page (S).
 
 - **Mentions** (M)
-  `@username` autolinks to profile and sends a notification. Detect in
-  markdown render and scan server-side on save.
+  `@username` autolinks to profile and writes a notification (now that
+  the notification system exists). Detect in markdown render and scan
+  server-side on save.
 
 ## Tier 3 — content quality
 
@@ -113,4 +118,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-22 (after comment sort options ship). Update or trash as priorities shift._
+_Last touched 2026-05-22 (after in-app notifications MVP ship). Update or trash as priorities shift._
