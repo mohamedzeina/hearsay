@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CommentCard from '@/components/comments/comment-card';
+import { deleteComment } from '@/actions';
 
 vi.mock('next-auth/react', () => ({
   useSession: () => ({ status: 'authenticated' }),
@@ -153,5 +154,183 @@ describe('CommentCard copy-link button', () => {
 
     expect(writeTextSpy).toHaveBeenCalled();
     expect(screen.queryByText('Copied')).not.toBeInTheDocument();
+  });
+});
+
+describe('CommentCard lifecycle', () => {
+  it('renders a gravestone when comment.deleted is true and there are replies', () => {
+    render(
+      <CommentCard
+        comment={{ ...baseComment, deleted: true }}
+        isOwner={false}
+        hasReplies={true}
+      >
+        <div data-testid="thread-child">reply</div>
+      </CommentCard>
+    );
+    expect(screen.getByText(/comment deleted/i)).toBeInTheDocument();
+    expect(screen.getByTestId('thread-child')).toBeInTheDocument();
+    // No author or vote controls should leak through.
+    expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /upvote/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('soft-deletes (gravestone) when the owner deletes a comment with replies', async () => {
+    vi.mocked(deleteComment).mockResolvedValue({ ok: true });
+    const user = userEvent.setup();
+
+    render(
+      <CommentCard comment={baseComment} isOwner={true} hasReplies={true}>
+        <div data-testid="thread-child">reply</div>
+      </CommentCard>
+    );
+
+    await user.click(screen.getByRole('button', { name: /delete/i }));
+    await user.click(screen.getByRole('button', { name: /^yes$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/comment deleted/i)).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('thread-child')).toBeInTheDocument();
+    expect(screen.queryByText('hello world')).not.toBeInTheDocument();
+  });
+
+  it('hides the card entirely when the owner deletes a leaf comment (no replies)', async () => {
+    vi.mocked(deleteComment).mockResolvedValue({ ok: true });
+    const user = userEvent.setup();
+
+    const { container } = render(
+      <CommentCard comment={baseComment} isOwner={true} hasReplies={false} />
+    );
+
+    await user.click(screen.getByRole('button', { name: /delete/i }));
+    await user.click(screen.getByRole('button', { name: /^yes$/i }));
+
+    await waitFor(() => {
+      expect(container).toBeEmptyDOMElement();
+    });
+  });
+});
+
+describe('CommentCard edit toggle', () => {
+  it('shows the edit form when Edit is clicked and hides actions/content', async () => {
+    const user = userEvent.setup();
+    render(
+      <CommentCard comment={baseComment} isOwner={true} hasReplies={false} />
+    );
+
+    expect(screen.getByText('hello world')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    expect(
+      screen.getByRole('button', { name: /^save$/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^cancel$/i })
+    ).toBeInTheDocument();
+    // Live-view-only controls (copy link, vote, reply) should disappear.
+    expect(
+      screen.queryByRole('button', { name: /copy link to this comment/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /upvote/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('restores the live view when Cancel is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <CommentCard comment={baseComment} isOwner={true} hasReplies={false} />
+    );
+
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+    expect(screen.getByText('hello world')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+  });
+});
+
+describe('CommentCard collapse rail', () => {
+  it('hides children and shows "+ show replies" when the rail is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <CommentCard
+        comment={baseComment}
+        isOwner={false}
+        hasReplies={true}
+      >
+        <div data-testid="thread-child">reply</div>
+      </CommentCard>
+    );
+
+    expect(screen.getByTestId('thread-child')).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', { name: /collapse replies/i })
+    );
+
+    expect(screen.queryByTestId('thread-child')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /show replies/i })
+    ).toBeInTheDocument();
+  });
+
+  it('re-expands children when "+ show replies" is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <CommentCard
+        comment={baseComment}
+        isOwner={false}
+        hasReplies={true}
+      >
+        <div data-testid="thread-child">reply</div>
+      </CommentCard>
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: /collapse replies/i })
+    );
+    await user.click(screen.getByRole('button', { name: /show replies/i }));
+
+    expect(screen.getByTestId('thread-child')).toBeInTheDocument();
+  });
+
+  it('does not render the collapse rail when there are no children', () => {
+    render(
+      <CommentCard
+        comment={baseComment}
+        isOwner={false}
+        hasReplies={false}
+      />
+    );
+    expect(
+      screen.queryByRole('button', { name: /collapse replies/i })
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe('CommentCard edited indicator', () => {
+  it('shows "edited X ago" when editedAt is present', () => {
+    render(
+      <CommentCard
+        comment={{ ...baseComment, editedAt: new Date('2026-05-20T13:00:00Z') }}
+        isOwner={false}
+        hasReplies={false}
+      />
+    );
+    expect(screen.getByText(/^edited /i)).toBeInTheDocument();
+  });
+
+  it('does not show the edited indicator when editedAt is null', () => {
+    render(
+      <CommentCard
+        comment={baseComment}
+        isOwner={false}
+        hasReplies={false}
+      />
+    );
+    expect(screen.queryByText(/^edited /i)).not.toBeInTheDocument();
   });
 });
