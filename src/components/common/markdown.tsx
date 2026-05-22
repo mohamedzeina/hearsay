@@ -28,7 +28,7 @@ const components: Components = {
       return (
         <Link
           href={href}
-          className="font-semibold text-persimmon hover:text-persimmon-deep hover:underline decoration-persimmon/50 underline-offset-2 transition-colors duration-150 motion-reduce:transition-none"
+          className="font-semibold no-underline text-persimmon hover:text-persimmon-deep hover:underline decoration-persimmon/50 underline-offset-2 transition-colors duration-150 motion-reduce:transition-none"
         >
           {children}
         </Link>
