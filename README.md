@@ -43,6 +43,7 @@ A community discussion platform where every voice gets a thread — topics, post
 - Full-text search across title and content
 - Owner-only delete with two-stage inline confirm (no browser dialogs)
 - **Owner-only inline edit**: a small pencil button appears next to the title; clicking swaps the title and body for a validated form ("Tidy up · not rewrite"). Saves stamp `editedAt`; a muted "edited Xm ago" pip appears in the meta row.
+- **Live char counters under every textarea** — `min N to post` while the field is too short, `1,234 / 10,000` once you're past the minimum, flipping to persimmon-deep within the last 10% of the cap. Limits live in `src/lib/form-limits.ts` (10k post / 5k comment / 280 description) and both the Zod schemas and the UI import from there, so the two never drift.
 - Empty state cards with persimmon-soft icon halo
 
 ### Saved posts
@@ -166,12 +167,14 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **`SignInPromptProvider`** (`src/components/auth/signin-prompt.tsx`) — Context-based modal trigger. Any client component calls `useSignInPrompt().open(reason)` to surface the auth modal without losing the user's place.
 - **`FormButton`** — ink pill with built-in `useFormStatus()` spinner and "Working…" state.
 - **`FormError`** — accessible `role="alert"` error banner.
+- **`CharCounter`** (`src/components/common/char-counter.tsx`) — live `current / max` counter for write forms. Three states (below-min hint, in-range muted, ≥90% persimmon-deep). `aria-live="polite"` so screen readers announce updates without interrupting.
 - **`DeleteButton`** — trash icon → inline persimmon "Are you sure?" pill with Yes/Cancel.
 - **`Markdown`** (`src/components/common/markdown.tsx`) — `react-markdown` + `remark-gfm` + `rehype-highlight` wrapper with `body` and `comment` variants. Strict allowlist; no raw HTML; external links auto-set `target="_blank" rel="noopener noreferrer nofollow"`. Highlight tokens themed in `globals.css` to the cream-and-persimmon palette.
 - **`AuthorChip`** (`src/components/common/author-chip.tsx`) — client primitive that's safe to render inside an outer `<Link>` (renders as `<button>`, intercepts clicks, navigates via `router.push`). Resolves `user.username` → falls back to `slugifyName(user.name)` → renders inert text if both are missing.
 - **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`, `IconLink`, `IconCheck`, `IconBookmark` (accepts a `filled` prop for the saved state).
 - **`topicTone(slug)`** (`src/lib/utils.ts`) — deterministic hash → 1 of 8 muted color triples (bg / text / dot).
 - **Form classNames** (`src/lib/form-classes.ts`) — `inputClassNames`, `inputClassNamesLg`, `textareaClassNamesLg` for consistent HeroUI styling. Focus state is just `border-persimmon` + `bg-surface`; the ring is themed at the HeroUI plugin level so no per-component override is needed.
+- **Form limits** (`src/lib/form-limits.ts`) — `POST_TITLE`, `POST_CONTENT`, `COMMENT_CONTENT`, `TOPIC_DESCRIPTION` `{ min, max }` constants. Imported by both server actions (Zod) and form components (`CharCounter`) so a number change only happens in one place.
 - **`usePaginated`** (`src/lib/use-paginated.ts`) — shared client pagination hook returning `{ page, setPage, totalPages, paginated }`.
 
 ## Architecture
@@ -193,13 +196,13 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **221 tests** total (+ 5 E2E).
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **230 tests** total (+ 5 E2E).
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
 | Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `paths`) | 41 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown (incl. hljs token classes on fenced blocks), SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), all auth-gated create forms | 93 |
-| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts` with viewer scope + 100-row cap, `fetchUserProfileByUsername`); truncate-per-test isolation; `setViewer()` helper for auth | 75 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown (incl. hljs token classes on fenced blocks), SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), CharCounter (min hint, in-range, ≥90% persimmon, over-max), all auth-gated create forms | 99 |
+| Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts` with viewer scope + 100-row cap, `fetchUserProfileByUsername`, Zod min/max enforcement on `createTopic` / `createPost` / `createComment`); truncate-per-test isolation; `setViewer()` helper for auth | 78 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
 Run everything with `npm run test:everything` — it starts the Docker test PG, runs all Vitest projects, then Playwright. Granular scripts (`test`, `test:integration`, `test:e2e`) exist for fast iteration on a single layer.
