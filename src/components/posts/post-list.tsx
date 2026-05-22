@@ -5,18 +5,16 @@ import PostEmpty from './post-empty';
 interface PostListProps {
   fetchData: () => Promise<PostWithData[]>;
   hideTopic?: boolean;
-  emptyMessage?: string;
 }
 
 export default async function PostList({
   fetchData,
   hideTopic,
-  emptyMessage,
 }: PostListProps) {
   const posts = await fetchData();
 
   if (posts.length === 0) {
-    return <PostEmpty message={emptyMessage} />;
+    return <PostEmpty />;
   }
 
   return (

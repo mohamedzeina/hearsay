@@ -1,5 +1,6 @@
 import PostCreateForm from '@/components/posts/post-create-form';
 import PostList from '@/components/posts/post-list';
+import TopicPostsEmpty from '@/components/posts/topic-posts-empty';
 import { fetchPostByTopicSlug } from '@/db/queries/posts';
 import { fetchTopicBySlug } from '@/db/queries/topics';
 import { notFound } from 'next/navigation';
@@ -69,30 +70,35 @@ export default async function TopicShowPage({ params }: TopicShowPageProps) {
         </div>
       </header>
 
-      <div className="lg:hidden mt-6">
-        <PostCreateForm slug={slug} />
-      </div>
+      {postCount > 0 && (
+        <div className="lg:hidden mt-6">
+          <PostCreateForm slug={slug} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
         <div className="lg:col-span-8">
-          <div className="flex items-end justify-between mb-5">
-            <div>
-              <h2 className="font-display font-bold text-2xl sm:text-[1.7rem] text-ink leading-tight tracking-tight">
-                Posts in <span className="lowercase">{slug}</span>
-              </h2>
-              <p className="mt-0.5 text-sm text-ink-2">
-                {postCount === 0
-                  ? 'No posts yet — kick it off.'
-                  : `${postCount} ${postCount === 1 ? 'post' : 'posts'} in this room`}
-              </p>
-            </div>
-          </div>
+          {postCount === 0 ? (
+            <TopicPostsEmpty slug={slug} />
+          ) : (
+            <>
+              <div className="flex items-end justify-between mb-5">
+                <div>
+                  <h2 className="font-display font-bold text-2xl sm:text-[1.7rem] text-ink leading-tight tracking-tight">
+                    Posts in <span className="lowercase">{slug}</span>
+                  </h2>
+                  <p className="mt-0.5 text-sm text-ink-2">
+                    {`${postCount} ${postCount === 1 ? 'post' : 'posts'} in this room`}
+                  </p>
+                </div>
+              </div>
 
-          <PostList
-            fetchData={() => fetchPostByTopicSlug(slug)}
-            hideTopic
-            emptyMessage={`No posts in #${slug} yet — be the first to start one.`}
-          />
+              <PostList
+                fetchData={() => fetchPostByTopicSlug(slug)}
+                hideTopic
+              />
+            </>
+          )}
         </div>
 
         <aside className="hidden lg:block lg:col-span-4">
