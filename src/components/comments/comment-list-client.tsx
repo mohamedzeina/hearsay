@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import CommentShow from '@/components/comments/comment-show';
 import type { CommentWithAuthor } from '@/db/queries/comments';
 import { IconReply } from '@/components/icons';
@@ -53,6 +53,35 @@ export default function CommentListClient({
 
   const activeCount = comments.filter((c) => !c.deleted).length;
   const hasReplies = sortedTopLevel.length > 0;
+
+  // The post page wraps <CommentList> in Suspense, so comments stream in
+  // AFTER the browser has already tried (and failed) to do its native
+  // hash-anchor scroll on initial paint. Re-fire the scroll here once
+  // comments are actually in the DOM. The URL hash is left intact, so the
+  // `:target`-flash CSS still triggers for visual confirmation.
+  //
+  // - rAF defers one frame so layout (incl. the `scroll-mt-24` offset) is
+  //   resolved before we measure the target position.
+  // - 'instant' (not 'smooth') because a smooth scroll can be cancelled by
+  //   any concurrent scroll event Next.js fires on route entry.
+  // - The hashchange listener covers the edge case of clicking a different
+  //   #c-id notification while already on the same post (no remount).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const scrollToHash = () => {
+      const hash = window.location.hash;
+      if (!hash || !hash.startsWith('#c-')) return;
+      requestAnimationFrame(() => {
+        const el = document.getElementById(hash.slice(1));
+        if (el) {
+          el.scrollIntoView({ behavior: 'instant', block: 'start' });
+        }
+      });
+    };
+    scrollToHash();
+    window.addEventListener('hashchange', scrollToHash);
+    return () => window.removeEventListener('hashchange', scrollToHash);
+  }, [comments]);
 
   return (
     <section aria-label="Comments">
