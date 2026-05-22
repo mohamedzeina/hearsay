@@ -98,7 +98,7 @@ export default function CommentCard({
           ) : (
             <>
               <Markdown content={comment.content} variant="comment" />
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
                 <VoteButton
                   kind="comment"
                   id={comment.id}

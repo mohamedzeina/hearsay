@@ -130,7 +130,7 @@ export default function CommentCreateForm({
   }
 
   return (
-    <div>
+    <div className={open ? 'basis-full w-full' : ''}>
       {!open && (
         <button
           type="button"
@@ -147,7 +147,7 @@ export default function CommentCreateForm({
           Reply
         </button>
       )}
-      {open && <div className="mt-3">{form}</div>}
+      {open && <div className="mt-1">{form}</div>}
     </div>
   );
 }
