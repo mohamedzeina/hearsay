@@ -1,7 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CommentCreateForm from '@/components/comments/comment-create-form';
+
+const DRAFT_PREFIX = 'hearsay:draft:';
 
 const useSessionMock = vi.fn();
 const signInPromptOpenMock = vi.fn();
@@ -27,6 +29,7 @@ describe('CommentCreateForm', () => {
     useSessionMock.mockReset();
     signInPromptOpenMock.mockReset();
     createCommentMock.mockReset();
+    window.localStorage.clear();
   });
 
   describe('top-level (startOpen=true)', () => {
@@ -104,6 +107,59 @@ describe('CommentCreateForm', () => {
 
       await user.click(screen.getByRole('button', { name: /^cancel$/i }));
       expect(screen.queryByPlaceholderText(/write a reply/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('draft persistence', () => {
+    it('restores a saved top-level comment draft on mount', async () => {
+      useSessionMock.mockReturnValue({ status: 'authenticated' });
+      window.localStorage.setItem(
+        DRAFT_PREFIX + 'comment:p1',
+        'half-written thought'
+      );
+
+      render(<CommentCreateForm postId="p1" startOpen />);
+
+      const textarea = await screen.findByPlaceholderText(
+        /share your thoughts/i
+      );
+      await waitFor(() =>
+        expect(textarea).toHaveValue('half-written thought')
+      );
+    });
+
+    it('persists typed top-level comment text to localStorage', async () => {
+      useSessionMock.mockReturnValue({ status: 'authenticated' });
+      const user = userEvent.setup();
+      render(<CommentCreateForm postId="p1" startOpen />);
+
+      const textarea = screen.getByPlaceholderText(/share your thoughts/i);
+      await user.type(textarea, 'in progress');
+
+      await waitFor(() =>
+        expect(window.localStorage.getItem(DRAFT_PREFIX + 'comment:p1')).toBe(
+          'in progress'
+        )
+      );
+    });
+
+    it('scopes drafts by parentId for nested replies', async () => {
+      useSessionMock.mockReturnValue({ status: 'authenticated' });
+      window.localStorage.setItem(
+        DRAFT_PREFIX + 'reply:c1',
+        'reply draft'
+      );
+      window.localStorage.setItem(
+        DRAFT_PREFIX + 'comment:p1',
+        'top-level draft'
+      );
+
+      const user = userEvent.setup();
+      render(<CommentCreateForm postId="p1" parentId="c1" />);
+      await user.click(screen.getByRole('button', { name: /^reply$/i }));
+
+      const textarea = await screen.findByPlaceholderText(/write a reply/i);
+      await waitFor(() => expect(textarea).toHaveValue('reply draft'));
     });
   });
 });

@@ -1,7 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TopicCreateForm from '@/components/topics/topic-create-form';
+
+const DRAFT_PREFIX = 'hearsay:draft:';
 
 const useSessionMock = vi.fn();
 const signInPromptOpenMock = vi.fn();
@@ -28,6 +30,7 @@ describe('TopicCreateForm trigger', () => {
     useSessionMock.mockReset();
     signInPromptOpenMock.mockReset();
     createTopicMock.mockReset();
+    window.localStorage.clear();
   });
 
   it('renders "Create a topic" button', () => {
@@ -70,5 +73,25 @@ describe('TopicCreateForm trigger', () => {
     await user.click(screen.getByRole('button', { name: /create a topic/i }));
 
     expect(signInPromptOpenMock).toHaveBeenCalled();
+  });
+
+  it('restores saved name + description drafts when the modal opens', async () => {
+    useSessionMock.mockReturnValue({ status: 'authenticated' });
+    window.localStorage.setItem(DRAFT_PREFIX + 'topic:name', 'cooking-tips');
+    window.localStorage.setItem(
+      DRAFT_PREFIX + 'topic:description',
+      'A place for kitchen wisdom.'
+    );
+
+    const user = userEvent.setup();
+    render(<TopicCreateForm />);
+    await user.click(screen.getByRole('button', { name: /create a topic/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^slug$/i)).toHaveValue('cooking-tips');
+      expect(screen.getByLabelText(/^description$/i)).toHaveValue(
+        'A place for kitchen wisdom.'
+      );
+    });
   });
 });
