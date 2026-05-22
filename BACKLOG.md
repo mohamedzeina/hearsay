@@ -25,6 +25,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Saved posts — bookmark button on `PostCard`, `/saved` page (newest-save first), header dropdown link, indexed `SavedPost` join table
 - ✅ Better empty states — topics with zero posts show a "start the discussion" CTA card with the embedded post-create button; seed includes an empty topic to demo it
 - ✅ Syntax highlighting on code blocks — `rehype-highlight` wired into the Markdown wrapper, custom cream-and-persimmon hljs theme for keywords/strings/comments/numbers
+- ✅ Word / char counters on forms — every textarea gets a live `min N to post` / `current / max` counter; shared `form-limits.ts` keeps Zod schemas and UI in lockstep, counter flips persimmon-deep within the last 10% of the cap
 
 ---
 
@@ -52,10 +53,6 @@ _All Tier 1 items have shipped. See Tier 2 for the next-best pick._
 - **Comment sort options** (S)
   Currently implicit newest-first. Add top / old / new toggles; reuse
   the post-feed sort pill pattern. Top would use the new vote counts.
-
-- **Word / char counters on forms** (S)
-  Live counter against the Zod min/max under each textarea. Reduces
-  "post failed" surprises.
 
 - **Topic following + a "Following" tab on the home feed** (M)
   Follow a topic → its new posts surface in a `Following` view on home
@@ -122,4 +119,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-22 (after syntax-highlighting ship). Update or trash as priorities shift._
+_Last touched 2026-05-22 (after char-counter ship). Update or trash as priorities shift._
