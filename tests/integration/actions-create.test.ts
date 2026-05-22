@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createComment, createPost, createTopic } from '@/actions';
 import { INITIAL_ACTION_STATE } from '@/lib/types';
+import {
+  COMMENT_CONTENT,
+  POST_CONTENT,
+  TOPIC_DESCRIPTION,
+} from '@/lib/form-limits';
 import { buildFormData, makePost, makeTopic, makeUser } from './factories';
 import { setViewer, testDb } from './setup';
 
@@ -36,6 +41,22 @@ describe('createTopic', () => {
     const result = await createTopic(
       INITIAL_ACTION_STATE,
       buildFormData({ name: 'cooking', description: 'short' })
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.description).toBeDefined();
+    }
+  });
+
+  it('returns field errors when description exceeds the max', async () => {
+    const user = await makeUser();
+    setViewer({ id: user.id });
+    const result = await createTopic(
+      INITIAL_ACTION_STATE,
+      buildFormData({
+        name: 'cooking',
+        description: 'x'.repeat(TOPIC_DESCRIPTION.max + 1),
+      })
     );
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -119,6 +140,25 @@ describe('createPost', () => {
     }
   });
 
+  it('returns field errors when content exceeds the max', async () => {
+    const user = await makeUser();
+    const topic = await makeTopic({ slug: 'cooking' });
+    setViewer({ id: user.id });
+
+    const result = await createPost(
+      topic.slug,
+      INITIAL_ACTION_STATE,
+      buildFormData({
+        title: 'A long-form attempt',
+        content: 'x'.repeat(POST_CONTENT.max + 1),
+      })
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.content).toBeDefined();
+    }
+  });
+
   it('returns form error when topic does not exist', async () => {
     const user = await makeUser();
     setViewer({ id: user.id });
@@ -193,6 +233,23 @@ describe('createComment', () => {
       { postId: post.id },
       INITIAL_ACTION_STATE,
       buildFormData({ content: 'x' })
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.formErrors?.content).toBeDefined();
+    }
+  });
+
+  it('returns field errors when content exceeds the max', async () => {
+    const user = await makeUser();
+    const topic = await makeTopic();
+    const post = await makePost({ userId: user.id, topicId: topic.id });
+    setViewer({ id: user.id });
+
+    const result = await createComment(
+      { postId: post.id },
+      INITIAL_ACTION_STATE,
+      buildFormData({ content: 'x'.repeat(COMMENT_CONTENT.max + 1) })
     );
     expect(result.ok).toBe(false);
     if (!result.ok) {
