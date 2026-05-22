@@ -4,10 +4,12 @@ import userEvent from '@testing-library/user-event';
 import NotificationsBell from '@/components/notifications/notifications-bell';
 import type { NotificationItem } from '@/db/queries/notifications';
 
-const markReadMock = vi.fn();
+const markOneMock = vi.fn();
+const markAllMock = vi.fn();
 
 vi.mock('@/actions', () => ({
-  markNotificationsRead: (...args: unknown[]) => markReadMock(...args),
+  markNotificationRead: (...args: unknown[]) => markOneMock(...args),
+  markAllNotificationsRead: (...args: unknown[]) => markAllMock(...args),
 }));
 
 function makeNotification(
@@ -39,13 +41,13 @@ function makeNotification(
 
 describe('NotificationsBell', () => {
   beforeEach(() => {
-    markReadMock.mockReset();
+    markOneMock.mockReset();
+    markAllMock.mockReset();
   });
 
-  it('shows the unread count badge when there are unread notifications', () => {
+  it('shows the unread count badge', () => {
     render(<NotificationsBell items={[]} unread={3} />);
-    const btn = screen.getByRole('button');
-    expect(btn).toHaveAccessibleName(/3 unread/i);
+    expect(screen.getByRole('button')).toHaveAccessibleName(/3 unread/i);
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
@@ -59,10 +61,86 @@ describe('NotificationsBell', () => {
       <NotificationsBell items={[]} unread={0} />
     );
     expect(screen.getByRole('button')).toHaveAccessibleName('Notifications');
-    expect(container.querySelector('.bg-persimmon')).not.toBeInTheDocument();
+    expect(container.querySelector('span.bg-persimmon')).not.toBeInTheDocument();
   });
 
-  it('opens the dropdown on click and shows the empty state when no items', async () => {
+  it('does NOT auto-mark items as read on dropdown open', async () => {
+    const user = userEvent.setup();
+    render(
+      <NotificationsBell
+        items={[makeNotification({ id: 'n1' })]}
+        unread={1}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /1 unread/i }));
+
+    expect(markOneMock).not.toHaveBeenCalled();
+    expect(markAllMock).not.toHaveBeenCalled();
+    // Badge stays at 1 — we never auto-cleared.
+    expect(screen.getByText('1')).toBeInTheDocument();
+  });
+
+  it('marks just the clicked item read and decrements the badge', async () => {
+    const user = userEvent.setup();
+    render(
+      <NotificationsBell
+        items={[
+          makeNotification({ id: 'n1' }),
+          makeNotification({ id: 'n2' }),
+        ]}
+        unread={2}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /2 unread/i }));
+    const [firstRow] = screen.getAllByRole('menuitem');
+    await user.click(firstRow);
+
+    await waitFor(() => expect(markOneMock).toHaveBeenCalledWith('n1'));
+    // Badge dropped by 1, not all.
+    expect(markAllMock).not.toHaveBeenCalled();
+  });
+
+  it('clears all unread when the "Mark all read" pill is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <NotificationsBell
+        items={[
+          makeNotification({ id: 'n1' }),
+          makeNotification({ id: 'n2' }),
+        ]}
+        unread={2}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /2 unread/i }));
+    await user.click(screen.getByRole('button', { name: /mark all read/i }));
+
+    await waitFor(() => expect(markAllMock).toHaveBeenCalledTimes(1));
+    // Badge clears; the per-row pill disappears since there are no visible unread.
+    expect(screen.queryByText('2')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /mark all read/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('hides the "Mark all read" pill when nothing in the dropdown is unread', async () => {
+    const user = userEvent.setup();
+    const read = makeNotification({
+      id: 'n1',
+      readAt: new Date('2026-05-21T12:00:00Z'),
+    });
+    render(<NotificationsBell items={[read]} unread={0} />);
+
+    await user.click(screen.getByRole('button'));
+    expect(
+      screen.queryByRole('button', { name: /mark all read/i })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/no new/i)).toBeInTheDocument();
+  });
+
+  it('opens the dropdown empty-state when there are no items', async () => {
     const user = userEvent.setup();
     render(<NotificationsBell items={[]} unread={0} />);
 
@@ -72,7 +150,23 @@ describe('NotificationsBell', () => {
     expect(screen.getByText(/all caught up/i)).toBeInTheDocument();
   });
 
-  it('clears the badge optimistically and calls markNotificationsRead on open', async () => {
+  it('shows the "older unread" footer when unread exceeds visible items', async () => {
+    const user = userEvent.setup();
+    render(
+      <NotificationsBell
+        items={[makeNotification({ id: 'n1' })]}
+        unread={31}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /31 unread/i }));
+
+    expect(
+      screen.getByText(/30 older unread/i)
+    ).toBeInTheDocument();
+  });
+
+  it('does NOT show the older-unread footer when the visible list covers everything', async () => {
     const user = userEvent.setup();
     render(
       <NotificationsBell
@@ -81,23 +175,9 @@ describe('NotificationsBell', () => {
       />
     );
 
-    expect(screen.getByText('1')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /1 unread/i }));
 
-    await waitFor(() => expect(markReadMock).toHaveBeenCalledTimes(1));
-    expect(screen.queryByText('1')).not.toBeInTheDocument();
-  });
-
-  it('does not call markNotificationsRead when unread is already 0', async () => {
-    const user = userEvent.setup();
-    const read = makeNotification({
-      id: 'n1',
-      readAt: new Date('2026-05-21T12:00:00Z'),
-    });
-    render(<NotificationsBell items={[read]} unread={0} />);
-
-    await user.click(screen.getByRole('button'));
-    expect(markReadMock).not.toHaveBeenCalled();
+    expect(screen.queryByText(/older unread/i)).not.toBeInTheDocument();
   });
 
   it('renders an item with the right verb and deep-link to the comment', async () => {

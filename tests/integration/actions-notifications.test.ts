@@ -3,7 +3,8 @@ import {
   createComment,
   togglePostVote,
   toggleCommentVote,
-  markNotificationsRead,
+  markNotificationRead,
+  markAllNotificationsRead,
 } from '@/actions';
 import {
   buildFormData,
@@ -199,7 +200,89 @@ describe('notifications — toggleCommentVote', () => {
   });
 });
 
-describe('notifications — markNotificationsRead', () => {
+describe('notifications — markNotificationRead (per-item)', () => {
+  it('marks just the specified notification as read', async () => {
+    const me = await makeUser();
+    const actor = await makeUser();
+    const topic = await makeTopic();
+    const post = await makePost({ userId: me.id, topicId: topic.id });
+
+    const [a, b] = await Promise.all([
+      testDb.notification.create({
+        data: {
+          recipientId: me.id,
+          actorId: actor.id,
+          kind: 'UPVOTE_POST',
+          postId: post.id,
+        },
+      }),
+      testDb.notification.create({
+        data: {
+          recipientId: me.id,
+          actorId: actor.id,
+          kind: 'REPLY_TO_POST',
+          postId: post.id,
+        },
+      }),
+    ]);
+
+    setViewer({ id: me.id, name: me.name, email: me.email });
+    await markNotificationRead(a.id);
+
+    const a2 = await testDb.notification.findUnique({ where: { id: a.id } });
+    const b2 = await testDb.notification.findUnique({ where: { id: b.id } });
+    expect(a2?.readAt).not.toBeNull();
+    expect(b2?.readAt).toBeNull();
+  });
+
+  it("refuses to mark another user's notification", async () => {
+    const me = await makeUser();
+    const otherUser = await makeUser();
+    const actor = await makeUser();
+    const topic = await makeTopic();
+    const post = await makePost({ userId: otherUser.id, topicId: topic.id });
+
+    const theirs = await testDb.notification.create({
+      data: {
+        recipientId: otherUser.id,
+        actorId: actor.id,
+        kind: 'UPVOTE_POST',
+        postId: post.id,
+      },
+    });
+
+    setViewer({ id: me.id, name: me.name, email: me.email });
+    await markNotificationRead(theirs.id);
+
+    const after = await testDb.notification.findUnique({
+      where: { id: theirs.id },
+    });
+    expect(after?.readAt).toBeNull();
+  });
+
+  it('is a no-op when not signed in', async () => {
+    const me = await makeUser();
+    const actor = await makeUser();
+    const topic = await makeTopic();
+    const post = await makePost({ userId: me.id, topicId: topic.id });
+    const n = await testDb.notification.create({
+      data: {
+        recipientId: me.id,
+        actorId: actor.id,
+        kind: 'UPVOTE_POST',
+        postId: post.id,
+      },
+    });
+
+    setViewer(null);
+    await markNotificationRead(n.id);
+
+    const after = await testDb.notification.findUnique({ where: { id: n.id } });
+    expect(after?.readAt).toBeNull();
+  });
+});
+
+describe('notifications — markAllNotificationsRead (bulk)', () => {
   it('marks every unread notification for the viewer as read', async () => {
     const me = await makeUser();
     const actor = await makeUser();
@@ -232,7 +315,7 @@ describe('notifications — markNotificationsRead', () => {
     });
 
     setViewer({ id: me.id, name: me.name, email: me.email });
-    await markNotificationsRead();
+    await markAllNotificationsRead();
 
     const unread = await testDb.notification.count({
       where: { recipientId: me.id, readAt: null },
@@ -271,7 +354,7 @@ describe('notifications — markNotificationsRead', () => {
     });
 
     setViewer({ id: me.id, name: me.name, email: me.email });
-    await markNotificationsRead();
+    await markAllNotificationsRead();
 
     const otherUnread = await testDb.notification.count({
       where: { recipientId: otherUser.id, readAt: null },
@@ -295,7 +378,7 @@ describe('notifications — markNotificationsRead', () => {
     });
 
     setViewer(null);
-    await markNotificationsRead();
+    await markAllNotificationsRead();
 
     const unread = await testDb.notification.count({ where: { readAt: null } });
     expect(unread).toBe(1);

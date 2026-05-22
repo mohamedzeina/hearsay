@@ -8,6 +8,9 @@ export { editPost } from './edit-post';
 export { togglePostVote } from './toggle-post-vote';
 export { toggleCommentVote } from './toggle-comment-vote';
 export { toggleSavedPost } from './toggle-saved-post';
-export { markNotificationsRead } from './mark-notifications-read';
+export {
+  markNotificationRead,
+  markAllNotificationsRead,
+} from './mark-notifications-read';
 export type { VoteResult } from './toggle-post-vote';
 export type { SaveResult } from './toggle-saved-post';

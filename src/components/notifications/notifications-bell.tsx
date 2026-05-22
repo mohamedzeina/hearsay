@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
-import { markNotificationsRead } from '@/actions';
+import {
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '@/actions';
 import { IconBell } from '@/components/icons';
 import Avatar from '@/components/common/avatar';
 import paths from '@/paths';
@@ -14,14 +17,21 @@ interface NotificationsBellProps {
   unread: number;
 }
 
-export default function NotificationsBell({ items, unread }: NotificationsBellProps) {
+export default function NotificationsBell({
+  items,
+  unread,
+}: NotificationsBellProps) {
   const [open, setOpen] = useState(false);
+  const [localItems, setLocalItems] = useState(items);
   const [localUnread, setLocalUnread] = useState(unread);
   const [, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement | null>(null);
 
-  // Re-sync optimistic count when the server-derived prop changes (e.g.
-  // after navigation triggers a fresh server render).
+  // Re-sync the optimistic view when fresh server-rendered props arrive
+  // (after navigation, the bell re-renders from the latest query).
+  useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
   useEffect(() => {
     setLocalUnread(unread);
   }, [unread]);
@@ -36,24 +46,40 @@ export default function NotificationsBell({ items, unread }: NotificationsBellPr
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleToggle = () => {
-    const next = !open;
-    if (next && localUnread > 0) {
-      // Optimistic: clear the badge as the dropdown opens. The next nav
-      // will read the now-stamped readAt and naturally show 0.
-      setLocalUnread(0);
-      startTransition(() => {
-        markNotificationsRead();
-      });
-    }
-    setOpen(next);
+  const visibleUnreadCount = localItems.filter((n) => !n.readAt).length;
+
+  const handleItemClick = (id: string) => {
+    // Locally clear this row's unread state and decrement the badge
+    // before firing the server action — the click is also navigating
+    // away, so the optimistic update is what the user sees in the
+    // back-button case.
+    const now = new Date();
+    setLocalItems((prev) =>
+      prev.map((n) => (n.id === id && !n.readAt ? { ...n, readAt: now } : n))
+    );
+    setLocalUnread((u) => Math.max(0, u - 1));
+    startTransition(() => {
+      markNotificationRead(id);
+    });
+    setOpen(false);
+  };
+
+  const handleMarkAllRead = () => {
+    const now = new Date();
+    setLocalItems((prev) =>
+      prev.map((n) => (n.readAt ? n : { ...n, readAt: now }))
+    );
+    setLocalUnread(0);
+    startTransition(() => {
+      markAllNotificationsRead();
+    });
   };
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={handleToggle}
+        onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={
@@ -79,18 +105,26 @@ export default function NotificationsBell({ items, unread }: NotificationsBellPr
           className="absolute right-0 top-full mt-2 w-[22rem] max-h-[28rem] overflow-y-auto bg-surface border border-rule rounded-2xl shadow-lift-lg z-50 rise"
           role="menu"
         >
-          <header className="px-4 py-3 border-b border-rule bg-cream-2/40 flex items-baseline justify-between">
+          <header className="px-4 py-3 border-b border-rule bg-cream-2/40 flex items-center justify-between gap-3">
             <p className="font-display font-bold text-sm text-ink">
               Notifications
             </p>
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-2">
-              {items.length === 0
-                ? 'all caught up'
-                : `${items.length} recent`}
-            </p>
+            {visibleUnreadCount > 0 ? (
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-2 hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
+              >
+                Mark all read
+              </button>
+            ) : (
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
+                {localItems.length === 0 ? 'all caught up' : 'no new'}
+              </p>
+            )}
           </header>
 
-          {items.length === 0 ? (
+          {localItems.length === 0 ? (
             <div className="px-4 py-10 text-center">
               <p className="text-xs text-ink-2">No notifications yet.</p>
               <p className="mt-1 text-[11px] text-ink-3">
@@ -99,14 +133,26 @@ export default function NotificationsBell({ items, unread }: NotificationsBellPr
             </div>
           ) : (
             <ul>
-              {items.map((n) => (
+              {localItems.map((n) => (
                 <NotificationRow
                   key={n.id}
                   n={n}
-                  onClick={() => setOpen(false)}
+                  onClick={() => handleItemClick(n.id)}
                 />
               ))}
             </ul>
+          )}
+
+          {localUnread > visibleUnreadCount && (
+            <footer className="px-4 py-2.5 border-t border-rule bg-cream-2/30">
+              <p className="text-[11px] text-ink-3 leading-snug">
+                {localUnread - visibleUnreadCount} older unread —{' '}
+                <span className="italic">
+                  visible once the full history page ships
+                </span>
+                .
+              </p>
+            </footer>
           )}
         </div>
       )}
