@@ -9,9 +9,11 @@ import {
   IconChevronDown,
   IconSignOut,
   IconSpinner,
+  IconUser,
 } from '@/components/icons';
 import Avatar from '@/components/common/avatar';
 import { PrimaryButton } from '@/components/common/primary-button';
+import { resolveAuthorSlug } from '@/lib/utils';
 import paths from '@/paths';
 
 export default function HeaderAuth() {
@@ -37,6 +39,7 @@ export default function HeaderAuth() {
 
   if (session.data?.user) {
     const user = session.data.user;
+    const profileSlug = resolveAuthorSlug(user);
     return (
       <div ref={ref} className="relative">
         <button
@@ -64,6 +67,20 @@ export default function HeaderAuth() {
               <p className="font-semibold text-sm text-ink truncate">{user.name}</p>
               <p className="text-xs text-ink-2 truncate font-mono">{user.email}</p>
             </div>
+            {profileSlug && (
+              <Link
+                href={paths.userProfile(profileSlug)}
+                onClick={() => setOpen(false)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-ink hover:bg-persimmon-soft hover:text-persimmon-deep transition-colors duration-150 motion-reduce:transition-none border-b border-rule"
+                role="menuitem"
+              >
+                <span className="flex items-center gap-2">
+                  <IconUser className="w-4 h-4" />
+                  Your profile
+                </span>
+                <span aria-hidden className="text-ink-3">&rarr;</span>
+              </Link>
+            )}
             <Link
               href={paths.savedPosts()}
               onClick={() => setOpen(false)}

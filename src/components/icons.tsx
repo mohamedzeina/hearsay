@@ -48,6 +48,16 @@ export function IconPlus({ strokeWidth = 2, ...props }: IconProps) {
   );
 }
 
+/** Person silhouette. Used for the "Your profile" link in the user dropdown. */
+export function IconUser({ strokeWidth = 2, ...props }: IconProps) {
+  return (
+    <svg {...outlineBase} strokeWidth={strokeWidth} {...props}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a8 8 0 0 1 16 0v1" />
+    </svg>
+  );
+}
+
 /** Sign-out icon: a door with an outgoing arrow. */
 export function IconSignOut({ strokeWidth = 2, ...props }: IconProps) {
   return (

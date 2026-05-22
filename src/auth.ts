@@ -8,6 +8,7 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
+      username?: string | null;
     } & DefaultSession['user'];
   }
   interface User {
@@ -79,8 +80,12 @@ export const {
     // strategy it passes `user`. Read whichever is present.
     session({ session, user, token }) {
       if (session.user) {
-        if (user) session.user.id = user.id;
-        else if (token?.sub) session.user.id = token.sub;
+        if (user) {
+          session.user.id = user.id;
+          session.user.username = user.username ?? null;
+        } else if (token?.sub) {
+          session.user.id = token.sub;
+        }
       }
       return session;
     },

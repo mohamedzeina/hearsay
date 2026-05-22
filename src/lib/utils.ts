@@ -69,7 +69,7 @@ export function slugifyName(name: string): string {
  * Returns null when there's nothing to link to.
  */
 export function resolveAuthorSlug(user: {
-  name: string | null;
+  name?: string | null;
   username?: string | null;
 }): string | null {
   return user.username ?? (user.name ? slugifyName(user.name) : null);
