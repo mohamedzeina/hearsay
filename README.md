@@ -31,10 +31,11 @@ A community discussion platform where every voice gets a thread — topics, post
 - Create topics via a centered modal (Cancel + Create-topic footer bar, autofocus, slug-pattern validation `^[a-z-]+$`)
 - Topic chips colored deterministically via `topicTone(slug)` — a hash of the slug maps to one of 8 muted palettes (terracotta, sage, plum, teal, mustard, periwinkle, rust, dusty rose). The same topic always renders in the same color across the entire app.
 - Topic show page hero is washed in the topic's own tone with a soft radial bloom
+- **Empty-state CTA** — when a topic has zero posts, the main column swaps the post list for a dashed `TopicPostsEmpty` card: persimmon-soft icon halo with `IconReply`, "Start the discussion in #[slug]" headline, a friendly nudge ("Drop the first one — a question, a hot take, or a half-formed thought."), and an embedded `PostCreateForm` button so the first post is one click away. The mobile-only top form is hidden in this state so the CTA reads as the single focal point.
 - Sidebar list sorted by post count with hover-lift chips
 
 ### Posts
-- Create posts inside a topic with title + content (large-variant Tailwind/NextUI inputs)
+- Create posts inside a topic with title + content (large-variant HeroUI inputs)
 - Per-topic-tone color band across the top of the post card
 - Big serif headline, author avatar with ring, mono timestamp, hairline divider, generous-leading body
 - Top/New sort tabs as a pill segmented control (star + clock icons); Top sorts by upvote count
@@ -46,10 +47,11 @@ A community discussion platform where every voice gets a thread — topics, post
 
 ### Saved posts
 - **Bookmark button** in the top-right corner of every `PostCard` (`absolute top-3 right-3`). `IconBookmark` toggles between outline (unsaved) and filled persimmon (saved); `aria-pressed`/`aria-label` swap between "Save post" and "Unsave post".
+- **Bookmark also on the post detail page** — same `SaveButton` (size `md`) sits at the right end of the post's action row, opposite the upvote count.
 - **Optimistic toggle via React 19's `useOptimistic`** — the in-flight icon state layers on top of the server-confirmed state and auto-reverts on failure, no manual rollback bookkeeping. Click bubbling is suppressed so the bookmark never triggers the card's outer `<Link>`.
 - **Auth-gated** via the standard sign-in modal — signed-out users see "Sign in to save posts." instead of being redirected away.
-- **`/saved` page** (auth-required; unauthenticated users redirect to signin with a `callbackUrl=/saved`) lists every bookmarked post newest-save-first, reusing `PostCard`. Paginates 5 at a time via the shared `usePaginated` hook; the underlying query caps at the 100 most-recent saves so the round-trip stays bounded. Empty state shows a centered `IconBookmark` halo with "Nothing saved yet" + "Tap the bookmark on any post and it'll land here, in the order you saved them." and a "Browse posts →" CTA.
-- **Unsaving on `/saved` drops the card immediately.** A small `SavedListContext` lets `SaveButton` tell the page-level list to remove the post on toggle-off, so the view doesn't lie about which bookmarks still exist. The toggle action also `revalidatePath('/saved')` to bust the Next.js Router Cache when you unsave somewhere else.
+- **`/saved` page** (auth-required; unauthenticated users redirect to signin with a `callbackUrl=/saved`) lists every bookmarked post newest-save-first, reusing `PostCard`. Paginates 5 at a time via the shared `usePaginated` hook; the underlying query caps at the 100 most-recent saves (`SAVED_POSTS_LIMIT`) so the round-trip stays bounded. Empty state shows a centered `IconBookmark` halo with "Nothing saved yet" + "Tap the bookmark on any post and it'll land here, in the order you saved them." and a "Browse posts →" CTA.
+- **Unsaving on `/saved` drops the card immediately.** A small `SavedListContext` lets `SaveButton` tell the page-level list to remove the post on toggle-off; the list mutation runs *outside* `startTransition` so React treats it as urgent and the card disappears in the same frame. The toggle action also `revalidatePath('/saved')` to bust the Next.js Router Cache when you unsave somewhere else.
 - **Header dropdown link**: the user-menu dropdown gains a "Saved posts" entry above sign-out so the page is reachable from anywhere.
 - Backed by a `SavedPost` join table with `@@unique([userId, postId])` (prevents double-saves at the DB level) and `@@index([userId])` (cheap `/saved` listing). Toggle action wraps find/delete-or-create in a Prisma `$transaction`.
 - Each post query also surfaces a viewer-aware `saves: { id: string }[]` (same pattern as `votes`), so the bookmark renders in the correct state on first paint without a follow-up roundtrip.
@@ -108,7 +110,7 @@ A community discussion platform where every voice gets a thread — topics, post
 ### UX & Motion
 - Streaming UI via Suspense — post card, comment list, and sidebar panels load independently
 - Custom 404 page with hand-drawn underline
-- Route-level loading skeletons for `/`, `/saved`, `/search`, `/auth/signin`, `/topics/[slug]`, `/topics/[slug]/posts/[postId]`, and `/u/[username]`
+- Route-level loading skeletons for `/`, `/saved`, `/search`, `/auth/signin`, `/topics/[slug]`, `/topics/[slug]/posts/[postId]`, and `/u/[username]` (all declare `'use client'` so HeroUI's `Skeleton` works under Turbopack)
 - Subtle animations: `.rise` (fade + slide-up), `.dot-live` (persimmon glow pulse), `.ink-link` (hover underline reveal), `:target` flash on anchor arrival, bouncy logo period on hover, rotating `+` glyph on the topic-create trigger
 - Global smooth scroll for hash-jumps (used by the thread map and comment permalinks); disabled under `prefers-reduced-motion`
 - All animations honor `prefers-reduced-motion`
@@ -117,12 +119,12 @@ A community discussion platform where every voice gets a thread — topics, post
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 15.5 (App Router) |
+| Framework | Next.js 15.1 (App Router, Turbopack dev) |
 | Runtime | React 19 |
 | Language | TypeScript 5 (strict) |
 | Database | PostgreSQL (Neon) via Prisma 5.11 |
 | Auth | NextAuth v5 (beta 25) + GitHub OAuth + Prisma adapter |
-| UI | HeroUI 2.7 + Tailwind CSS 3.4 |
+| UI | HeroUI 2.7+ + Tailwind CSS 3.4 |
 | Fonts | Plus Jakarta Sans + JetBrains Mono (`next/font/google`) |
 | Validation | Zod 3.22 |
 | Motion | Framer Motion 11 |
@@ -147,9 +149,11 @@ A self-built "warm community modern" design system — ivory paper background, i
 | `persimmon-soft` / `persimmon-deep` | `#FBE8E3` / `#C2402B` | Soft fill / strong hover |
 | `teal` / `teal-soft` | `#0F6E64` / `#DDEFEC` | Secondary accent |
 
-Three semantic shadows: `shadow-soft` (1px lift), `shadow-lift` (4-12px), `shadow-lift-lg` (modals).
+Three semantic shadows: `shadow-soft` (1px lift), `shadow-lift` (4-12px), `shadow-lift-lg` (modals). Plus `shadow-inset-rule` for hairline insets.
 
 CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the header height has a single source of truth that sidebars can offset from with `top-[calc(var(--nav-h)+2rem)]`).
+
+**HeroUI focus ring is themed to persimmon** via `heroui({ themes: { light: { colors: { focus: '#E5533D' } } } })` in `tailwind.config.ts`. The on-focus border-persimmon (mouse) and the on-focus-visible ring (keyboard) share a colour and read as one designed indicator — instead of HeroUI's default blue layered on top.
 
 ### Primitives
 
@@ -157,7 +161,7 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **`SurfacePanel`** (`src/components/common/surface-panel.tsx`) — polymorphic card with `as` (section/article/aside) and `size` (md = `rounded-2xl` sidebars, lg = `rounded-3xl` content). Single source of truth for bordered surfaces.
 - **`PostCard`** (`src/components/posts/post-card.tsx`) — shared by feed, topic list, search, profile, and `/saved`; reveals a persimmon left rail on hover and hosts the top-right bookmark.
 - **`VoteButton`** (`src/components/votes/vote-button.tsx`) — optimistic upvote toggle with auth-gate via signin modal.
-- **`SaveButton`** (`src/components/posts/save-button.tsx`) — optimistic bookmark toggle with the same auth-gate. Safe to nest inside `<Link>`-wrapped cards (intercepts clicks).
+- **`SaveButton`** (`src/components/posts/save-button.tsx`) — optimistic bookmark toggle with the same auth-gate. Safe to nest inside `<Link>`-wrapped cards (intercepts clicks). Rendered on every card AND on the post detail page action row.
 - **`SignInPromptProvider`** (`src/components/auth/signin-prompt.tsx`) — Context-based modal trigger. Any client component calls `useSignInPrompt().open(reason)` to surface the auth modal without losing the user's place.
 - **`FormButton`** — ink pill with built-in `useFormStatus()` spinner and "Working…" state.
 - **`FormError`** — accessible `role="alert"` error banner.
@@ -166,7 +170,7 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **`AuthorChip`** (`src/components/common/author-chip.tsx`) — client primitive that's safe to render inside an outer `<Link>` (renders as `<button>`, intercepts clicks, navigates via `router.push`). Resolves `user.username` → falls back to `slugifyName(user.name)` → renders inert text if both are missing.
 - **Icons** (`src/components/icons.tsx`) — shared `IconReply`, `IconSearch`, `IconChevronDown`, `IconChevronRight`, `IconPencil`, `IconPlus`, `IconSignOut`, `IconSpinner`, `IconLink`, `IconCheck`, `IconBookmark` (accepts a `filled` prop for the saved state).
 - **`topicTone(slug)`** (`src/lib/utils.ts`) — deterministic hash → 1 of 8 muted color triples (bg / text / dot).
-- **Form classNames** (`src/lib/form-classes.ts`) — `inputClassNames`, `inputClassNamesLg`, `textareaClassNamesLg` for consistent NextUI styling.
+- **Form classNames** (`src/lib/form-classes.ts`) — `inputClassNames`, `inputClassNamesLg`, `textareaClassNamesLg` for consistent HeroUI styling. Focus state is just `border-persimmon` + `bg-surface`; the ring is themed at the HeroUI plugin level so no per-component override is needed.
 - **`usePaginated`** (`src/lib/use-paginated.ts`) — shared client pagination hook returning `{ page, setPage, totalPages, paginated }`.
 
 ## Architecture
@@ -174,24 +178,26 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **Server Components** handle all data fetching — posts, comments, topics, suggestions, saved-posts listing, and auth resolve on the server before streaming.
 - **Next 15 async dynamic APIs**: every dynamic route (`/topics/[slug]`, `/topics/[slug]/posts/[postId]`, `/u/[username]`, `/search?term=…`) receives `params` / `searchParams` as Promises and `await`s them at the top of the page. The one client-component dynamic route (`/topics/[slug]/posts/new`) unwraps with `React.use(params)`.
 - **Client Components** are scoped to interactivity only: form state, sort toggles, delete confirmation, search dropdown, modal state, vote toggling, save toggling, comment-card permalink/edit UI.
-- **React 19 form hooks**: form actions use `useActionState` (renamed from `useFormState`); pending button states use `useFormStatus` from `react-dom`. The `SaveButton` uses `useOptimistic` for in-flight bookmark state — the overlay auto-reverts on action failure, so there's no manual rollback branch.
+- **React 19 form hooks**: form actions use `useActionState` (renamed from `useFormState`); pending button states use `useFormStatus` from `react-dom`. The `SaveButton` uses `useOptimistic` for in-flight bookmark state — the overlay auto-reverts on action failure, so there's no manual rollback branch. The `SavedListContext.removePost` call runs *outside* `startTransition` so React schedules the urgent list mutation in the same frame as the click (a transition-scoped state update would visibly linger for a frame).
 - **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`, `toggleSavedPost`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`. Toggle actions wrap their find/upsert in a Prisma `$transaction`. `toggleSavedPost` calls `revalidatePath('/saved')` so the bookmark page stays in sync after toggles on the feed.
 - **Suspense boundaries** on the post detail page stream the post, comments, author card, thread map, and related posts in parallel.
-- **Request memoization** via React `cache()` deduplicates `fetchPostById` and `fetchCommentsByPostId` when multiple components in the same render need them.
+- **Request memoization** via React `cache()` deduplicates `fetchPostById`, `fetchCommentsByPostId`, and `fetchUserProfileByUsername` when multiple components in the same render need them.
 - **Soft delete** on comments preserves thread context — comments with replies become `[deleted]`; childless ones disappear entirely.
 - **Vote and save queries are viewer-aware**: every post include uses `votes: { where: { userId: viewerId }, take: 1 }` and `saves: { where: { userId: viewerId }, take: 1 }` so the UI knows the viewer's vote/save state without a round-trip. Unauthenticated viewers pass an empty-string sentinel so the filter never matches.
 - **Auth gating via Context modal**, not redirects: protected client buttons (upvote, save, reply, write a post, create a topic) call `useSignInPrompt().open()` instead of `router.push('/auth/signin')`, keeping the user on their current page. Server-rendered protected pages (`/saved`) still redirect with a `callbackUrl` so post-signin brings the user back.
 - **Comment anchors are unified**: `CommentShow` wraps every recursive comment in `<div id="c-{id}" className="scroll-mt-24 comment-anchor">`, so both the sidebar thread map and the per-comment copy-link button hit the same `:target`-flash code path regardless of nesting depth.
 - **Username resolution is single-pass and indexed**: `User.username` is unique-indexed so profile lookups go through `findUnique` (O(1)) rather than scanning slugified names. The GitHub OAuth `profile()` callback in `src/auth.ts` is augmented (via `declare module 'next-auth'`) so the Prisma adapter forwards `profile.login` straight into the column on first signin. An `events.signIn` hook backfills legacy rows once — but only when `username` is currently `null`, so a later GitHub rename can't silently steal an existing profile URL.
+- **Turbopack in dev**: the `dev` script runs `next dev --turbopack`. Turbopack emits standard JS (no `eval()`-wrapped bundles), so CSP-strict browsers like Brave can't block client handlers. As a consequence, every `loading.tsx` that imports HeroUI's `Skeleton` declares `'use client'` — Turbopack is stricter than webpack about server/client boundary for components that use React Context.
+- **Tailwind content paths cover npm's nested HeroUI layout**: `tailwind.config.ts` scans both `./node_modules/@heroui/theme/dist/**/*` and `./node_modules/@heroui/**/node_modules/@heroui/theme/dist/**/*` so modal positioning classes (`fixed`, `inset-0`, `z-50`, …) survive the production purge regardless of how npm hoists `@heroui/theme`.
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **203 tests** total (+ 5 E2E).
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **218 tests** total (+ 5 E2E).
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
 | Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `paths`) | 41 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, all auth-gated create forms | 87 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown, SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), all auth-gated create forms | 90 |
 | Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts` with viewer scope + 100-row cap, `fetchUserProfileByUsername`); truncate-per-test isolation; `setViewer()` helper for auth | 75 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
@@ -204,12 +210,12 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 ├── prisma/
 │   ├── schema.prisma          # User, Topic, Post, Comment, PostVote, CommentVote, SavedPost
 │   ├── migrations/            # init → soft_delete → votes → edited_at → user_profile_fields → saved_post
-│   └── seed.ts                # 10 personas (with handles + spread join dates) + 11 topics + threaded markdown content + pre-edited rows + pre-saved bookmarks
+│   └── seed.ts                # 10 personas (with handles + spread join dates) + 12 topics (one intentionally empty to show the topic empty-state CTA) + threaded markdown content + pre-edited rows + pre-saved bookmarks
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx         # Plus Jakarta + JetBrains Mono + Header + footer
 │   │   ├── page.tsx           # Home — hero, signed-in greeting, post feed, sidebar
-│   │   ├── loading.tsx        # Home skeleton
+│   │   ├── loading.tsx        # Home skeleton ('use client' for HeroUI Skeleton under Turbopack)
 │   │   ├── not-found.tsx      # Custom 404
 │   │   ├── providers.tsx      # SessionProvider + HeroUIProvider + SignInPromptProvider
 │   │   ├── globals.css        # CSS vars, animations, smooth-scroll w/ reduced-motion guard
@@ -251,9 +257,13 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── posts/
 │   │   │   ├── post-card.tsx / post-empty.tsx / post-pagination.tsx
 │   │   │   ├── post-feed.tsx           # Top/New sort + pagination
-│   │   │   ├── post-show.tsx / post-author.tsx
+│   │   │   ├── post-show.tsx           # Two-column detail; bookmark in action row
+│   │   │   ├── post-author.tsx
 │   │   │   ├── post-editable.tsx       # Inline edit form + "edited" hint
 │   │   │   ├── save-button.tsx         # Bookmark toggle (optimistic + auth-gated)
+│   │   │   ├── saved-list-context.tsx  # Tells the /saved list to drop a card
+│   │   │   ├── saved-posts-list.tsx    # Client wrapper around /saved (pagination + empty state)
+│   │   │   ├── topic-posts-empty.tsx   # Topic-page empty-state CTA (start the discussion)
 │   │   │   ├── thread-map.tsx / related-posts.tsx
 │   │   │   └── *-loading.tsx, *-skeleton.tsx
 │   │   ├── comments/
@@ -274,18 +284,18 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │       ├── posts.ts                # by-id (cached), by-topic, search, recent, related — viewer-aware votes + saves include
 │   │       ├── comments.ts             # by-post (cached)
 │   │       ├── users.ts                # profile-by-username (cached, indexed lookup)
-│   │       ├── saved-posts.ts          # fetchSavedPosts(userId)
+│   │       ├── saved-posts.ts          # fetchSavedPosts(userId) — SAVED_POSTS_LIMIT = 100
 │   │       └── search-suggestions.ts
 │   ├── lib/
 │   │   ├── utils.ts                    # timeAgo(), stripMarkdown(), topicTone(), slugifyName()
 │   │   ├── server-utils.ts             # requireAuth(), getViewerId()
-│   │   ├── form-classes.ts             # Shared NextUI input/textarea classes
+│   │   ├── form-classes.ts             # Shared HeroUI input/textarea classes
 │   │   ├── use-paginated.ts            # Client pagination hook
 │   │   └── types.ts                    # FormState, ActionResult
 │   ├── auth.ts                         # NextAuth v5 config (GitHub profile.login → User.username + events.signIn backfill + test creds)
 │   └── paths.ts                        # Type-safe URL builder (topicShow, postShow, postCreate, userProfile, savedPosts)
 ├── tests/
-│   ├── setup.ts                        # jsdom + react-dom form-hook stubs
+│   ├── setup.ts                        # jsdom + react form-hook stubs
 │   ├── unit/                           # Pure-function tests (incl. slugifyName)
 │   ├── components/                     # RTL component tests (incl. save-button, comment-card, comment-show, author-chip)
 │   ├── integration/                    # Real-PG queries + actions (incl. actions-saved, queries-saved-posts)
@@ -298,7 +308,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 ├── docker-compose.test.yml             # Postgres 16-alpine on :54329 (tmpfs)
 ├── playwright.config.ts
 ├── vitest.config.ts                    # Projects: unit + integration
-├── tailwind.config.ts                  # Design tokens
+├── tailwind.config.ts                  # Design tokens + HeroUI focus = persimmon override
 └── next.config.mjs
 ```
 
@@ -333,7 +343,7 @@ npx prisma db seed   # creates 10 personas + topics + posts + comments + votes +
 Run the dev server:
 
 ```bash
-npm run dev
+npm run dev          # next dev --turbopack
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -374,7 +384,7 @@ Copy `.env.test.example` → `.env.test` (gitignored). Defaults work out of the 
 
 ```bash
 # Dev
-npm run dev                # Start the dev server on :3000
+npm run dev                # next dev --turbopack — starts dev server on :3000 with Turbopack
 npm run build              # prisma generate + next build
 npm run start              # Start the production server
 npm run lint               # next lint
