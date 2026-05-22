@@ -1,6 +1,8 @@
+import Link from 'next/link';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
+import remarkMentions from '@/lib/remark-mentions';
 
 interface MarkdownProps {
   content: string;
@@ -18,14 +20,32 @@ const components: Components = {
   h1: ({ node, ...props }) => <h3 className="font-display font-bold text-lg mt-4 mb-2 text-ink" {...props} />,
   h2: ({ node, ...props }) => <h3 className="font-display font-bold text-base mt-4 mb-2 text-ink" {...props} />,
   h3: ({ node, ...props }) => <h4 className="font-display font-semibold text-base mt-3 mb-1.5 text-ink" {...props} />,
-  a: ({ node, ...props }) => (
-    <a
-      {...props}
-      className="text-persimmon-deep underline decoration-persimmon/40 underline-offset-2 hover:decoration-persimmon transition-colors"
-      target="_blank"
-      rel="noopener noreferrer nofollow"
-    />
-  ),
+  a: ({ node, href, children, ...props }) => {
+    // Mentions are produced by remarkMentions and always land at /u/<name>.
+    // Render them as internal Next/Link with mention-specific styling — no
+    // target=_blank, no underline-by-default, distinct from generic links.
+    if (typeof href === 'string' && href.startsWith('/u/')) {
+      return (
+        <Link
+          href={href}
+          className="font-semibold text-persimmon hover:text-persimmon-deep hover:underline decoration-persimmon/50 underline-offset-2 transition-colors duration-150 motion-reduce:transition-none"
+        >
+          {children}
+        </Link>
+      );
+    }
+    return (
+      <a
+        href={href}
+        {...props}
+        className="text-persimmon-deep underline decoration-persimmon/40 underline-offset-2 hover:decoration-persimmon transition-colors"
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+      >
+        {children}
+      </a>
+    );
+  },
   // Code is styled uniformly as an inline pill. When it lives inside <pre> the
   // pre's descendant overrides strip the pill so the block reads as a block.
   // Avoids guessing inline-vs-block from className, which silently mis-styled
@@ -67,7 +87,7 @@ export default function Markdown({
   return (
     <div className={`${prose} ${className}`.trim()}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkMentions]}
         rehypePlugins={[[rehypeHighlight, { detect: true, ignoreMissing: true }]]}
         components={components}
       >
