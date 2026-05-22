@@ -72,6 +72,7 @@ A community discussion platform where every voice gets a thread — topics, post
 - Instant client UI on delete; counts in the header exclude soft-deleted comments
 - **Owner-only inline edit**: pencil button alongside Delete swaps the markdown body for a Textarea form; saves stamp `editedAt` and surface a "edited Xm ago" hint next to the timestamp
 - **Per-comment permalink**: every comment — top-level or nested — wraps in an `id="c-{id}"` anchor with the `comment-anchor` class. A "Link" button (with `IconLink` / `IconCheck` swap) on every card copies `<post-url>#c-{id}` via `navigator.clipboard.writeText`, flips to "Copied" for 1.5s, and swallows clipboard failures silently. Loading the URL with that hash smooth-scrolls to the comment and triggers the existing 1.8s persimmon `:target` flash. `html { scroll-behavior: smooth }` is set globally with a `prefers-reduced-motion` opt-out.
+- **Thread sort pill** (Top / New / Old) sits at the head of every comment list, matching the post-feed sort pattern (star / clock / counterclockwise-arrow icons; active tab on a cream `shadow-soft` pill). Default is **New** — newest top-level branches first. **Top** orders by `_count.votes` descending and tie-breaks newer-first so the ordering is stable; **Old** reverses to oldest-first. **Only top-level branches reorder** — nested replies always read top-to-bottom within their parent's subtree, so threads stay coherent. The underlying `fetchCommentsByPostId` query carries an explicit `orderBy: createdAt asc` so the natural fetch order isn't dependent on Postgres row order. Sort happens client-side via the same `useMemo` pattern as the post feed.
 
 ### Markdown rendering
 - Post bodies and comments render through `react-markdown` + `remark-gfm` + `rehype-highlight`
@@ -189,7 +190,7 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 - **Server Components** handle all data fetching — posts, comments, topics, suggestions, saved-posts listing, and auth resolve on the server before streaming.
 - **Next 15 async dynamic APIs**: every dynamic route (`/topics/[slug]`, `/topics/[slug]/posts/[postId]`, `/u/[username]`, `/search?term=…`) receives `params` / `searchParams` as Promises and `await`s them at the top of the page. The one client-component dynamic route (`/topics/[slug]/posts/new`) unwraps with `React.use(params)`.
-- **Client Components** are scoped to interactivity only: form state, sort toggles, delete confirmation, search dropdown, modal state, vote toggling, save toggling, comment-card permalink/edit UI.
+- **Client Components** are scoped to interactivity only: form state, sort toggles (post feed AND comment threads), delete confirmation, search dropdown, modal state, vote toggling, save toggling, comment-card permalink/edit UI.
 - **React 19 form hooks**: form actions use `useActionState` (renamed from `useFormState`); pending button states use `useFormStatus` from `react-dom`. The `SaveButton` uses `useOptimistic` for in-flight bookmark state — the overlay auto-reverts on action failure, so there's no manual rollback branch. The `SavedListContext.removePost` call runs *outside* `startTransition` so React schedules the urgent list mutation in the same frame as the click (a transition-scoped state update would visibly linger for a frame).
 - **Server Actions** (`'use server'`) handle every mutation: `createPost`, `editPost`, `deletePost`, `createTopic`, `createComment`, `editComment`, `deleteComment`, `togglePostVote`, `toggleCommentVote`, `toggleSavedPost`. All write actions go through Zod validation and `requireAuth()`; edits additionally check ownership and stamp `editedAt`. Toggle actions wrap their find/upsert in a Prisma `$transaction`. `toggleSavedPost` calls `revalidatePath('/saved')` so the bookmark page stays in sync after toggles on the feed.
 - **Suspense boundaries** on the post detail page stream the post, comments, author card, thread map, and related posts in parallel.
@@ -204,12 +205,12 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **243 tests** total (+ 5 E2E).
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **250 tests** total (+ 5 E2E).
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
 | Unit | Vitest + jsdom | Pure functions and hooks (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `useDraft` — incl. SSR-safe rehydration, empty-string eviction, and storage-failure tolerance, `paths`) | 50 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown (incl. hljs token classes on fenced blocks), SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), CharCounter (min hint, in-range, ≥90% persimmon, over-max), draft restore-from-storage on comment + topic forms (incl. parentId scoping for nested replies), all auth-gated create forms | 115 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown (incl. hljs token classes on fenced blocks), SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), CommentListClient (default-new ordering, top vote-count sort with newest-first tiebreak, old reverse, parent-only scoping, empty-state pill hiding, soft-deleted exclusion from the count), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), CharCounter (min hint, in-range, ≥90% persimmon, over-max), draft restore-from-storage on comment + topic forms (incl. parentId scoping for nested replies), all auth-gated create forms | 122 |
 | Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts` with viewer scope + 100-row cap, `fetchUserProfileByUsername`, Zod min/max enforcement on `createTopic` / `createPost` / `createComment`); truncate-per-test isolation; `setViewer()` helper for auth | 78 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
@@ -279,7 +280,8 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   │   ├── thread-map.tsx / related-posts.tsx
 │   │   │   └── *-loading.tsx, *-skeleton.tsx
 │   │   ├── comments/
-│   │   │   ├── comment-list.tsx
+│   │   │   ├── comment-list.tsx        # Server fetcher → hands off to client
+│   │   │   ├── comment-list-client.tsx # Sort pill (Top/New/Old) + recursive render
 │   │   │   ├── comment-show.tsx        # Wraps every comment in a #c-{id} anchor
 │   │   │   ├── comment-card.tsx        # Card with collapse rail, inline edit, copy-link button
 │   │   │   ├── comment-create-form.tsx
