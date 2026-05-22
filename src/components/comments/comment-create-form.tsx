@@ -18,6 +18,7 @@ import {
   INITIAL_ACTION_STATE,
 } from '@/lib/types';
 import { useSignInPrompt } from '@/components/auth/signin-prompt';
+import { useDraft } from '@/lib/use-draft';
 
 interface CommentCreateFormProps {
   postId: string;
@@ -31,11 +32,12 @@ export default function CommentCreateForm({
   startOpen,
 }: CommentCreateFormProps) {
   const [open, setOpen] = useState(startOpen);
-  const [contentLength, setContentLength] = useState(0);
   const ref = useRef<HTMLFormElement | null>(null);
   const session = useSession();
   const signInPrompt = useSignInPrompt();
   const isAuthed = session.status === 'authenticated';
+  const draftKey = parentId ? `reply:${parentId}` : `comment:${postId}`;
+  const draft = useDraft(draftKey);
   const [formState, action] = useActionState(
     actions.createComment.bind(null, { postId, parentId }),
     INITIAL_ACTION_STATE
@@ -44,12 +46,12 @@ export default function CommentCreateForm({
   useEffect(() => {
     if (formState.ok) {
       ref.current?.reset();
-      setContentLength(0);
+      draft.clear();
       if (!startOpen) {
         setOpen(false);
       }
     }
-  }, [formState.ok, startOpen]);
+  }, [formState.ok, startOpen, draft]);
 
   const form = (
     <form action={action} ref={ref}>
@@ -60,7 +62,8 @@ export default function CommentCreateForm({
             startOpen ? 'Share your thoughts...' : 'Write a reply...'
           }
           minRows={startOpen ? 3 : 2}
-          onValueChange={(v) => setContentLength(v.length)}
+          value={draft.value}
+          onValueChange={draft.setValue}
           isInvalid={!!fieldError(formState, 'content')}
           errorMessage={fieldError(formState, 'content')?.join(', ')}
           classNames={textareaClassNames}
@@ -71,7 +74,7 @@ export default function CommentCreateForm({
             Be kind &middot; be curious
           </p>
           <CharCounter
-            current={contentLength}
+            current={draft.value.length}
             min={COMMENT_CONTENT.min}
             max={COMMENT_CONTENT.max}
           />
