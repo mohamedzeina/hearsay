@@ -56,6 +56,32 @@ describe('Markdown', () => {
     expect(code?.className).toMatch(/language-js/);
   });
 
+  it('applies hljs token classes to keywords inside a js fenced block', () => {
+    const md = '```js\nconst x = 1;\n```';
+    const { container } = render(<Markdown content={md} />);
+    const code = container.querySelector('pre code');
+    expect(code?.className).toMatch(/hljs/);
+    // `const` should be tokenised as a keyword by highlight.js
+    const keyword = container.querySelector('pre code .hljs-keyword');
+    expect(keyword).not.toBeNull();
+    expect(keyword?.textContent).toBe('const');
+  });
+
+  it('highlights strings in a json fenced block', () => {
+    const md = '```json\n{"name": "hearsay"}\n```';
+    const { container } = render(<Markdown content={md} />);
+    const strings = container.querySelectorAll('pre code .hljs-string');
+    expect(strings.length).toBeGreaterThan(0);
+  });
+
+  it('does not apply hljs classes to inline code', () => {
+    const { container } = render(<Markdown content="Run `npm test`" />);
+    // Inline `<code>` lives outside a `<pre>` and must not pick up hljs token spans.
+    const inline = container.querySelector('p > code');
+    expect(inline).not.toBeNull();
+    expect(inline?.querySelector('.hljs-keyword')).toBeNull();
+  });
+
   it('renders blockquotes', () => {
     const { container } = render(<Markdown content="> a quoted line" />);
     expect(container.querySelector('blockquote')).toHaveTextContent(
