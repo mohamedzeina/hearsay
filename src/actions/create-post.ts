@@ -12,6 +12,7 @@ import {
   requireUserOr,
 } from '@/lib/actions';
 import { POST_CONTENT, POST_TITLE } from '@/lib/form-limits';
+import { extractMentions } from '@/lib/mentions';
 
 const createPostSchema = z.object({
   title: z.string().min(POST_TITLE.min).max(POST_TITLE.max),
@@ -34,17 +35,42 @@ export async function createPost(
   const topic = await db.topic.findFirst({ where: { slug } });
   if (!topic) return formError('Cannot find topic.');
 
+  const mentioned = extractMentions(parsed.data.content);
+
   let postId: string;
   try {
-    const post = await db.post.create({
-      data: {
-        title: parsed.data.title,
-        content: parsed.data.content,
-        userId: authed.user.id,
-        topicId: topic.id,
-      },
+    postId = await db.$transaction(async (tx) => {
+      const post = await tx.post.create({
+        data: {
+          title: parsed.data.title,
+          content: parsed.data.content,
+          userId: authed.user.id,
+          topicId: topic.id,
+        },
+      });
+
+      if (mentioned.length > 0) {
+        const users = await tx.user.findMany({
+          where: {
+            username: { in: mentioned },
+            id: { not: authed.user.id },
+          },
+          select: { id: true },
+        });
+        if (users.length > 0) {
+          await tx.notification.createMany({
+            data: users.map((u) => ({
+              recipientId: u.id,
+              actorId: authed.user.id,
+              kind: 'MENTION',
+              postId: post.id,
+            })),
+          });
+        }
+      }
+
+      return post.id;
     });
-    postId = post.id;
   } catch (err) {
     console.error('createPost failed', err);
     return formError('Failed to create post. Please try again.');

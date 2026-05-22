@@ -12,6 +12,7 @@ import {
   requireUserOr,
 } from '@/lib/actions';
 import { COMMENT_CONTENT } from '@/lib/form-limits';
+import { extractMentions } from '@/lib/mentions';
 
 const createCommentSchema = z.object({
   content: z.string().min(COMMENT_CONTENT.min).max(COMMENT_CONTENT.max),
@@ -53,6 +54,8 @@ export async function createComment(
     recipientId = post.userId;
   }
 
+  const mentioned = extractMentions(parsed.data.content);
+
   try {
     await db.$transaction(async (tx) => {
       const comment = await tx.comment.create({
@@ -63,6 +66,10 @@ export async function createComment(
           userId: authed.user.id,
         },
       });
+
+      // Track recipients that have already been notified for this write so
+      // a mention of the same user doesn't double-ping them.
+      const notified = new Set<string>();
 
       // Skip self-replies: don't notify yourself when you reply to your
       // own post / comment. Skip if the parent author is somehow missing.
@@ -76,6 +83,29 @@ export async function createComment(
             commentId: comment.id,
           },
         });
+        notified.add(recipientId);
+      }
+
+      if (mentioned.length > 0) {
+        const users = await tx.user.findMany({
+          where: {
+            username: { in: mentioned },
+            id: { not: authed.user.id },
+          },
+          select: { id: true },
+        });
+        const targets = users.filter((u) => !notified.has(u.id));
+        if (targets.length > 0) {
+          await tx.notification.createMany({
+            data: targets.map((u) => ({
+              recipientId: u.id,
+              actorId: authed.user.id,
+              kind: 'MENTION',
+              postId,
+              commentId: comment.id,
+            })),
+          });
+        }
       }
     });
   } catch (err) {

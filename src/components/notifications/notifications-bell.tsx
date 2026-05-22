@@ -185,13 +185,18 @@ function NotificationRow({
           ? 'upvoted your post'
           : n.kind === 'UPVOTE_COMMENT'
             ? 'upvoted your comment'
-            : 'reacted';
+            : n.kind === 'MENTION'
+              ? 'mentioned you'
+              : 'reacted';
 
-  // For *_COMMENT kinds, the post title is the *location*, not the subject —
-  // prefix with "in" so readers don't mistake it for the comment that was
-  // replied to / upvoted. For *_POST kinds, the title IS the subject.
+  // For *_COMMENT and MENTION kinds, the post title is the *location*, not
+  // the subject — prefix with "in" so readers don't mistake it for the
+  // comment that was replied to / upvoted. For *_POST kinds, the title IS
+  // the subject.
   const titleIsLocation =
-    n.kind === 'REPLY_TO_COMMENT' || n.kind === 'UPVOTE_COMMENT';
+    n.kind === 'REPLY_TO_COMMENT' ||
+    n.kind === 'UPVOTE_COMMENT' ||
+    n.kind === 'MENTION';
 
   const href = n.commentId
     ? `${paths.postShow(n.post.topic.slug, n.post.id)}#c-${n.commentId}`
