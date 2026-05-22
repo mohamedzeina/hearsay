@@ -48,13 +48,23 @@ export default function NotificationsBell({
   const visibleUnreadCount = localItems.filter((n) => !n.readAt).length;
 
   const handleItemClick = (id: string) => {
+    // If the row is already read (e.g. user clicked the same notification
+    // a second time while staying on the same page), close the dropdown
+    // and bail — the counter would otherwise keep decrementing on every
+    // click even though nothing changes on the server.
+    const target = localItems.find((n) => n.id === id);
+    if (!target || target.readAt) {
+      setOpen(false);
+      return;
+    }
+
     // Locally clear this row's unread state and decrement the badge
     // before firing the server action — the click is also navigating
     // away, so the optimistic update is what the user sees in the
     // back-button case.
     const now = new Date();
     setLocalItems((prev) =>
-      prev.map((n) => (n.id === id && !n.readAt ? { ...n, readAt: now } : n))
+      prev.map((n) => (n.id === id ? { ...n, readAt: now } : n))
     );
     setLocalUnread((u) => Math.max(0, u - 1));
     startTransition(() => {

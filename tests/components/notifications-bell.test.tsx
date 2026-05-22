@@ -102,6 +102,35 @@ describe('NotificationsBell', () => {
     expect(markAllMock).not.toHaveBeenCalled();
   });
 
+  it('does NOT decrement the badge or re-fire markRead when clicking an already-read row', async () => {
+    const user = userEvent.setup();
+    render(
+      <NotificationsBell
+        items={[
+          makeNotification({ id: 'n1' }),
+          makeNotification({ id: 'n2' }),
+        ]}
+        unread={2}
+      />
+    );
+
+    // First click → marks n1 read, badge drops to 1.
+    await user.click(screen.getByRole('button', { name: /2 unread/i }));
+    await user.click(screen.getAllByRole('menuitem')[0]);
+    await waitFor(() => expect(markOneMock).toHaveBeenCalledTimes(1));
+
+    // Re-open and click the SAME (now-read) row twice more. Badge must
+    // stay at 1 — the server action must not be re-fired either.
+    await user.click(screen.getByRole('button', { name: /1 unread/i }));
+    await user.click(screen.getAllByRole('menuitem')[0]);
+    await user.click(screen.getByRole('button', { name: /1 unread/i }));
+    await user.click(screen.getAllByRole('menuitem')[0]);
+
+    expect(markOneMock).toHaveBeenCalledTimes(1);
+    // Badge still shows 1 — the unread n2 row.
+    expect(screen.getByText('1')).toBeInTheDocument();
+  });
+
   it('clears all unread when the "Mark all read" pill is clicked', async () => {
     const user = userEvent.setup();
     render(
