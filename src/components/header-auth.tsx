@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import {
+  IconBell,
   IconBookmark,
   IconChevronDown,
   IconSignOut,
@@ -81,6 +82,18 @@ export default function HeaderAuth() {
                 <span aria-hidden className="text-ink-3">&rarr;</span>
               </Link>
             )}
+            <Link
+              href={paths.notifications()}
+              onClick={() => setOpen(false)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-ink hover:bg-persimmon-soft hover:text-persimmon-deep transition-colors duration-150 motion-reduce:transition-none border-b border-rule"
+              role="menuitem"
+            >
+              <span className="flex items-center gap-2">
+                <IconBell className="w-4 h-4" />
+                Notifications
+              </span>
+              <span aria-hidden className="text-ink-3">&rarr;</span>
+            </Link>
             <Link
               href={paths.savedPosts()}
               onClick={() => setOpen(false)}

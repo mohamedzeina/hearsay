@@ -142,15 +142,21 @@ export default function NotificationsBell({
             </ul>
           )}
 
-          {localUnread > visibleUnreadCount && (
-            <footer className="px-4 py-2.5 border-t border-rule bg-cream-2/30">
-              <p className="text-[11px] text-ink-3 leading-snug">
-                {localUnread - visibleUnreadCount} older unread —{' '}
-                <span className="italic">
-                  visible once the full history page ships
-                </span>
-                .
-              </p>
+          {localItems.length > 0 && (
+            <footer className="border-t border-rule bg-cream-2/30">
+              {localUnread > visibleUnreadCount && (
+                <p className="px-4 pt-2.5 text-[11px] text-ink-3 leading-snug">
+                  {localUnread - visibleUnreadCount} older unread —{' '}
+                  <span className="italic">see them all below.</span>
+                </p>
+              )}
+              <a
+                href={paths.notifications()}
+                onClick={() => setOpen(false)}
+                className="block px-4 py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-ink-2 hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
+              >
+                See all &rarr;
+              </a>
             </footer>
           )}
         </div>
