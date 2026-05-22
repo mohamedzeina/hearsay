@@ -117,6 +117,60 @@ select:focus {
   }
 }
 
+/* Syntax highlighting for fenced code blocks (rehype-highlight / highlight.js).
+   Scoped to `.hljs` so inline-pill code and the cream-2 pre background stay intact. */
+.hljs {
+  color: var(--ink);
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--ink-3);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-tag,
+.hljs-name,
+.hljs-section,
+.hljs-doctag {
+  color: var(--persimmon-deep);
+  font-weight: 600;
+}
+.hljs-string,
+.hljs-attr,
+.hljs-attribute,
+.hljs-symbol,
+.hljs-regexp,
+.hljs-link,
+.hljs-built_in,
+.hljs-type {
+  color: var(--teal);
+}
+.hljs-number,
+.hljs-literal,
+.hljs-meta,
+.hljs-bullet {
+  color: var(--persimmon);
+}
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.function_ {
+  color: var(--persimmon-deep);
+}
+.hljs-variable,
+.hljs-template-variable,
+.hljs-params,
+.hljs-property,
+.hljs-punctuation {
+  color: var(--ink-2);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 700;
+}
+
 /* Hover-reveal underline for inline links */
 .ink-link {
   position: relative;

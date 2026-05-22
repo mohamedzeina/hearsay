@@ -1,5 +1,6 @@
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 
 interface MarkdownProps {
   content: string;
@@ -65,7 +66,11 @@ export default function Markdown({
 
   return (
     <div className={`${prose} ${className}`.trim()}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[[rehypeHighlight, { detect: true, ignoreMissing: true }]]}
+        components={components}
+      >
         {content}
       </ReactMarkdown>
     </div>
