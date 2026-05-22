@@ -22,6 +22,23 @@ export async function togglePostVote(postId: string): Promise<VoteResult> {
       await tx.postVote.delete({ where: { id: existing.id } });
     } else {
       await tx.postVote.create({ data: { userId: user.id, postId } });
+
+      // Notify the post author on a fresh upvote. Skip self-upvotes.
+      // Unvoting doesn't remove the historical notification — kept simple.
+      const post = await tx.post.findUnique({
+        where: { id: postId },
+        select: { userId: true },
+      });
+      if (post && post.userId !== user.id) {
+        await tx.notification.create({
+          data: {
+            recipientId: post.userId,
+            actorId: user.id,
+            kind: 'UPVOTE_POST',
+            postId,
+          },
+        });
+      }
     }
 
     const count = await tx.postVote.count({ where: { postId } });

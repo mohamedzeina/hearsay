@@ -32,18 +32,51 @@ export async function createComment(
 
   const post = await db.post.findFirst({
     where: { id: postId },
-    select: { topic: { select: { slug: true } } },
+    select: {
+      userId: true,
+      topic: { select: { slug: true } },
+    },
   });
   if (!post) return formError('Post not found.');
 
+  // Resolve the recipient: nested reply → parent comment's author;
+  // top-level comment → post author. Look up the parent author here so the
+  // create transaction below has everything it needs.
+  let recipientId: string | null = null;
+  if (parentId) {
+    const parent = await db.comment.findUnique({
+      where: { id: parentId },
+      select: { userId: true },
+    });
+    recipientId = parent?.userId ?? null;
+  } else {
+    recipientId = post.userId;
+  }
+
   try {
-    await db.comment.create({
-      data: {
-        content: parsed.data.content,
-        postId,
-        parentId,
-        userId: authed.user.id,
-      },
+    await db.$transaction(async (tx) => {
+      const comment = await tx.comment.create({
+        data: {
+          content: parsed.data.content,
+          postId,
+          parentId,
+          userId: authed.user.id,
+        },
+      });
+
+      // Skip self-replies: don't notify yourself when you reply to your
+      // own post / comment. Skip if the parent author is somehow missing.
+      if (recipientId && recipientId !== authed.user.id) {
+        await tx.notification.create({
+          data: {
+            recipientId,
+            actorId: authed.user.id,
+            kind: 'REPLY',
+            postId,
+            commentId: comment.id,
+          },
+        });
+      }
     });
   } catch (err) {
     console.error('createComment failed', err);
