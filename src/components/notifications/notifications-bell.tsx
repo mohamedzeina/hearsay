@@ -181,6 +181,12 @@ function NotificationRow({
             ? 'upvoted your comment'
             : 'reacted';
 
+  // For *_COMMENT kinds, the post title is the *location*, not the subject —
+  // prefix with "in" so readers don't mistake it for the comment that was
+  // replied to / upvoted. For *_POST kinds, the title IS the subject.
+  const titleIsLocation =
+    n.kind === 'REPLY_TO_COMMENT' || n.kind === 'UPVOTE_COMMENT';
+
   const href = n.commentId
     ? `${paths.postShow(n.post.topic.slug, n.post.id)}#c-${n.commentId}`
     : paths.postShow(n.post.topic.slug, n.post.id);
@@ -208,6 +214,9 @@ function NotificationRow({
               <span className="text-ink-2">{verb}</span>
             </p>
             <p className="text-xs text-ink-2 truncate mt-0.5 italic">
+              {titleIsLocation && (
+                <span className="not-italic text-ink-3">in </span>
+              )}
               &ldquo;{n.post.title}&rdquo;
             </p>
             <p

@@ -220,6 +220,41 @@ describe('NotificationsBell', () => {
     expect(screen.getByText('upvoted your comment')).toBeInTheDocument();
   });
 
+  it('prefixes the post title with "in" for comment-kind notifications', async () => {
+    const user = userEvent.setup();
+    render(
+      <NotificationsBell
+        items={[
+          makeNotification({ id: '1', kind: 'REPLY_TO_COMMENT' }),
+          makeNotification({ id: '2', kind: 'UPVOTE_COMMENT' }),
+        ]}
+        unread={2}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /2 unread/i }));
+
+    // Both *_COMMENT rows label the title as location, not subject.
+    expect(screen.getAllByText('in')).toHaveLength(2);
+  });
+
+  it('does NOT prefix the post title with "in" for post-kind notifications', async () => {
+    const user = userEvent.setup();
+    render(
+      <NotificationsBell
+        items={[
+          makeNotification({ id: '1', kind: 'REPLY_TO_POST' }),
+          makeNotification({ id: '2', kind: 'UPVOTE_POST', commentId: null }),
+        ]}
+        unread={2}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /2 unread/i }));
+
+    expect(screen.queryByText('in')).not.toBeInTheDocument();
+  });
+
   it('uses the post URL (no anchor) for non-comment notifications', async () => {
     const user = userEvent.setup();
     render(
