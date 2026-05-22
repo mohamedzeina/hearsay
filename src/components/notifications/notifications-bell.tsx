@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
-import Link from 'next/link';
 import {
   markAllNotificationsRead,
   markNotificationRead,
@@ -190,7 +189,12 @@ function NotificationRow({
 
   return (
     <li className={n.readAt ? '' : 'bg-persimmon-soft/30'}>
-      <Link
+      {/* Plain <a> on purpose: a Next.js <Link> would client-side navigate */}
+      {/* and miss the browser's native hash-anchor scroll because the */}
+      {/* target comment element isn't mounted yet at the moment the */}
+      {/* router tries to scroll. A full nav guarantees the deep-link */}
+      {/* lands on the right #c-{commentId}. */}
+      <a
         href={href}
         onClick={onClick}
         role="menuitem"
@@ -220,7 +224,7 @@ function NotificationRow({
             />
           )}
         </div>
-      </Link>
+      </a>
     </li>
   );
 }
