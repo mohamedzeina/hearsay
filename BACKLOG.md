@@ -24,6 +24,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ User profile pages — `/u/[username]` with posts, recent replies, joined-on date, stats; indexed `User.username` (GitHub `login` on signin); clickable usernames across `PostCard` / `CommentCard` / `PostAuthor`
 - ✅ Saved posts — bookmark button on `PostCard`, `/saved` page (newest-save first), header dropdown link, indexed `SavedPost` join table
 - ✅ Better empty states — topics with zero posts show a "start the discussion" CTA card with the embedded post-create button; seed includes an empty topic to demo it
+- ✅ Syntax highlighting on code blocks — `rehype-highlight` wired into the Markdown wrapper, custom cream-and-persimmon hljs theme for keywords/strings/comments/numbers
 
 ---
 
@@ -47,12 +48,6 @@ _All Tier 1 items have shipped. See Tier 2 for the next-best pick._
   work; survives accidental reloads.
 
 ## Tier 3 — content quality
-
-- **Syntax highlighting on code blocks** (S)
-  Code blocks already render through markdown — they just lack
-  highlighting. Drop in Shiki or rehype-highlight via the existing
-  Markdown wrapper. Big win for the dev-heavy seed topics
-  (`javascript`, `web-dev`, `open-source`).
 
 - **Comment sort options** (S)
   Currently implicit newest-first. Add top / old / new toggles; reuse
@@ -127,4 +122,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-22 (after better-empty-states ship). Update or trash as priorities shift._
+_Last touched 2026-05-22 (after syntax-highlighting ship). Update or trash as priorities shift._
