@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect } from 'react';
 import {
   Input,
   Textarea,
@@ -25,23 +25,27 @@ import {
   INITIAL_ACTION_STATE,
 } from '@/lib/types';
 import { useSignInPrompt } from '@/components/auth/signin-prompt';
+import { useDraft } from '@/lib/use-draft';
 
 export default function TopicCreateForm() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const session = useSession();
   const signInPrompt = useSignInPrompt();
   const router = useRouter();
-  const [descLength, setDescLength] = useState(0);
+  const nameDraft = useDraft('topic:name');
+  const descDraft = useDraft('topic:description');
   const [formState, action] = useActionState(
     actions.createTopic,
     INITIAL_ACTION_STATE
   );
 
   useEffect(() => {
-    if (formState.ok && formState.redirectTo) {
-      router.push(formState.redirectTo);
+    if (formState.ok) {
+      nameDraft.clear();
+      descDraft.clear();
+      if (formState.redirectTo) router.push(formState.redirectTo);
     }
-  }, [formState, router]);
+  }, [formState, router, nameDraft, descDraft]);
 
   const handleTrigger = () => {
     if (session.status !== 'authenticated') {
@@ -110,6 +114,8 @@ export default function TopicCreateForm() {
                     label="Slug"
                     labelPlacement="outside"
                     placeholder="e.g. cooking-tips"
+                    value={nameDraft.value}
+                    onValueChange={nameDraft.setValue}
                     isInvalid={!!fieldError(formState, 'name')}
                     errorMessage={fieldError(formState, 'name')?.join(', ')}
                     classNames={inputClassNames}
@@ -120,14 +126,15 @@ export default function TopicCreateForm() {
                     labelPlacement="outside"
                     placeholder="What is this topic about?"
                     minRows={3}
-                    onValueChange={(v) => setDescLength(v.length)}
+                    value={descDraft.value}
+                    onValueChange={descDraft.setValue}
                     isInvalid={!!fieldError(formState, 'description')}
                     errorMessage={fieldError(formState, 'description')?.join(', ')}
                     classNames={inputClassNames}
                   />
                   <div className="flex items-center justify-end -mt-2">
                     <CharCounter
-                      current={descLength}
+                      current={descDraft.value.length}
                       min={TOPIC_DESCRIPTION.min}
                       max={TOPIC_DESCRIPTION.max}
                     />
