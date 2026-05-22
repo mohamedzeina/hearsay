@@ -47,7 +47,10 @@ export default function NotificationsBell({
 
   const visibleUnreadCount = localItems.filter((n) => !n.readAt).length;
 
-  const handleItemClick = (id: string) => {
+  const handleItemClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    id: string
+  ) => {
     // If the row is already read (e.g. user clicked the same notification
     // a second time while staying on the same page), close the dropdown
     // and bail — the counter would otherwise keep decrementing on every
@@ -58,19 +61,44 @@ export default function NotificationsBell({
       return;
     }
 
-    // Locally clear this row's unread state and decrement the badge
-    // before firing the server action — the click is also navigating
-    // away, so the optimistic update is what the user sees in the
-    // back-button case.
+    // Let modifier-clicks (cmd / ctrl / shift, middle-click) keep their
+    // default open-in-new-tab behavior. We still optimistically mark the
+    // row on the current page and fire the action async.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {
+      const now = new Date();
+      setLocalItems((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, readAt: now } : n))
+      );
+      setLocalUnread((u) => Math.max(0, u - 1));
+      startTransition(() => {
+        markNotificationRead(id);
+      });
+      setOpen(false);
+      return;
+    }
+
+    // Plain left-click: we use a full-page nav (plain <a>), so the
+    // destination's server-rendered bell would race with the mark-read
+    // action — clearing the badge optimistically, then snapping it back
+    // up because the new query read stale `readAt: null` rows. Intercept
+    // the nav, await the action, THEN navigate manually.
+    e.preventDefault();
+    const href = e.currentTarget.href;
+
     const now = new Date();
     setLocalItems((prev) =>
       prev.map((n) => (n.id === id ? { ...n, readAt: now } : n))
     );
     setLocalUnread((u) => Math.max(0, u - 1));
-    startTransition(() => {
-      markNotificationRead(id);
-    });
     setOpen(false);
+
+    void (async () => {
+      try {
+        await markNotificationRead(id);
+      } finally {
+        window.location.href = href;
+      }
+    })();
   };
 
   const handleMarkAllRead = () => {
@@ -146,7 +174,7 @@ export default function NotificationsBell({
                 <NotificationRow
                   key={n.id}
                   n={n}
-                  onClick={() => handleItemClick(n.id)}
+                  onClick={(e) => handleItemClick(e, n.id)}
                 />
               ))}
             </ul>
@@ -180,7 +208,7 @@ function NotificationRow({
   onClick,
 }: {
   n: NotificationItem;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   // Skip if the underlying post is gone (post cascade-deletes notifications,
   // but in transit / soft-state we guard anyway).

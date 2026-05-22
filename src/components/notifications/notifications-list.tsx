@@ -38,14 +38,43 @@ export default function NotificationsList({
 
   const unreadCount = items.filter((n) => !n.readAt).length;
 
-  const handleItemClick = (id: string) => {
+  const handleItemClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    id: string
+  ) => {
+    // Already read: nothing to do, let the default nav happen.
+    const target = items.find((n) => n.id === id);
+    if (!target || target.readAt) return;
+
+    // Modifier-clicks open a new tab — fire-and-forget the action and
+    // let the default new-tab navigation through.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {
+      const now = new Date();
+      setItems((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, readAt: now } : n))
+      );
+      startTransition(() => {
+        markNotificationRead(id);
+      });
+      return;
+    }
+
+    // Plain left-click: await the server action before navigating so the
+    // destination's server-rendered bell doesn't race with the write and
+    // show the row as unread again.
+    e.preventDefault();
+    const href = e.currentTarget.href;
     const now = new Date();
     setItems((prev) =>
-      prev.map((n) => (n.id === id && !n.readAt ? { ...n, readAt: now } : n))
+      prev.map((n) => (n.id === id ? { ...n, readAt: now } : n))
     );
-    startTransition(() => {
-      markNotificationRead(id);
-    });
+    void (async () => {
+      try {
+        await markNotificationRead(id);
+      } finally {
+        window.location.href = href;
+      }
+    })();
   };
 
   const handleMarkAllRead = () => {
@@ -89,7 +118,7 @@ export default function NotificationsList({
               <NotificationRow
                 key={n.id}
                 n={n}
-                onClick={() => handleItemClick(n.id)}
+                onClick={(e) => handleItemClick(e, n.id)}
               />
             ))}
           </ul>
@@ -109,7 +138,7 @@ function NotificationRow({
   onClick,
 }: {
   n: NotificationItem;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   // Underlying post may be gone (cascade-delete protects us, but be defensive
   // in case the row is in flight to deletion).

@@ -102,6 +102,51 @@ describe('NotificationsBell', () => {
     expect(markAllMock).not.toHaveBeenCalled();
   });
 
+  it('awaits markNotificationRead before navigating (so the destination bell sees the write)', async () => {
+    const user = userEvent.setup();
+
+    // Defer the action so we can confirm the bell waits on it before
+    // assigning to location.href.
+    let resolveAction!: () => void;
+    markOneMock.mockImplementation(
+      () => new Promise<void>((r) => {
+        resolveAction = r;
+      })
+    );
+
+    // jsdom's `location.href` setter is non-configurable, so swap the
+    // whole location object for a spy-backed stand-in.
+    const hrefSpy = vi.fn();
+    const originalLocation = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...originalLocation, set href(v: string) { hrefSpy(v); } },
+    });
+
+    render(
+      <NotificationsBell items={[makeNotification({ id: 'n1' })]} unread={1} />
+    );
+    await user.click(screen.getByRole('button', { name: /1 unread/i }));
+    await user.click(screen.getByRole('menuitem'));
+
+    // Server action invoked optimistically — but navigation is deferred
+    // until the action settles.
+    expect(markOneMock).toHaveBeenCalledWith('n1');
+    expect(hrefSpy).not.toHaveBeenCalled();
+
+    // Once the action resolves, the bell completes the deferred nav.
+    resolveAction();
+    await waitFor(() => expect(hrefSpy).toHaveBeenCalledTimes(1));
+    expect(hrefSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/topics/coffee/posts/p1#c-c1')
+    );
+
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: originalLocation,
+    });
+  });
+
   it('does NOT decrement the badge or re-fire markRead when clicking an already-read row', async () => {
     const user = userEvent.setup();
     render(
