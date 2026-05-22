@@ -52,15 +52,15 @@ export const fetchUserStats = cache(
       select: {
         _count: {
           select: {
-            Post: true,
-            Comment: { where: { deleted: false } },
+            posts: true,
+            comments: { where: { deleted: false } },
           },
         },
       },
     });
     return {
-      postCount: userStats?._count.Post ?? 0,
-      commentCount: userStats?._count.Comment ?? 0,
+      postCount: userStats?._count.posts ?? 0,
+      commentCount: userStats?._count.comments ?? 0,
     };
   }
 );

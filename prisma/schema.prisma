@@ -44,8 +44,8 @@ model User {
   createdAt     DateTime      @default(now())
   accounts      Account[]
   sessions      Session[]
-  Post          Post[]
-  Comment       Comment[]
+  posts         Post[]
+  comments      Comment[]
   postVotes     PostVote[]
   commentVotes  CommentVote[]
   savedPosts    SavedPost[]
