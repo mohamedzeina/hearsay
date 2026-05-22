@@ -41,3 +41,17 @@ export const fetchUnreadNotificationCount = cache(
     });
   }
 );
+
+// Full history feed for the /notifications page. No `take` limit — the
+// page paginates client-side via usePaginated. A future enhancement
+// would be cursor-based server pagination once the row count grows
+// past what's reasonable to ship in a single payload.
+export const fetchAllNotifications = cache(
+  async (userId: string): Promise<NotificationItem[]> => {
+    return db.notification.findMany({
+      where: { recipientId: userId },
+      orderBy: { createdAt: 'desc' },
+      include: notificationInclude,
+    });
+  }
+);

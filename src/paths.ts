@@ -14,6 +14,9 @@ const paths = {
   savedPosts() {
     return '/saved';
   },
+  notifications() {
+    return '/notifications';
+  },
 };
 
 export default paths;
