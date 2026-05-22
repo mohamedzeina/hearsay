@@ -30,6 +30,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Comment sort options — Top / New / Old pill at the head of every comment thread (matches the post-feed sort pattern); top-level branches reorder client-side, nested replies keep their chronological subtree order; default is New
 - ✅ In-app notifications (MVP) — `Notification` model + header bell with unread badge + dropdown of the 20 most-recent items; reply / upvote actions emit notifications inside the existing write transactions (self-actions skipped); mark-as-read fires optimistically on dropdown open. No live updates yet (refreshes on navigation); no dedicated `/notifications` history page yet; no mention-triggered notifications yet
 - ✅ Notifications history page — dedicated `/notifications` route with the full history paginated at 10/page via `usePaginated`, per-row mark-read + "Mark all read" pill (matches the bell), bell footer now links here via a "See all →" link, "Notifications" entry added to the avatar dropdown
+- ✅ Mentions — `@username` in post and comment markdown autolinks to `/u/<name>` (custom remark plugin via `mdast-util-find-and-replace`, code-context safe); a `MENTION` notification fires inside the existing create transactions, with self-mention skip, unknown-user skip, dedupe per write, and suppression of double-pinging a recipient who already got the reply notification
 
 ---
 
@@ -44,11 +45,6 @@ _All Tier 1 items have shipped. See Tier 2 for the next-best pick._
   - **Light polling** every ~60s on the bell so new items appear without
     a full navigation (S).
   - **Filtering** (replies vs. upvotes) on the `/notifications` page (S).
-
-- **Mentions** (M)
-  `@username` autolinks to profile and writes a notification (now that
-  the notification system exists). Detect in markdown render and scan
-  server-side on save.
 
 ## Tier 3 — content quality
 
@@ -117,4 +113,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-22 (after notifications history page ship). Update or trash as priorities shift._
+_Last touched 2026-05-22 (after mentions ship). Update or trash as priorities shift._
