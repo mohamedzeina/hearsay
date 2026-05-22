@@ -49,6 +49,8 @@ model User {
   postVotes     PostVote[]
   commentVotes  CommentVote[]
   savedPosts    SavedPost[]
+  notifications        Notification[] @relation("NotificationRecipient")
+  triggeredNotifications Notification[] @relation("NotificationActor")
 }
 
 model VerificationToken {
@@ -80,11 +82,12 @@ model Post {
   updatedAt DateTime  @updatedAt
   editedAt  DateTime?
 
-  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topic    Topic       @relation(fields: [topicId], references: [id])
-  comments Comment[]
-  votes    PostVote[]
-  saves    SavedPost[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic         Topic          @relation(fields: [topicId], references: [id])
+  comments      Comment[]
+  votes         PostVote[]
+  saves         SavedPost[]
+  notifications Notification[]
 }
 
 model Comment {
@@ -100,11 +103,12 @@ model Comment {
 
   deleted Boolean @default(false)
 
-  parent   Comment?      @relation("Comments", fields: [parentId], references: [id], onDelete: Cascade)
-  post     Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  children Comment[]     @relation("Comments")
-  votes    CommentVote[]
+  parent        Comment?       @relation("Comments", fields: [parentId], references: [id], onDelete: Cascade)
+  post          Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  children      Comment[]      @relation("Comments")
+  votes         CommentVote[]
+  notifications Notification[]
 }
 
 model PostVote {
@@ -147,4 +151,28 @@ model CommentVote {
 
   @@unique([userId, commentId])
   @@index([commentId])
+}
+
+// In-app notification surfaced in the header bell.
+// `kind` discriminates the event: REPLY (someone replied to your post or
+// comment), UPVOTE_POST, UPVOTE_COMMENT. `postId` is always set; `commentId`
+// is set when the notification targets a specific comment so the deeplink
+// can scroll to it via #c-{commentId}.
+model Notification {
+  id          String   @id @default(cuid())
+  recipientId String
+  actorId     String
+  kind        String
+  postId      String?
+  commentId   String?
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  recipient User     @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User     @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@index([recipientId, readAt])
 }
