@@ -5,11 +5,13 @@ import { Textarea } from '@heroui/react';
 import { useSession } from 'next-auth/react';
 import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
+import CharCounter from '@/components/common/char-counter';
 import { PrimaryButton } from '@/components/common/primary-button';
 import * as actions from '@/actions';
 import SurfacePanel from '@/components/common/surface-panel';
 import { IconReply } from '@/components/icons';
 import { inputClassNames as textareaClassNames } from '@/lib/form-classes';
+import { COMMENT_CONTENT } from '@/lib/form-limits';
 import {
   fieldError,
   formMessage,
@@ -29,6 +31,7 @@ export default function CommentCreateForm({
   startOpen,
 }: CommentCreateFormProps) {
   const [open, setOpen] = useState(startOpen);
+  const [contentLength, setContentLength] = useState(0);
   const ref = useRef<HTMLFormElement | null>(null);
   const session = useSession();
   const signInPrompt = useSignInPrompt();
@@ -41,6 +44,7 @@ export default function CommentCreateForm({
   useEffect(() => {
     if (formState.ok) {
       ref.current?.reset();
+      setContentLength(0);
       if (!startOpen) {
         setOpen(false);
       }
@@ -56,17 +60,26 @@ export default function CommentCreateForm({
             startOpen ? 'Share your thoughts...' : 'Write a reply...'
           }
           minRows={startOpen ? 3 : 2}
+          onValueChange={(v) => setContentLength(v.length)}
           isInvalid={!!fieldError(formState, 'content')}
           errorMessage={fieldError(formState, 'content')?.join(', ')}
           classNames={textareaClassNames}
         />
 
-        <FormError message={formMessage(formState)} />
-
         <div className="flex items-center justify-between gap-3">
           <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-ink-3">
             Be kind &middot; be curious
           </p>
+          <CharCounter
+            current={contentLength}
+            min={COMMENT_CONTENT.min}
+            max={COMMENT_CONTENT.max}
+          />
+        </div>
+
+        <FormError message={formMessage(formState)} />
+
+        <div className="flex items-center justify-end gap-3">
           <div className="flex items-center gap-2">
             {!startOpen && (
               <button

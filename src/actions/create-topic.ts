@@ -11,6 +11,7 @@ import {
   parseFormData,
   requireUserOr,
 } from '@/lib/actions';
+import { TOPIC_DESCRIPTION } from '@/lib/form-limits';
 
 const createTopicSchema = z.object({
   name: z
@@ -19,7 +20,10 @@ const createTopicSchema = z.object({
     .regex(/^[a-z-]+$/, {
       message: 'Must be lowercase letters or dashes without spaces',
     }),
-  description: z.string().min(10),
+  description: z
+    .string()
+    .min(TOPIC_DESCRIPTION.min)
+    .max(TOPIC_DESCRIPTION.max),
 });
 
 const FIELDS = ['name', 'description'] as const;

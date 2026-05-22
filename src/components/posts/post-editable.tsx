@@ -8,6 +8,7 @@ import Avatar from '@/components/common/avatar';
 import DeleteButton from '@/components/common/delete-button';
 import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
+import CharCounter from '@/components/common/char-counter';
 import Markdown from '@/components/common/markdown';
 import { IconPencil } from '@/components/icons';
 import paths from '@/paths';
@@ -21,6 +22,7 @@ import {
   inputClassNamesLg,
   textareaClassNamesLg,
 } from '@/lib/form-classes';
+import { POST_CONTENT } from '@/lib/form-limits';
 
 interface PostEditableProps {
   postId: string;
@@ -43,6 +45,7 @@ export default function PostEditable({
 }: PostEditableProps) {
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [contentLength, setContentLength] = useState(initialContent.length);
   const [formState, action] = useActionState(
     actions.editPost.bind(null, postId),
     INITIAL_ACTION_STATE
@@ -78,10 +81,18 @@ export default function PostEditable({
           labelPlacement="outside"
           defaultValue={initialContent}
           minRows={8}
+          onValueChange={(v) => setContentLength(v.length)}
           isInvalid={!!fieldError(formState, 'content')}
           errorMessage={fieldError(formState, 'content')?.join(', ')}
           classNames={textareaClassNamesLg}
         />
+        <div className="flex items-center justify-end -mt-2">
+          <CharCounter
+            current={contentLength}
+            min={POST_CONTENT.min}
+            max={POST_CONTENT.max}
+          />
+        </div>
         <FormError message={formMessage(formState)} />
         <div className="flex items-center justify-between gap-3 pt-2 border-t border-rule">
           <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">

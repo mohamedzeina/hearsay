@@ -11,9 +11,10 @@ import {
   parseFormData,
   requireUserOr,
 } from '@/lib/actions';
+import { COMMENT_CONTENT } from '@/lib/form-limits';
 
 const createCommentSchema = z.object({
-  content: z.string().min(3),
+  content: z.string().min(COMMENT_CONTENT.min).max(COMMENT_CONTENT.max),
 });
 
 const FIELDS = ['content'] as const;

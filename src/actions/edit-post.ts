@@ -11,10 +11,11 @@ import {
   parseFormData,
   requireUserOr,
 } from '@/lib/actions';
+import { POST_CONTENT, POST_TITLE } from '@/lib/form-limits';
 
 const editPostSchema = z.object({
-  title: z.string().min(3),
-  content: z.string().min(10),
+  title: z.string().min(POST_TITLE.min).max(POST_TITLE.max),
+  content: z.string().min(POST_CONTENT.min).max(POST_CONTENT.max),
 });
 
 const FIELDS = ['title', 'content'] as const;

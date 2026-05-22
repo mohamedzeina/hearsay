@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import {
   Input,
   Textarea,
@@ -13,9 +13,11 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import FormButton from '../common/form-button';
 import FormError from '@/components/common/form-error';
+import CharCounter from '@/components/common/char-counter';
 import { PrimaryButton } from '@/components/common/primary-button';
 import * as actions from '@/actions';
 import { inputClassNames } from '@/lib/form-classes';
+import { TOPIC_DESCRIPTION } from '@/lib/form-limits';
 import { IconPlus } from '@/components/icons';
 import {
   fieldError,
@@ -29,6 +31,7 @@ export default function TopicCreateForm() {
   const session = useSession();
   const signInPrompt = useSignInPrompt();
   const router = useRouter();
+  const [descLength, setDescLength] = useState(0);
   const [formState, action] = useActionState(
     actions.createTopic,
     INITIAL_ACTION_STATE
@@ -117,10 +120,18 @@ export default function TopicCreateForm() {
                     labelPlacement="outside"
                     placeholder="What is this topic about?"
                     minRows={3}
+                    onValueChange={(v) => setDescLength(v.length)}
                     isInvalid={!!fieldError(formState, 'description')}
                     errorMessage={fieldError(formState, 'description')?.join(', ')}
                     classNames={inputClassNames}
                   />
+                  <div className="flex items-center justify-end -mt-2">
+                    <CharCounter
+                      current={descLength}
+                      min={TOPIC_DESCRIPTION.min}
+                      max={TOPIC_DESCRIPTION.max}
+                    />
+                  </div>
 
                   <FormError message={formMessage(formState)} />
                 </div>

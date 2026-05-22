@@ -1,10 +1,11 @@
 'use client';
 
-import { use, useActionState, useEffect } from 'react';
+import { use, useActionState, useEffect, useState } from 'react';
 import { Input, Textarea } from '@heroui/react';
 import { useRouter } from 'next/navigation';
 import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
+import CharCounter from '@/components/common/char-counter';
 import * as actions from '@/actions';
 import Link from 'next/link';
 import paths from '@/paths';
@@ -20,6 +21,7 @@ import {
   inputClassNamesLg as inputClassNames,
   textareaClassNamesLg as textareaClassNames,
 } from '@/lib/form-classes';
+import { POST_CONTENT } from '@/lib/form-limits';
 
 interface PostCreatePageProps {
   params: Promise<{ slug: string }>;
@@ -29,6 +31,7 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
   const { slug } = use(params);
   const tone = topicTone(slug);
   const router = useRouter();
+  const [contentLength, setContentLength] = useState(0);
   const [formState, action] = useActionState(
     actions.createPost.bind(null, slug),
     INITIAL_ACTION_STATE
@@ -91,10 +94,18 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
               labelPlacement="outside"
               placeholder="Share your thoughts, questions, or ideas..."
               minRows={8}
+              onValueChange={(v) => setContentLength(v.length)}
               isInvalid={!!fieldError(formState, 'content')}
               errorMessage={fieldError(formState, 'content')?.join(', ')}
               classNames={textareaClassNames}
             />
+            <div className="flex items-center justify-end -mt-2">
+              <CharCounter
+                current={contentLength}
+                min={POST_CONTENT.min}
+                max={POST_CONTENT.max}
+              />
+            </div>
             <FormError message={formMessage(formState)} />
 
             <div className="flex items-center justify-between pt-2 border-t border-rule">

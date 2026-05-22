@@ -1,11 +1,13 @@
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { Textarea } from '@heroui/react';
 import * as actions from '@/actions';
 import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
+import CharCounter from '@/components/common/char-counter';
 import { inputClassNames as textareaClassNames } from '@/lib/form-classes';
+import { COMMENT_CONTENT } from '@/lib/form-limits';
 import {
   fieldError,
   formMessage,
@@ -26,6 +28,7 @@ export default function CommentEditForm({
   onSuccess,
 }: CommentEditFormProps) {
   const ref = useRef<HTMLFormElement | null>(null);
+  const [contentLength, setContentLength] = useState(initialContent.length);
   const [formState, action] = useActionState(
     actions.editComment.bind(null, commentId),
     INITIAL_ACTION_STATE
@@ -43,10 +46,18 @@ export default function CommentEditForm({
         name="content"
         defaultValue={initialContent}
         minRows={3}
+        onValueChange={(v) => setContentLength(v.length)}
         isInvalid={!!fieldError(formState, 'content')}
         errorMessage={fieldError(formState, 'content')?.join(', ')}
         classNames={textareaClassNames}
       />
+      <div className="flex items-center justify-end">
+        <CharCounter
+          current={contentLength}
+          min={COMMENT_CONTENT.min}
+          max={COMMENT_CONTENT.max}
+        />
+      </div>
       <FormError message={formMessage(formState)} />
       <div className="flex items-center justify-end gap-2">
         <button
