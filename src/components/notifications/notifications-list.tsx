@@ -141,10 +141,10 @@ function NotificationRow({
 
   return (
     <li className="rise">
-      {/* Next/Link for instant client-side nav. CommentListClient re-fires
-          the #c-{commentId} scroll once comments have hydrated, so the deep
-          link still lands on the right thread. */}
-      <Link
+      {/* Plain <a> on purpose: matches the bell rows so cross-page hash
+          deep-links scroll reliably (Next App Router client-side nav fires
+          the hash scroll before the target comment has hydrated). */}
+      <a
         href={href}
         onClick={onClick}
         className={`block rounded-2xl border shadow-soft transition-all duration-200 motion-reduce:transition-none hover:shadow-lift/40 ${
@@ -180,7 +180,7 @@ function NotificationRow({
             />
           )}
         </div>
-      </Link>
+      </a>
     </li>
   );
 }

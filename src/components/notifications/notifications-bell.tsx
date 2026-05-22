@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import {
   markAllNotificationsRead,
@@ -151,13 +150,13 @@ export default function NotificationsBell({
                   <span className="italic">see them all below.</span>
                 </p>
               )}
-              <Link
+              <a
                 href={paths.notifications()}
                 onClick={() => setOpen(false)}
                 className="block px-4 py-2.5 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-ink-2 hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
               >
                 See all &rarr;
-              </Link>
+              </a>
             </footer>
           )}
         </div>
@@ -207,11 +206,12 @@ function NotificationRow({
 
   return (
     <li className={n.readAt ? '' : 'bg-persimmon-soft/30'}>
-      {/* Next/Link for instant client-side nav. The destination page's */}
-      {/* CommentListClient runs a useEffect on mount that re-fires the */}
-      {/* #c-{commentId} scroll once comments have hydrated, so the deep */}
-      {/* link still lands on the right comment with the :target flash. */}
-      <Link
+      {/* Plain <a> on purpose: a Next.js <Link> would client-side navigate */}
+      {/* and miss the browser's native hash-anchor scroll because the */}
+      {/* target comment element isn't mounted yet at the moment the */}
+      {/* router tries to scroll. A full nav guarantees the deep-link */}
+      {/* lands on the right #c-{commentId}. */}
+      <a
         href={href}
         onClick={onClick}
         role="menuitem"
@@ -244,7 +244,7 @@ function NotificationRow({
             />
           )}
         </div>
-      </Link>
+      </a>
     </li>
   );
 }

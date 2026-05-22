@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import CommentShow from '@/components/comments/comment-show';
 import type { CommentWithAuthor } from '@/db/queries/comments';
 import { IconReply } from '@/components/icons';
@@ -53,28 +53,6 @@ export default function CommentListClient({
 
   const activeCount = comments.filter((c) => !c.deleted).length;
   const hasReplies = sortedTopLevel.length > 0;
-
-  // Cross-page deep-links (e.g. notifications bell → /post#c-123) navigate
-  // client-side via Next/Link, which fires the browser's hash-anchor scroll
-  // BEFORE the target comment element has hydrated. We re-trigger the
-  // scroll here once comments are actually rendered. The URL hash is left
-  // intact, so the `:target`-flash CSS still fires for visual confirmation.
-  // The hashchange listener also covers the edge case of clicking a
-  // notification that points to a different comment on the SAME post,
-  // where this component doesn't unmount and the [comments] dep wouldn't
-  // re-fire.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const scrollToHash = () => {
-      const hash = window.location.hash;
-      if (!hash || !hash.startsWith('#c-')) return;
-      const el = document.getElementById(hash.slice(1));
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-    scrollToHash();
-    window.addEventListener('hashchange', scrollToHash);
-    return () => window.removeEventListener('hashchange', scrollToHash);
-  }, [comments]);
 
   return (
     <section aria-label="Comments">
