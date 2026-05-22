@@ -25,6 +25,10 @@ export const fetchCommentsByPostId = cache(
     return db.comment.findMany({
       where: { postId },
       include: commentInclude(viewerId),
+      // Ascending so replies within a subtree read top-to-bottom in
+      // posting order. The client re-sorts top-level branches via the
+      // sort pill; nested replies keep this chronological flow.
+      orderBy: { createdAt: 'asc' },
     });
   }
 );
