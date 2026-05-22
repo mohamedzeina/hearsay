@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useActionState, useEffect, useState } from 'react';
+import { use, useActionState, useEffect } from 'react';
 import { Input, Textarea } from '@heroui/react';
 import { useRouter } from 'next/navigation';
 import FormButton from '@/components/common/form-button';
@@ -22,6 +22,7 @@ import {
   textareaClassNamesLg as textareaClassNames,
 } from '@/lib/form-classes';
 import { POST_CONTENT } from '@/lib/form-limits';
+import { useDraft } from '@/lib/use-draft';
 
 interface PostCreatePageProps {
   params: Promise<{ slug: string }>;
@@ -31,17 +32,20 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
   const { slug } = use(params);
   const tone = topicTone(slug);
   const router = useRouter();
-  const [contentLength, setContentLength] = useState(0);
+  const titleDraft = useDraft(`post:${slug}:title`);
+  const contentDraft = useDraft(`post:${slug}:content`);
   const [formState, action] = useActionState(
     actions.createPost.bind(null, slug),
     INITIAL_ACTION_STATE
   );
 
   useEffect(() => {
-    if (formState.ok && formState.redirectTo) {
-      router.push(formState.redirectTo);
+    if (formState.ok) {
+      titleDraft.clear();
+      contentDraft.clear();
+      if (formState.redirectTo) router.push(formState.redirectTo);
     }
-  }, [formState, router]);
+  }, [formState, router, titleDraft, contentDraft]);
 
   return (
     <div className="max-w-2xl mx-auto py-8 sm:py-10">
@@ -84,6 +88,8 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
               label="Title"
               labelPlacement="outside"
               placeholder="What's your post about?"
+              value={titleDraft.value}
+              onValueChange={titleDraft.setValue}
               isInvalid={!!fieldError(formState, 'title')}
               errorMessage={fieldError(formState, 'title')?.join(', ')}
               classNames={inputClassNames}
@@ -94,14 +100,15 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
               labelPlacement="outside"
               placeholder="Share your thoughts, questions, or ideas..."
               minRows={8}
-              onValueChange={(v) => setContentLength(v.length)}
+              value={contentDraft.value}
+              onValueChange={contentDraft.setValue}
               isInvalid={!!fieldError(formState, 'content')}
               errorMessage={fieldError(formState, 'content')?.join(', ')}
               classNames={textareaClassNames}
             />
             <div className="flex items-center justify-end -mt-2">
               <CharCounter
-                current={contentLength}
+                current={contentDraft.value.length}
                 min={POST_CONTENT.min}
                 max={POST_CONTENT.max}
               />
