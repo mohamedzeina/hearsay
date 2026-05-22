@@ -66,7 +66,7 @@ beforeAll(async () => {
 afterEach(async () => {
   // Truncate every table between tests — fast on small data, cascades FKs.
   await testDb.$executeRawUnsafe(
-    'TRUNCATE TABLE "PostVote", "CommentVote", "SavedPost", "Comment", "Post", "Topic", "Session", "Account", "VerificationToken", "User" RESTART IDENTITY CASCADE'
+    'TRUNCATE TABLE "Notification", "PostVote", "CommentVote", "SavedPost", "Comment", "Post", "Topic", "Session", "Account", "VerificationToken", "User" RESTART IDENTITY CASCADE'
   );
   setViewer(null);
 });
