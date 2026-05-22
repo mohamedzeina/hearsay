@@ -3,14 +3,16 @@ const baseLabels = {
   errorMessage: 'text-persimmon-deep text-xs font-medium',
 } as const;
 
-// Mouse focus shows a persimmon border + surface background. Keyboard focus
-// adds HeroUI's default ring on top — themed to persimmon via the heroui()
-// plugin in tailwind.config.ts so the two indicators read as one designed
-// focus look rather than competing colours.
+// Focus is a single indicator: the wrapper border shifts to persimmon and the
+// background flips to surface white. HeroUI's default focus-visible ring is
+// suppressed here (ring-0 + ring-offset-0) — when it was left on, it layered
+// outside the border and read as two parallel persimmon lines instead of one
+// coordinated halo. The border alone is a sufficient a11y cue.
 const wrapperBase =
   'bg-cream-2/40 border border-rule shadow-none rounded-xl ' +
   'data-[hover=true]:border-rule-2 ' +
-  'group-data-[focus=true]:border-persimmon group-data-[focus=true]:bg-surface';
+  'group-data-[focus=true]:border-persimmon group-data-[focus=true]:bg-surface ' +
+  'group-data-[focus-visible=true]:!ring-0 group-data-[focus-visible=true]:!ring-offset-0';
 
 /** Standard-size NextUI Input/Textarea classNames matching the warm-modern palette. */
 export const inputClassNames = {
