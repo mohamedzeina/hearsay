@@ -156,6 +156,16 @@ async function main() {
 		}),
 	]);
 
+	// Deliberately empty topic so the "start the discussion" empty state
+	// shows up in the dev DB. Keep it postless on every reseed.
+	await db.topic.create({
+		data: {
+			slug: 'photography',
+			description:
+				'Cameras, lenses, light, and the photos you actually wanted to take',
+		},
+	});
+
 	console.log('Creating posts...');
 	const posts = await Promise.all([
 		db.post.create({
@@ -887,7 +897,7 @@ async function main() {
 
 	const stats = {
 		users: users.length + (owner ? 1 : 0),
-		topics: 11,
+		topics: await db.topic.count(),
 		posts: allPosts.length,
 		comments: allComments.length,
 		postVotes: await db.postVote.count(),
