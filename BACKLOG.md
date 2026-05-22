@@ -26,6 +26,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Better empty states — topics with zero posts show a "start the discussion" CTA card with the embedded post-create button; seed includes an empty topic to demo it
 - ✅ Syntax highlighting on code blocks — `rehype-highlight` wired into the Markdown wrapper, custom cream-and-persimmon hljs theme for keywords/strings/comments/numbers
 - ✅ Word / char counters on forms — every textarea gets a live `min N to post` / `current / max` counter; shared `form-limits.ts` keeps Zod schemas and UI in lockstep, counter flips persimmon-deep within the last 10% of the cap
+- ✅ Drafts via localStorage — every create-form textarea (post, top-level comment, nested reply, topic modal) auto-saves to `hearsay:draft:*` keys, rehydrates on remount, and clears on successful submit; new `useDraft` hook is SSR-safe and tolerates disabled storage
 
 ---
 
@@ -43,10 +44,6 @@ _All Tier 1 items have shipped. See Tier 2 for the next-best pick._
 - **Mentions** (M)
   `@username` autolinks to profile and sends a notification. Detect in
   markdown render and scan server-side on save.
-
-- **Drafts via localStorage** (S)
-  Auto-save the comment/post form contents keyed by route. No server
-  work; survives accidental reloads.
 
 ## Tier 3 — content quality
 
@@ -119,4 +116,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-22 (after char-counter ship). Update or trash as priorities shift._
+_Last touched 2026-05-22 (after localStorage drafts ship). Update or trash as priorities shift._
