@@ -82,6 +82,13 @@ A community discussion platform where every voice gets a thread — topics, post
 - Two prose variants: `body` (generous leading, used on post show) and `comment` (tighter, zero-margin paragraphs)
 - Post card previews use `stripMarkdown()` so the line-clamped excerpt doesn't show raw syntax
 
+### Drafts
+- **Every create-form textarea auto-saves to `localStorage`** — post composer (`/topics/[slug]/posts/new`), top-level comment box, nested reply box, and the topic-create modal. Refresh, close the tab, or navigate away mid-thought — the next time the same form mounts, your text is already there.
+- **Scoped keys** under a single `hearsay:draft:*` namespace: `post:<slug>:title`, `post:<slug>:content`, `comment:<postId>`, `reply:<parentId>`, `topic:name`, `topic:description`. Drafts never bleed across topics, posts, or reply threads.
+- **Clears on successful submit** — once the server action returns `ok`, the matching draft entry is removed so the next post starts blank.
+- **Edit forms are intentionally excluded** — published content shouldn't shadow itself with a ghost draft after a cancelled edit. Cancel discards.
+- Backed by a small `useDraft` hook (`src/lib/use-draft.ts`) that's SSR-safe (initial render always matches server output; rehydration runs in a post-mount effect), debounce-free (writes synchronously per keystroke — small payloads, no perceivable cost), and silently survives a disabled or quota-full `localStorage` (Safari private mode, etc.). Empty strings remove the entry rather than persisting `""`, so cleared drafts don't litter storage.
+
 ### Voting
 - **Upvote-only** on posts and comments — disagreement goes in replies; no karma scores
 - Optimistic toggle: state flips immediately on click; rolls back if the server rejects
@@ -176,6 +183,7 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 - **Form classNames** (`src/lib/form-classes.ts`) — `inputClassNames`, `inputClassNamesLg`, `textareaClassNamesLg` for consistent HeroUI styling. Focus state is just `border-persimmon` + `bg-surface`; the ring is themed at the HeroUI plugin level so no per-component override is needed.
 - **Form limits** (`src/lib/form-limits.ts`) — `POST_TITLE`, `POST_CONTENT`, `COMMENT_CONTENT`, `TOPIC_DESCRIPTION` `{ min, max }` constants. Imported by both server actions (Zod) and form components (`CharCounter`) so a number change only happens in one place.
 - **`usePaginated`** (`src/lib/use-paginated.ts`) — shared client pagination hook returning `{ page, setPage, totalPages, paginated }`.
+- **`useDraft`** (`src/lib/use-draft.ts`) — client hook that mirrors a textarea's value into `localStorage` under a `hearsay:draft:<key>` entry. Returns `{ value, setValue, clear }`. SSR-safe (initial state is always `''`; rehydration runs in a post-mount effect to keep server and first client render identical), `try/catch`-wrapped around storage access so disabled / quota-full storage degrades silently, and removes the entry on empty rather than persisting `""`.
 
 ## Architecture
 
@@ -196,12 +204,12 @@ CSS custom properties are exposed in `globals.css` (e.g. `--nav-h: 4rem` so the 
 
 ## Testing
 
-A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **230 tests** total (+ 5 E2E).
+A four-layer test pyramid covers utilities, components, queries/actions, and full browser flows. **243 tests** total (+ 5 E2E).
 
 | Layer | Framework | Runs against | Tests |
 |---|---|---|---|
-| Unit | Vitest + jsdom | Pure functions (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `paths`) | 41 |
-| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown (incl. hljs token classes on fenced blocks), SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), CharCounter (min hint, in-range, ≥90% persimmon, over-max), all auth-gated create forms | 99 |
+| Unit | Vitest + jsdom | Pure functions and hooks (`timeAgo`, `topicTone`, `stripMarkdown`, `slugifyName`, `usePaginated`, `useDraft` — incl. SSR-safe rehydration, empty-string eviction, and storage-failure tolerance, `paths`) | 50 |
+| Component | Vitest + React Testing Library | Mocked NextAuth/router; covers Avatar, FormError/Button, VoteButton, SaveButton, SavedPostsList (unsave-removes-card), Markdown (incl. hljs token classes on fenced blocks), SignInPromptProvider, CommentCard (incl. copy-link + clipboard fallbacks), CommentShow (anchor wrapping), AuthorChip, TopicPostsEmpty (start-the-discussion CTA), CharCounter (min hint, in-range, ≥90% persimmon, over-max), draft restore-from-storage on comment + topic forms (incl. parentId scoping for nested replies), all auth-gated create forms | 115 |
 | Integration | Vitest + Node + Docker Postgres | Every server action and query against a real PG schema (incl. `toggleSavedPost`, `fetchSavedPosts` with viewer scope + 100-row cap, `fetchUserProfileByUsername`, Zod min/max enforcement on `createTopic` / `createPost` / `createComment`); truncate-per-test isolation; `setViewer()` helper for auth | 78 |
 | E2E | Playwright (Chromium) | Live Next.js dev server with a test-only NextAuth credentials provider gated by `PLAYWRIGHT_TEST=1` | 5 |
 
@@ -294,7 +302,9 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── utils.ts                    # timeAgo(), stripMarkdown(), topicTone(), slugifyName()
 │   │   ├── server-utils.ts             # requireAuth(), getViewerId()
 │   │   ├── form-classes.ts             # Shared HeroUI input/textarea classes
+│   │   ├── form-limits.ts              # Shared min/max bounds (single source for Zod + CharCounter)
 │   │   ├── use-paginated.ts            # Client pagination hook
+│   │   ├── use-draft.ts                # localStorage-backed textarea autosave hook
 │   │   └── types.ts                    # FormState, ActionResult
 │   ├── auth.ts                         # NextAuth v5 config (GitHub profile.login → User.username + events.signIn backfill + test creds)
 │   └── paths.ts                        # Type-safe URL builder (topicShow, postShow, postCreate, userProfile, savedPosts)
