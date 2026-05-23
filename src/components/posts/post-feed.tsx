@@ -9,7 +9,7 @@ type Sort = 'top' | 'new';
 
 interface PostFeedProps {
   posts: PostWithData[];
-  /** Initial sort. Defaults to 'top'. The page picks per-scope (e.g. Following defaults to 'new'). */
+  /** Initial sort. Defaults to 'top'. */
   defaultSort?: Sort;
   /** Heading shown above the sort pills. Falls back to a sort-derived label. */
   title?: string;
@@ -17,6 +17,8 @@ interface PostFeedProps {
   subtitle?: string;
   /** Custom empty state. Falls back to the all-site PostEmpty card. */
   emptyState?: React.ReactNode;
+  /** Extra identity to fold into the pagination reset key — pass e.g. the feed scope so swapping arrays under a sticky sort still resets pagination back to page 1. */
+  resetKey?: string;
 }
 
 const SORT_META: Record<Sort, { title: string; subtitle: string }> = {
@@ -30,6 +32,7 @@ export default function PostFeed({
   title,
   subtitle,
   emptyState,
+  resetKey,
 }: PostFeedProps) {
   const [sort, setSort] = useState<Sort>(defaultSort);
 
@@ -102,7 +105,7 @@ export default function PostFeed({
         </div>
       </header>
 
-      <PostCardList posts={sorted} resetKey={sort} />
+      <PostCardList posts={sorted} resetKey={resetKey ? `${sort}:${resetKey}` : sort} />
     </div>
   );
 }

@@ -20,17 +20,16 @@ export default function ScopedPostFeed({
   if (scope === 'following') {
     return (
       <PostFeed
-        key="following"
         posts={followingPosts}
-        defaultSort="new"
         title="From topics you follow"
         subtitle="Scoped to your follows"
         emptyState={<FollowingEmpty />}
+        resetKey="following"
       />
     );
   }
 
-  return <PostFeed key="everywhere" posts={everywherePosts} defaultSort="top" />;
+  return <PostFeed posts={everywherePosts} resetKey="everywhere" />;
 }
 
 function FollowingEmpty() {

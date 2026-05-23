@@ -115,4 +115,33 @@ describe('ScopedPostFeed', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/scoped to your follows/i)).toBeInTheDocument();
   });
+
+  it('keeps the active sort sticky when the viewer switches scopes', async () => {
+    const user = userEvent.setup();
+    renderWith(
+      'everywhere',
+      <>
+        <FeedNav />
+        <ScopedPostFeed everywherePosts={EVERYWHERE} followingPosts={FOLLOWING} />
+      </>
+    );
+
+    // Default is Top; flip to New on the Everywhere feed first.
+    await user.click(screen.getByRole('tab', { name: /new/i }));
+    expect(screen.getByRole('tab', { name: /new/i })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+
+    // Switch scope. New should remain the active sort — not snap back to Top.
+    await user.click(screen.getByRole('button', { name: /following/i }));
+    expect(screen.getByRole('tab', { name: /new/i })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    expect(screen.getByRole('tab', { name: /top/i })).toHaveAttribute(
+      'aria-selected',
+      'false'
+    );
+  });
 });
