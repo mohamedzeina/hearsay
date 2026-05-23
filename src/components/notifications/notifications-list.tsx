@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '@/actions';
 import Avatar from '@/components/common/avatar';
-import { IconBell } from '@/components/icons';
+import { IconBell, IconReply } from '@/components/icons';
 import PostPagination from '@/components/posts/post-pagination';
 import { usePaginated } from '@/lib/use-paginated';
 import { timeAgo } from '@/lib/utils';
@@ -15,6 +15,21 @@ import paths from '@/paths';
 import type { NotificationItem } from '@/db/queries/notifications';
 
 const PAGE_SIZE = 10;
+
+type Filter = 'all' | 'replies' | 'upvotes' | 'mentions';
+
+const FILTER_KINDS: Record<Exclude<Filter, 'all'>, ReadonlySet<string>> = {
+  replies: new Set(['REPLY_TO_POST', 'REPLY_TO_COMMENT']),
+  upvotes: new Set(['UPVOTE_POST', 'UPVOTE_COMMENT']),
+  mentions: new Set(['MENTION']),
+};
+
+const FILTER_LABEL: Record<Filter, string> = {
+  all: 'All',
+  replies: 'Replies',
+  upvotes: 'Upvotes',
+  mentions: 'Mentions',
+};
 
 interface NotificationsListProps {
   initialItems: NotificationItem[];
@@ -24,9 +39,17 @@ export default function NotificationsList({
   initialItems,
 }: NotificationsListProps) {
   const [items, setItems] = useState(initialItems);
+  const [filter, setFilter] = useState<Filter>('all');
   const [, startTransition] = useTransition();
+
+  const filteredItems = useMemo(() => {
+    if (filter === 'all') return items;
+    const kinds = FILTER_KINDS[filter];
+    return items.filter((n) => kinds.has(n.kind));
+  }, [items, filter]);
+
   const { page, setPage, totalPages, paginated } = usePaginated(
-    items,
+    filteredItems,
     PAGE_SIZE
   );
 
@@ -35,6 +58,11 @@ export default function NotificationsList({
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages, setPage]);
+
+  const handleFilterChange = (next: Filter) => {
+    setFilter(next);
+    setPage(1);
+  };
 
   const unreadCount = items.filter((n) => !n.readAt).length;
 
@@ -113,23 +141,124 @@ export default function NotificationsList({
         <EmptyState />
       ) : (
         <>
-          <ul className="space-y-3">
-            {paginated.map((n) => (
-              <NotificationRow
-                key={n.id}
-                n={n}
-                onClick={(e) => handleItemClick(e, n.id)}
+          <FilterPills value={filter} onChange={handleFilterChange} />
+          {filteredItems.length === 0 ? (
+            <FilterEmptyState filter={filter} />
+          ) : (
+            <>
+              <ul className="space-y-3">
+                {paginated.map((n) => (
+                  <NotificationRow
+                    key={n.id}
+                    n={n}
+                    onClick={(e) => handleItemClick(e, n.id)}
+                  />
+                ))}
+              </ul>
+              <PostPagination
+                page={page}
+                totalPages={totalPages}
+                onChange={setPage}
               />
-            ))}
-          </ul>
-          <PostPagination
-            page={page}
-            totalPages={totalPages}
-            onChange={setPage}
-          />
+            </>
+          )}
         </>
       )}
     </>
+  );
+}
+
+function FilterPills({
+  value,
+  onChange,
+}: {
+  value: Filter;
+  onChange: (next: Filter) => void;
+}) {
+  const filters: Filter[] = ['all', 'replies', 'upvotes', 'mentions'];
+  return (
+    <div
+      role="tablist"
+      aria-label="Filter notifications"
+      className="mb-5 inline-flex items-center gap-1 rounded-full bg-cream-2 p-1 border border-rule"
+    >
+      {filters.map((f) => (
+        <button
+          key={f}
+          role="tab"
+          aria-selected={value === f}
+          onClick={() => onChange(f)}
+          className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold transition-all duration-200 motion-reduce:transition-none ${
+            value === f
+              ? 'bg-surface text-ink shadow-soft'
+              : 'text-ink-2 hover:text-ink'
+          }`}
+        >
+          <FilterIcon filter={f} />
+          {FILTER_LABEL[f]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function FilterIcon({ filter }: { filter: Filter }) {
+  if (filter === 'replies') {
+    return <IconReply className="w-3 h-3" />;
+  }
+  if (filter === 'upvotes') {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="w-3 h-3"
+      >
+        <path d="M12 19V5" />
+        <path d="m5 12 7-7 7 7" />
+      </svg>
+    );
+  }
+  if (filter === 'mentions') {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="w-3 h-3"
+      >
+        <circle cx="12" cy="12" r="4" />
+        <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.9 7.9" />
+      </svg>
+    );
+  }
+  // 'all' — a small dot, so the pill row stays visually balanced.
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="w-3 h-3"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function FilterEmptyState({ filter }: { filter: Filter }) {
+  const label = FILTER_LABEL[filter].toLowerCase();
+  return (
+    <div className="rounded-2xl border border-dashed border-rule-2 bg-cream-2/30 px-6 py-10 text-center">
+      <p className="text-sm text-ink-2">
+        No {label} to show yet.
+      </p>
+    </div>
   );
 }
 
