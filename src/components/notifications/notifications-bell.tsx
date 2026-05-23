@@ -16,6 +16,16 @@ import {
 } from '@/lib/notifications-bus';
 import type { NotificationItem } from '@/db/queries/notifications';
 
+// Polling cadence for the header bell. Defaults to 60s; override for
+// local dev via NEXT_PUBLIC_NOTIFICATIONS_POLL_MS in .env.local so you
+// don't have to sit and wait a minute to see the loop work.
+const DEFAULT_POLL_MS = 60_000;
+const POLL_MS = (() => {
+  const raw = process.env.NEXT_PUBLIC_NOTIFICATIONS_POLL_MS;
+  const parsed = raw ? Number(raw) : NaN;
+  return Number.isFinite(parsed) && parsed >= 1_000 ? parsed : DEFAULT_POLL_MS;
+})();
+
 interface NotificationsBellProps {
   items: NotificationItem[];
   unread: number;
@@ -90,6 +100,58 @@ export default function NotificationsBell({
     return () => {
       window.removeEventListener(NOTIF_READ_EVENT, onRead);
       window.removeEventListener(NOTIF_ALL_READ_EVENT, onAllRead);
+    };
+  }, []);
+
+  // Light polling so new notifications appear without waiting for the
+  // user to navigate. Pause when the dropdown is open (no rug-pull
+  // mid-interaction) and when the tab is hidden (no useless traffic
+  // for a backgrounded tab). When the tab returns to visible, fire an
+  // immediate fetch so users see fresh state the moment they switch
+  // back instead of waiting up to a full interval.
+  const openRef = useRef(open);
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      if (cancelled) return;
+      if (openRef.current) return;
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const res = await fetch('/api/notifications/recent', {
+          cache: 'no-store',
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          items: NotificationItem[];
+          unread: number;
+        };
+        // Replace local state directly. Mark-read events in the bell's
+        // 100ms-ish action window can transiently disagree with the
+        // server, but the bell's optimistic flow awaits the action
+        // before the next interaction, so a poll that races in will
+        // simply re-sync once the action completes.
+        setLocalItems(data.items);
+        setLocalUnread(data.unread);
+      } catch {
+        // Network blips are fine — the next interval will retry.
+      }
+    };
+
+    const interval = setInterval(refresh, POLL_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refresh();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 
