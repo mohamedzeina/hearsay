@@ -23,14 +23,32 @@ export default function HomeLoadingSkeleton({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-10">
         <div className="lg:col-span-8">
-          <Skeleton className="h-8 w-56 rounded mb-5 bg-cream-2" />
+          {/* Mobile scope strip — only signed-in viewers get one. */}
+          {isAuthed && <FeedNavMobileSkeleton />}
+
+          {/* Feed header: title block on the left, sort pills on the right. */}
+          <div className="flex items-end justify-between gap-4 mb-5">
+            <div className="space-y-1.5 min-w-0">
+              <Skeleton className="h-7 w-48 rounded bg-cream-2" />
+              <Skeleton className="h-3.5 w-32 rounded bg-cream-2" />
+            </div>
+            <Skeleton className="h-10 w-[136px] rounded-full bg-cream-2 shrink-0" />
+          </div>
+
           <PostListSkeleton />
         </div>
+
         <aside className="lg:col-span-4 space-y-5">
+          {/* "Your feed" scope nav — only shown to signed-in viewers. */}
+          {isAuthed && <FeedNavSkeleton />}
+
+          {/* Start something */}
           <div className="rounded-2xl border border-rule bg-surface p-4 space-y-3">
             <Skeleton className="h-4 w-32 rounded bg-cream-2" />
             <Skeleton className="h-10 w-full rounded-full bg-cream-2" />
           </div>
+
+          {/* Browse topics */}
           <div className="rounded-2xl border border-rule bg-surface p-4 space-y-3">
             <Skeleton className="h-4 w-28 rounded bg-cream-2" />
             <div className="flex flex-wrap gap-2 pt-1">
@@ -43,7 +61,51 @@ export default function HomeLoadingSkeleton({
               ))}
             </div>
           </div>
+
+          {/* House rules — matches the cream-2 inline note, not a card. */}
+          <div className="rounded-2xl bg-cream-2/60 border border-rule px-4 py-3.5 space-y-2">
+            <Skeleton className="h-2.5 w-20 rounded bg-cream-2" />
+            <Skeleton className="h-3.5 w-full rounded bg-cream-2" />
+            <Skeleton className="h-3.5 w-3/4 rounded bg-cream-2" />
+          </div>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function FeedNavMobileSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="lg:hidden mb-4 inline-flex items-center gap-1 rounded-full bg-cream-2 p-1 border border-rule"
+    >
+      <Skeleton className="h-8 w-24 rounded-full bg-surface" />
+      <Skeleton className="h-8 w-20 rounded-full bg-cream-2" />
+    </div>
+  );
+}
+
+function FeedNavSkeleton() {
+  return (
+    <div className="rounded-2xl border border-rule bg-surface shadow-soft overflow-hidden">
+      <div className="flex items-baseline justify-between px-4 pt-3.5 pb-2.5">
+        <Skeleton className="h-4 w-20 rounded bg-cream-2" />
+        <Skeleton className="h-3 w-10 rounded bg-cream-2" />
+      </div>
+      <hr className="border-0 h-px bg-rule" />
+      <div className="p-1.5 space-y-0.5">
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between gap-3 rounded-xl px-3 py-2"
+          >
+            <div className="flex-1 space-y-1.5">
+              <Skeleton className="h-3.5 w-28 rounded bg-cream-2" />
+              <Skeleton className="h-2.5 w-20 rounded bg-cream-2" />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
