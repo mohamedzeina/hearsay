@@ -25,6 +25,10 @@ vi.mock('@/components/auth/signin-prompt', () => ({
   useSignInPrompt: () => ({ open: vi.fn() }),
 }));
 
+vi.mock('@/components/common/toast', () => ({
+  useToast: () => ({ show: vi.fn(), dismiss: vi.fn() }),
+}));
+
 function makePost(overrides: Partial<PostWithData>): PostWithData {
   return {
     id: 'p1',

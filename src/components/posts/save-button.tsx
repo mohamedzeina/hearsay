@@ -1,10 +1,11 @@
 'use client';
 
-import { useOptimistic, useState, useTransition } from 'react';
+import { useCallback, useOptimistic, useState, useTransition } from 'react';
 import { useSession } from 'next-auth/react';
 import { toggleSavedPost } from '@/actions';
 import { useSignInPrompt } from '@/components/auth/signin-prompt';
 import { useSavedListContext } from '@/components/posts/saved-list-context';
+import { useToast } from '@/components/common/toast';
 import { IconBookmark } from '@/components/icons';
 
 interface SaveButtonProps {
@@ -38,6 +39,44 @@ export default function SaveButton({
   const session = useSession();
   const signInPrompt = useSignInPrompt();
   const savedList = useSavedListContext();
+  const toast = useToast();
+
+  const doToggle = useCallback(
+    (silent: boolean) => {
+      const next = !confirmed;
+      // Drop the card from /saved up-front so the unsave feels instant even
+      // on slow Neon roundtrips. Runs OUTSIDE startTransition because React
+      // marks transition-scoped updates as non-urgent and can defer them —
+      // the card would visibly linger for a frame. One-way hint to the
+      // list; we don't restore on server error.
+      if (!next) savedList?.removePost(postId);
+
+      if (!silent) {
+        toast.show({
+          eyebrow: next ? 'Saved' : 'Unsaved',
+          body: next ? 'Tucked away in /saved.' : 'Removed from /saved.',
+          undo: () => doToggle(true),
+        });
+      }
+
+      startTransition(async () => {
+        addOptimistic(next);
+        try {
+          const result = await toggleSavedPost(postId);
+          setConfirmed(result.saved);
+          onToggle?.(result.saved);
+        } catch {
+          // Pull the toast back too — the action didn't land, so the
+          // confirmation message is now lying.
+          if (!silent) toast.dismiss();
+          // No setConfirmed → useOptimistic auto-reverts when the
+          // transition settles, snapping the icon back to its
+          // server-confirmed state.
+        }
+      });
+    },
+    [confirmed, postId, savedList, toast, addOptimistic, onToggle]
+  );
 
   const onClick = (e: React.MouseEvent) => {
     // PostCard wraps this in <Link> — don't navigate.
@@ -49,25 +88,7 @@ export default function SaveButton({
       return;
     }
 
-    const next = !confirmed;
-    // Drop the card from /saved up-front so the unsave feels instant even on
-    // slow Neon roundtrips. Runs OUTSIDE startTransition because React marks
-    // transition-scoped updates as non-urgent and can defer them — the card
-    // would visibly linger for a frame. One-way hint to the list; we don't
-    // restore on server error.
-    if (!next) savedList?.removePost(postId);
-
-    startTransition(async () => {
-      addOptimistic(next);
-      try {
-        const result = await toggleSavedPost(postId);
-        setConfirmed(result.saved);
-        onToggle?.(result.saved);
-      } catch {
-        // No setConfirmed → useOptimistic auto-reverts when the transition
-        // settles, snapping the icon back to its server-confirmed state.
-      }
-    });
+    doToggle(false);
   };
 
   const s = SIZES[size];
