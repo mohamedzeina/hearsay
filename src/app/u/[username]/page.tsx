@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { fetchUserProfileByUsername } from '@/db/queries/users';
 import Avatar from '@/components/common/avatar';
 import PostCard from '@/components/posts/post-card';
+import VisitedLi from '@/components/posts/visited-li';
 import SurfacePanel from '@/components/common/surface-panel';
 import Breadcrumb from '@/components/common/breadcrumb';
 import { stripMarkdown, timeAgo, topicTone } from '@/lib/utils';
@@ -91,9 +92,9 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
             ) : (
               <ul className="space-y-3">
                 {profile.posts.map((post) => (
-                  <li key={post.id}>
+                  <VisitedLi key={post.id} postId={post.id}>
                     <PostCard post={post} />
-                  </li>
+                  </VisitedLi>
                 ))}
               </ul>
             )}
