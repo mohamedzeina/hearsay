@@ -35,6 +35,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Mention autocomplete — typing `@` in a post or comment textarea opens a portaled dropdown of matching users (avatar + @username + display name); click / Enter / Tab inserts `@username `; `↑` / `↓` navigate, `Escape` closes; `GET /api/users/suggestions` (auth-gated, ≤6 rows, prefix-match case-insensitive) backs the lookup; dropdown is portaled to `document.body` and tracks scroll/resize so a `SurfacePanel`'s `overflow-hidden` can't clip it
 - ✅ Notifications live polling — header bell polls `GET /api/notifications/recent` every 60s, pauses while the dropdown is open and while the tab is hidden, and fires an immediate refresh when the tab returns to visible; cadence overridable via `NEXT_PUBLIC_NOTIFICATIONS_POLL_MS` for local dev so the loop is testable without sitting and waiting a minute
 - ✅ Topic following + Following tab — new `TopicFollow` join table (`@@unique(userId, topicId)` + `userId` index, cascades on both FKs); `toggleTopicFollow` action ($transaction find/delete-or-create, `revalidatePath('/')`); Follow/Following pill on each topic page header (optimistic via `useOptimistic`, auth-gated via signin modal); Following tab on the home post feed (signed-in viewers only, newest-first, dedicated empty state when you follow nothing); seed gives every persona 2–4 follows and the real owner 4 so the demo lands
+- ✅ Feed scope nav (URL-driven) — Following is no longer a third sort pill; the home page now reads `?view=following` and renders a dedicated "Your feed" sidebar panel (Everywhere / Following, persimmon left rail on the active row, quiet follow-count chip) plus a `lg:hidden` horizontal fallback above the feed. `PostFeed` is scope-agnostic — only Top/New sort pills, `defaultSort` / `title` / `subtitle` / `emptyState` props per scope (Following defaults to New). Signed-out visits to `?view=following` silently redirect home; the page only fetches the matching query so we don't pay for both feeds.
 
 ---
 
@@ -110,4 +111,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-23 (after topic following ship). Update or trash as priorities shift._
+_Last touched 2026-05-23 (after feed scope nav ship). Update or trash as priorities shift._
