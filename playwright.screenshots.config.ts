@@ -19,10 +19,6 @@ export default defineConfig({
   reporter: 'list',
   use: {
     baseURL,
-    // 1440 × 900 reads as a "real laptop" composition in the README
-    // hero. deviceScaleFactor 2 → retina-sharp PNGs at 2880 × 1800.
-    viewport: { width: 1440, height: 900 },
-    deviceScaleFactor: 2,
     // Animations off so the .rise stagger doesn't catch the camera
     // mid-fade — visited fade still applies via the !important class.
     launchOptions: { args: ['--force-prefers-reduced-motion'] },
@@ -30,7 +26,18 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      // Spread devices['Desktop Chrome'] FIRST, then override viewport
+      // + deviceScaleFactor so our resolution wins. The reverse order
+      // silently clobbered both back to the preset's 1280×720 @ 1x and
+      // produced soft, non-retina PNGs.
+      use: {
+        ...devices['Desktop Chrome'],
+        // 1440 × 900 reads as a "real laptop" composition in the
+        // README hero. deviceScaleFactor 2 → retina-sharp PNGs at
+        // 2880 × 1800 (and proportionally for the cropped shots).
+        viewport: { width: 1440, height: 900 },
+        deviceScaleFactor: 2,
+      },
     },
   ],
   webServer: {

@@ -95,10 +95,11 @@ test('feature-scope-nav — sidebar "Your feed" panel cropped', async ({
   await signIn(page);
   await setTheme(page, 'light');
   await page.goto('/');
-  // FeedNavMobile uses the same aria-label but is rendered first in
-  // DOM order — and lg:hidden makes it invisible at 1440px. Scope to
-  // the sidebar nav by requiring its <section> SurfacePanel ancestor.
-  const feedNav = page.locator('section nav[aria-label="Feed scope"]');
+  // FeedNavMobile uses the same aria-label but is `lg:hidden` at 1440px.
+  // Pin to the sidebar variant via the page's only <aside> ancestor.
+  // `.first()` guards against transient duplicate DOM nodes Turbopack
+  // can leave behind during Fast Refresh between serial test cases.
+  const feedNav = page.locator('aside nav[aria-label="Feed scope"]').first();
   await expect(feedNav).toBeVisible();
   const panel = feedNav.locator('xpath=ancestor::section[1]');
   await panel.screenshot({
@@ -147,13 +148,25 @@ test('feature-post-detail — markdown + comments + sidebar', async ({
   await firstPost.click();
   // Wait for the post show to hydrate.
   await expect(page.locator('article').first()).toBeVisible();
+  // Wait for at least one comment to land so the screenshot frames the
+  // threaded-comments story, not just the post body in isolation.
+  await expect(page.locator('[id^="c-"]').first()).toBeVisible();
   await hideDevChrome(page);
+
+  // Stretch the viewport for this shot so the frame includes the post
+  // body AND a couple of threaded comments below it (default 900px
+  // catches only the post + sidebar). 1700px fits the post card +
+  // ~2-3 top-level comments + their first nested reply on most posts.
+  await page.setViewportSize({ width: 1440, height: 1700 });
   await page.waitForTimeout(500);
 
   await page.screenshot({
     path: resolve(OUT_DIR, 'feature-post-detail.png'),
     fullPage: false,
   });
+
+  // Restore for any subsequent test in this file.
+  await page.setViewportSize({ width: 1440, height: 900 });
 });
 
 test('feature-mentions — @ autocomplete dropdown open', async ({ page }) => {
@@ -168,6 +181,19 @@ test('feature-mentions — @ autocomplete dropdown open', async ({ page }) => {
 
   // The top-level reply textarea starts open on the post detail page.
   const textarea = page.getByRole('textbox').first();
+  // Pin the textarea ~120px below the top of the viewport so there's
+  // room below for the portaled `position: absolute` suggestions
+  // dropdown. `behavior: 'instant'` is critical — globals.css sets
+  // `html { scroll-behavior: smooth }`, so the default behaviour
+  // would animate the scroll asynchronously and the next bounding-box
+  // read would still report the pre-scroll position.
+  await textarea.evaluate((el) => {
+    el.scrollIntoView({ block: 'start', behavior: 'instant' as ScrollBehavior });
+  });
+  await page.evaluate(() => window.scrollBy({ top: -120, behavior: 'instant' as ScrollBehavior }));
+  // Tiny extra settle so the dropdown's scroll/resize listener can
+  // re-anchor against the new textarea coordinates.
+  await page.waitForTimeout(100);
   await textarea.click();
   await textarea.fill('');
   // Single character after @ triggers the prefix-matched suggestion list.
@@ -175,23 +201,25 @@ test('feature-mentions — @ autocomplete dropdown open', async ({ page }) => {
   // Wait for the portaled dropdown.
   const listbox = page.locator('[role="listbox"]');
   await expect(listbox).toBeVisible({ timeout: 5000 });
+  // Wait for at least one suggestion row to land — the listbox is
+  // measurable the instant it mounts, but options stream in via fetch
+  // and bounding-box height stays at the empty-list value until they
+  // hydrate. Without this wait the clip was framing only the textarea.
+  await expect(listbox.locator('[role="option"]').first()).toBeVisible();
+  await page.waitForTimeout(200);
 
-  // Capture the textarea + dropdown by getting their combined bounding box.
+  // Frame the textarea + dropdown by computing from real bounding
+  // boxes. Now reliable because the smooth-scroll guard above lets
+  // the dropdown re-anchor before we measure.
   const taBox = await textarea.boundingBox();
   const lbBox = await listbox.boundingBox();
   if (!taBox || !lbBox) throw new Error('bounding boxes missing');
-  const x = Math.min(taBox.x, lbBox.x) - 12;
-  const y = Math.min(taBox.y, lbBox.y) - 12;
+  const x = Math.max(0, taBox.x - 12);
+  const y = Math.max(0, taBox.y - 12);
   const right = Math.max(taBox.x + taBox.width, lbBox.x + lbBox.width) + 12;
-  const bottom = Math.max(taBox.y + taBox.height, lbBox.y + lbBox.height) + 12;
-
+  const bottom = lbBox.y + lbBox.height + 12;
   await page.screenshot({
     path: resolve(OUT_DIR, 'feature-mentions.png'),
-    clip: {
-      x: Math.max(0, x),
-      y: Math.max(0, y),
-      width: right - x,
-      height: bottom - y,
-    },
+    clip: { x, y, width: right - x, height: bottom - y },
   });
 });
