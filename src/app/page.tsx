@@ -1,6 +1,6 @@
 import TopicCreateForm from '@/components/topics/topic-create-form';
 import TopicList from '@/components/topics/topic-list';
-import { fetchRecentPosts } from '@/db/queries/posts';
+import { fetchFollowingPosts, fetchRecentPosts } from '@/db/queries/posts';
 import { fetchSiteStats } from '@/db/queries/stats';
 import PostFeed from '@/components/posts/post-feed';
 import SurfacePanel from '@/components/common/surface-panel';
@@ -9,10 +9,12 @@ import { auth } from '@/auth';
 
 export default async function Home() {
   const session = await auth();
+  const viewerId = session?.user?.id ?? null;
 
-  const [posts, stats] = await Promise.all([
+  const [posts, stats, followingPosts] = await Promise.all([
     fetchRecentPosts(),
     fetchSiteStats(),
+    viewerId ? fetchFollowingPosts(viewerId) : Promise.resolve([]),
   ]);
 
   return (
@@ -25,7 +27,11 @@ export default async function Home() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-10">
         <div id="feed" className="lg:col-span-8">
-          <PostFeed posts={posts} />
+          <PostFeed
+            posts={posts}
+            followingPosts={followingPosts}
+            canFollow={!!viewerId}
+          />
         </div>
         <aside className="lg:col-span-4">
           <div className="sticky top-[calc(var(--nav-h)+2rem)] space-y-5">
