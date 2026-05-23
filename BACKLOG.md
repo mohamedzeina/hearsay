@@ -31,6 +31,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ In-app notifications (MVP) — `Notification` model + header bell with unread badge + dropdown of the 20 most-recent items; reply / upvote actions emit notifications inside the existing write transactions (self-actions skipped); mark-as-read fires optimistically on dropdown open. No live updates yet (refreshes on navigation); no dedicated `/notifications` history page yet; no mention-triggered notifications yet
 - ✅ Notifications history page — dedicated `/notifications` route with the full history paginated at 10/page via `usePaginated`, per-row mark-read + "Mark all read" pill (matches the bell), bell footer now links here via a "See all →" link, "Notifications" entry added to the avatar dropdown
 - ✅ Mentions — `@username` in post and comment markdown autolinks to `/u/<name>` (custom remark plugin via `mdast-util-find-and-replace`, code-context safe); a `MENTION` notification fires inside the existing create transactions, with self-mention skip, unknown-user skip, dedupe per write, and suppression of double-pinging a recipient who already got the reply notification
+- ✅ Notifications filtering — All / Replies / Upvotes / Mentions pill row on `/notifications` (matches the comment-sort pill pattern); filters client-side, resets to page 1 on change, shows a filter-specific empty state when the active filter has no matches; pill row hidden when there are no items overall
 
 ---
 
@@ -40,11 +41,10 @@ _All Tier 1 items have shipped. See Tier 2 for the next-best pick._
 
 ## Tier 2 — engagement & retention
 
-- **Notifications — live + filtering** (S→M)
-  Follow-ups to the in-app notifications MVP + history page:
-  - **Light polling** every ~60s on the bell so new items appear without
-    a full navigation (S).
-  - **Filtering** (replies vs. upvotes) on the `/notifications` page (S).
+- **Notifications — live polling on the bell** (S)
+  Light polling every ~60s on the header bell so new items appear
+  without a full navigation. Pause when the tab is hidden / dropdown
+  is open. Filtering has already shipped on `/notifications`.
 
 ## Tier 3 — content quality
 
@@ -113,4 +113,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-22 (after mentions ship). Update or trash as priorities shift._
+_Last touched 2026-05-23 (after notifications filtering ship). Update or trash as priorities shift._
