@@ -5,9 +5,11 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Textarea, type TextAreaProps } from '@heroui/react';
 import Avatar from '@/components/common/avatar';
 import { findMentionTrigger } from '@/lib/find-mention-trigger';
@@ -35,6 +37,7 @@ interface MentionTextareaProps
 const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
   function MentionTextarea({ value, onValueChange, ...rest }, forwardedRef) {
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
     const taRef = useRef<HTMLTextAreaElement | null>(null);
     useImperativeHandle(forwardedRef, () => taRef.current as HTMLTextAreaElement);
 
@@ -45,6 +48,18 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
     const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [isFetching, setIsFetching] = useState(false);
+    // Portal target + measured dropdown position. The dropdown lives at
+    // document.body so an ancestor with `overflow: hidden` (the post /
+    // comment SurfacePanel) can't clip it.
+    const [mounted, setMounted] = useState(false);
+    const [anchor, setAnchor] = useState<{
+      top: number;
+      left: number;
+      width: number;
+    } | null>(null);
+    useEffect(() => {
+      setMounted(true);
+    }, []);
 
     // Detect mention state from the textarea's caret. We read this on
     // every value change AND on cursor moves (click / arrow keys) so
@@ -103,19 +118,60 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
       };
     }, [trigger]);
 
-    // Close on click outside the textarea + dropdown.
+    // Close on click outside the textarea + dropdown. The dropdown is
+    // portaled to document.body, so we have to check BOTH the wrapper
+    // and the dropdown ref — neither alone is a complete answer.
     useEffect(() => {
       const handler = (e: MouseEvent) => {
+        const target = e.target as Node;
         if (
-          containerRef.current &&
-          !containerRef.current.contains(e.target as Node)
+          containerRef.current?.contains(target) ||
+          dropdownRef.current?.contains(target)
         ) {
-          setTrigger(null);
+          return;
         }
+        setTrigger(null);
       };
       document.addEventListener('mousedown', handler);
       return () => document.removeEventListener('mousedown', handler);
     }, []);
+
+    // Measure the wrapper's bounding rect so the portaled dropdown can
+    // sit flush below it. Re-measure on scroll + resize so the dropdown
+    // tracks if the page moves while it's open. useLayoutEffect avoids
+    // a single frame of mis-positioning right after the trigger opens.
+    const updateAnchor = useCallback(() => {
+      const wrapper = containerRef.current;
+      if (!wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
+      setAnchor({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width,
+      });
+    }, []);
+
+    useLayoutEffect(() => {
+      if (!trigger) {
+        setAnchor(null);
+        return;
+      }
+      updateAnchor();
+    }, [trigger, updateAnchor]);
+
+    useEffect(() => {
+      if (!trigger) return;
+      const onScroll = () => updateAnchor();
+      const onResize = () => updateAnchor();
+      // `capture: true` so we catch scroll events from any scrolling
+      // ancestor, not just window.
+      window.addEventListener('scroll', onScroll, true);
+      window.addEventListener('resize', onResize);
+      return () => {
+        window.removeEventListener('scroll', onScroll, true);
+        window.removeEventListener('resize', onResize);
+      };
+    }, [trigger, updateAnchor]);
 
     const insertMention = (user: UserSuggestion) => {
       const ta = taRef.current;
@@ -209,60 +265,71 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
             rest.onKeyUp?.(e);
           }}
         />
-        {(open || showEmptyHint) && (
-          <div
-            id="mention-suggestions"
-            role="listbox"
-            aria-label="Mention a user"
-            className="absolute left-0 right-0 top-full mt-1 z-40 rounded-2xl border border-rule bg-surface shadow-lift-lg overflow-hidden rise"
-          >
-            {open ? (
-              <ul className="max-h-64 overflow-y-auto py-1">
-                {suggestions.map((u, i) => (
-                  <li key={u.id}>
-                    <button
-                      type="button"
-                      id={`mention-item-${i}`}
-                      role="option"
-                      aria-selected={activeIndex === i}
-                      onMouseEnter={() => setActiveIndex(i)}
-                      onMouseDown={(e) => {
-                        // mousedown (not click) so the textarea doesn't
-                        // blur and dismount the dropdown before select.
-                        e.preventDefault();
-                        insertMention(u);
-                      }}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors duration-100 motion-reduce:transition-none ${
-                        activeIndex === i
-                          ? 'bg-cream-2'
-                          : 'hover:bg-cream-2/60'
-                      }`}
-                    >
-                      <Avatar user={u} size="sm" />
-                      <span className="flex-1 min-w-0">
-                        <span className="block text-sm font-semibold text-ink truncate">
-                          @{u.username}
-                        </span>
-                        {u.name && u.name !== u.username && (
-                          <span className="block text-[11px] text-ink-2 truncate">
-                            {u.name}
+        {mounted &&
+          (open || showEmptyHint) &&
+          anchor &&
+          createPortal(
+            <div
+              ref={dropdownRef}
+              id="mention-suggestions"
+              role="listbox"
+              aria-label="Mention a user"
+              style={{
+                position: 'fixed',
+                top: anchor.top,
+                left: anchor.left,
+                width: anchor.width,
+              }}
+              className="z-50 rounded-2xl border border-rule bg-surface shadow-lift-lg overflow-hidden rise"
+            >
+              {open ? (
+                <ul className="max-h-64 overflow-y-auto py-1">
+                  {suggestions.map((u, i) => (
+                    <li key={u.id}>
+                      <button
+                        type="button"
+                        id={`mention-item-${i}`}
+                        role="option"
+                        aria-selected={activeIndex === i}
+                        onMouseEnter={() => setActiveIndex(i)}
+                        onMouseDown={(e) => {
+                          // mousedown (not click) so the textarea doesn't
+                          // blur and dismount the dropdown before select.
+                          e.preventDefault();
+                          insertMention(u);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors duration-100 motion-reduce:transition-none ${
+                          activeIndex === i
+                            ? 'bg-cream-2'
+                            : 'hover:bg-cream-2/60'
+                        }`}
+                      >
+                        <Avatar user={u} size="sm" />
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-sm font-semibold text-ink truncate">
+                            @{u.username}
                           </span>
-                        )}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="px-3 py-3 text-xs text-ink-2">
-                No matches for{' '}
-                <span className="text-ink font-medium">
-                  @{trigger?.query}
-                </span>
-              </p>
-            )}
-          </div>
-        )}
+                          {u.name && u.name !== u.username && (
+                            <span className="block text-[11px] text-ink-2 truncate">
+                              {u.name}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="px-3 py-3 text-xs text-ink-2">
+                  No matches for{' '}
+                  <span className="text-ink font-medium">
+                    @{trigger?.query}
+                  </span>
+                </p>
+              )}
+            </div>,
+            document.body
+          )}
       </div>
     );
   }

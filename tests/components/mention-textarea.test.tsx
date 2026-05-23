@@ -206,4 +206,27 @@ describe('MentionTextarea', () => {
     expect(listbox).toHaveTextContent(/no matches/i);
     expect(listbox).toHaveTextContent('@xyz');
   });
+
+  it('portals the dropdown to document.body so an overflow-hidden ancestor cannot clip it', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      // Simulate a clipping wrapper (the SurfacePanel does this in
+      // production): if the dropdown sat as a descendant, the panel's
+      // `overflow: hidden` would hide it from view.
+      <div className="overflow-hidden" data-testid="clip-wrap">
+        <ControlledHost />
+      </div>
+    );
+    const ta = screen.getByPlaceholderText('Write...');
+    await user.click(ta);
+    await user.type(ta, '@');
+
+    const listbox = await screen.findByRole('listbox');
+    // The portal renders the dropdown to document.body — the clipping
+    // wrapper rendered by `render()` (container) must NOT contain it.
+    expect(container.contains(listbox)).toBe(false);
+    // And the dropdown is a direct child of document.body (or its
+    // immediate test-harness root), which has no overflow-hidden.
+    expect(document.body.contains(listbox)).toBe(true);
+  });
 });
