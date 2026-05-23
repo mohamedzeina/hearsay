@@ -158,10 +158,12 @@ A community discussion platform where every voice gets a thread — topics, post
 - Full search page leads with a serif "Results for «term»" line where the query sits in a persimmon-soft marker highlight
 
 ### Read state
-- **Visited posts fade gently** so the unread ones still draw the eye. The detail page mounts a render-nothing `<MarkVisited postId>` client component on mount; everywhere `PostCardList` renders, a visited card drops to `opacity-60` with `hover:opacity-100` so a faded card is still inviting to revisit.
+- **Visited posts fade gently** so the unread ones still draw the eye. The detail page mounts a render-nothing `<MarkVisited postId>` client component; a shared `<VisitedLi>` wrapper drops each visited `<li>` to `opacity-60` with `hover:opacity-100` so a faded card is still inviting to revisit.
+- **Applies everywhere a list of posts renders** — home (Everywhere + Following), `/saved`, `/search`, topic pages, user profile, and the post-detail "More in this topic" sidebar. One primitive (`VisitedLi`) is the single source of truth for the fade, so no list surface drifts.
 - **Local-only. No server tracking.** Storage lives under `hearsay:visited` in `localStorage` as a most-recent-first JSON array. Capped at 200 entries so it stays bounded; corrupt JSON and disabled-storage paths (Safari private, quota-full) degrade silently to session-only.
 - **Strictly a visual hint** — order is untouched, no algorithmic re-ranking, no influence on Top / New sort. Sort/scope decisions remain the user's.
-- **Same-tab sync** via a `hearsay:post-visited` `CustomEvent` so mark-from-detail lands on the feed's `PostCardList` without a navigation. **Cross-tab sync** falls out of the native `storage` event for free.
+- **Same-tab sync** via a `hearsay:post-visited` `CustomEvent` so mark-from-detail lands on every mounted list without a navigation. **Cross-tab sync** falls out of the native `storage` event for free.
+- The visited-state opacity is marked `!important` so it wins over the staggered `.rise` entry animation's `opacity: 1` end-state — without that, the home feed would render the class but appear at full opacity after the fade-in.
 
 ### Dark mode
 - **"Hearsay at night" is warm charcoal**, not generic black. Page bg `#161210`, cards lift to `#241E1A`; warm off-white text (`#F2EDE3`); persimmon stays exactly as the accent so brand identity survives the swap.
@@ -253,6 +255,7 @@ Other CSS custom properties (e.g. `--nav-h: 4rem`) live in the same file so the 
 - **`usePaginated`** (`src/lib/use-paginated.ts`) — shared client pagination hook returning `{ page, setPage, totalPages, paginated }`.
 - **`useDraft`** (`src/lib/use-draft.ts`) — client hook that mirrors a textarea's value into `localStorage` under a `hearsay:draft:<key>` entry. Returns `{ value, setValue, clear }`. SSR-safe (initial state is always `''`; rehydration runs in a post-mount effect to keep server and first client render identical), `try/catch`-wrapped around storage access so disabled / quota-full storage degrades silently, and removes the entry on empty rather than persisting `""`.
 - **`useVisited` + `markVisited`** (`src/lib/use-visited.ts`) — local-only read-state primitive. `markVisited(postId)` writes a deduped, most-recent-first list under `hearsay:visited` (capped at 200) and fires a `hearsay:post-visited` `CustomEvent`; `useVisited()` returns a `Set<string>` and subscribes to both the custom event (same-tab) and the native `storage` event (cross-tab). SSR-safe — initial server-render returns an empty set, rehydration runs in a post-mount effect. Tolerates disabled storage, quota-full writes, and corrupt JSON in the existing entry.
+- **`VisitedLi`** (`src/components/posts/visited-li.tsx`) — small `<li>` wrapper that owns the read-state fade for any list-of-posts surface. Reads `useVisited()`, sets `data-visited` + the `!opacity-60 hover:!opacity-100` Tailwind classes, and accepts a `className` prop so callers can stack extras like the `rise` staggered-entry animation without conflict (the `!important` opacity beats the animation's `opacity: 1` end-state).
 
 ## Architecture
 
@@ -358,6 +361,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   │   ├── post-editable.tsx       # Inline edit form + "edited" hint
 │   │   │   ├── save-button.tsx         # Bookmark toggle (optimistic + auth-gated)
 │   │   │   ├── mark-visited.tsx        # Render-nothing client: marks post visited on mount
+│   │   │   ├── visited-li.tsx          # <li> wrapper that applies the visited fade to any list surface
 │   │   │   ├── saved-list-context.tsx  # Tells the /saved list to drop a card
 │   │   │   ├── saved-posts-list.tsx    # Client wrapper around /saved (pagination + empty state)
 │   │   │   ├── topic-posts-empty.tsx   # Topic-page empty-state CTA (start the discussion)
