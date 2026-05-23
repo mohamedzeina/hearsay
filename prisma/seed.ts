@@ -799,12 +799,203 @@ async function main() {
 			});
 		}
 		if (ownerCareerPost) {
-			await db.comment.create({
+			// Generous thread so the owner's career post is useful for testing
+			// long-comment behavior: deep-link scroll, sort options, collapse
+			// rails, the @mention render, and pagination of activity. ~25
+			// comments across a handful of top-level threads.
+			const oc0 = await db.comment.create({
 				data: {
 					postId: ownerCareerPost.id,
 					userId: byHandle.theo.id,
 					content:
 						"Love this. The end-of-session note habit has saved me on every project I've actually shipped.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc0.id,
+					userId: byHandle.maya.id,
+					content:
+						"@theo same — I keep mine in a single `WORKLOG.md` at the repo root. Append-only. Future-me thanks past-me every Monday.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc0.id,
+					userId: byHandle.kai.id,
+					content:
+						"Does this fall apart for you on multi-day debugging sessions, or do you just keep stacking on the same note?",
+				},
+			});
+
+			const oc1 = await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					userId: byHandle.jordan.id,
+					content:
+						"Mine: **writing the PR description before the code**. If I can't summarise what I'm about to do in three bullets, I don't actually know what I'm about to do yet.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc1.id,
+					userId: byHandle.aiden.id,
+					content:
+						"This is great. Halfway to ADR-as-PR-description, which I think is underrated.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc1.id,
+					userId: byHandle.sasha.id,
+					content:
+						"@jordan I started doing this last quarter and it cuts my review back-and-forth roughly in half. Reviewers know what I was trying to do, so they can flag intent mismatches first.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc1.id,
+					userId: byHandle.riley.id,
+					content:
+						"Counterpoint: for exploratory work I find the PR description ossifies my thinking too early. I keep it as a scratch comment until I'm 70% of the way there.",
+				},
+			});
+
+			const oc2 = await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					userId: byHandle.lin.id,
+					content:
+						"Reading the diff of *my own commit* one more time before clicking merge. Catches embarrassing leftover console.logs almost every week.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc2.id,
+					userId: byHandle.nadia.id,
+					content:
+						"+1, and `git diff --staged` once more before composing the commit message is the same trick at a smaller scale.",
+				},
+			});
+
+			const oc3 = await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					userId: byHandle.sam.id,
+					content:
+						"Writing a failing test *first* — even a sloppy one — before changing the offending line. It forces me to articulate the bug, which more than half the time changes what I think the fix should be.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc3.id,
+					userId: byHandle.theo.id,
+					content:
+						"Yes. The number of bugs that 'aren't actually bugs' once you try to write the test is comedy.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc3.id,
+					userId: byHandle.kai.id,
+					content:
+						"Counter-habit: also writing a *passing* test for the supposed bug, just to convince myself the failure mode isn't 'I misread the issue'.",
+				},
+			});
+
+			const oc4 = await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					userId: byHandle.aiden.id,
+					content:
+						"Keeping a 'questions' file open while reading new code. I write down every thing I don't understand, then resolve them one by one. Stops me from glazing past confusing parts.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc4.id,
+					userId: byHandle.lin.id,
+					content:
+						"This is exactly the habit my mentor drilled into me. The discipline of admitting 'I don't know what this does' is half the job.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc4.id,
+					userId: byHandle.maya.id,
+					content:
+						"@aiden where do you keep that file? Repo-tracked or scratch?",
+				},
+			});
+
+			const oc5 = await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					userId: byHandle.nadia.id,
+					content:
+						"Saying 'I don't know yet, let me check' instead of guessing in standups. The team starts trusting your confident answers more once your uncertain ones are honest.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc5.id,
+					userId: byHandle.sasha.id,
+					content:
+						"Single biggest career-leveler I've ever seen. Most people don't realise senior engineers say this *more*, not less.",
+				},
+			});
+
+			const oc6 = await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					userId: byHandle.riley.id,
+					content:
+						"Twenty-minute 'design break' before touching the keyboard on any non-trivial change. Whiteboard, paper, even just a doc — anything that's not the IDE. Stops the 'I'll just refactor as I go' spiral.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					parentId: oc6.id,
+					userId: byHandle.jordan.id,
+					content:
+						"This is the one. The cost of 20 minutes upfront is shocking compared to the cost of a half-rewritten branch you have to abandon.",
+				},
+			});
+
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					userId: byHandle.theo.id,
+					content:
+						"Reviewing my own PR diff in GitHub's UI before assigning a reviewer. Different visual context catches things VS Code's blame view hides.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					userId: byHandle.maya.id,
+					content:
+						"Saying *no* (politely) to scope creep early in a sprint. The first 'just one more thing' is always cheaper to push back on than the fifth.",
+				},
+			});
+			await db.comment.create({
+				data: {
+					postId: ownerCareerPost.id,
+					userId: byHandle.kai.id,
+					content:
+						"Closing the IDE at the same time every day, regardless of what's left. Boundaries beat heroics over a 30-year career.",
 				},
 			});
 		}
@@ -895,6 +1086,30 @@ async function main() {
 		}
 	}
 
+	console.log('Following topics...');
+	// Each persona follows 2–4 random topics. Owner (real user) gets a
+	// guaranteed 4 so the "Following" tab on the home feed has enough
+	// content to demonstrate the feature when signing in as them.
+	const allTopics = await db.topic.findMany({ select: { id: true } });
+	for (const follower of users) {
+		const targets = pick(allTopics, 2 + Math.floor(rand() * 3)); // 2–4 follows
+		for (const topic of targets) {
+			await db.topicFollow
+				.create({ data: { userId: follower.id, topicId: topic.id } })
+				.catch(() => {
+					// Unique violation is fine — pick can repeat across iterations.
+				});
+		}
+	}
+	if (owner) {
+		const ownerTargets = pick(allTopics, 4);
+		for (const topic of ownerTargets) {
+			await db.topicFollow
+				.create({ data: { userId: owner.id, topicId: topic.id } })
+				.catch(() => {});
+		}
+	}
+
 	const stats = {
 		users: users.length + (owner ? 1 : 0),
 		topics: await db.topic.count(),
@@ -903,6 +1118,7 @@ async function main() {
 		postVotes: await db.postVote.count(),
 		commentVotes: await db.commentVote.count(),
 		savedPosts: await db.savedPost.count(),
+		topicFollows: await db.topicFollow.count(),
 	};
 	console.log('Seeding complete:', stats);
 }
