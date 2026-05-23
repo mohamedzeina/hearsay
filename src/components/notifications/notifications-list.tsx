@@ -9,6 +9,10 @@ import {
 import Avatar from '@/components/common/avatar';
 import { IconBell, IconReply } from '@/components/icons';
 import PostPagination from '@/components/posts/post-pagination';
+import {
+  dispatchAllNotificationsRead,
+  dispatchNotificationRead,
+} from '@/lib/notifications-bus';
 import { usePaginated } from '@/lib/use-paginated';
 import { timeAgo } from '@/lib/utils';
 import paths from '@/paths';
@@ -81,6 +85,7 @@ export default function NotificationsList({
       setItems((prev) =>
         prev.map((n) => (n.id === id ? { ...n, readAt: now } : n))
       );
+      dispatchNotificationRead(id);
       startTransition(() => {
         markNotificationRead(id);
       });
@@ -96,6 +101,7 @@ export default function NotificationsList({
     setItems((prev) =>
       prev.map((n) => (n.id === id ? { ...n, readAt: now } : n))
     );
+    dispatchNotificationRead(id);
     void (async () => {
       try {
         await markNotificationRead(id);
@@ -110,6 +116,7 @@ export default function NotificationsList({
     setItems((prev) =>
       prev.map((n) => (n.readAt ? n : { ...n, readAt: now }))
     );
+    dispatchAllNotificationsRead();
     startTransition(() => {
       markAllNotificationsRead();
     });

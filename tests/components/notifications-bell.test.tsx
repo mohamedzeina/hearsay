@@ -1,7 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NotificationsBell from '@/components/notifications/notifications-bell';
+import {
+  NOTIF_ALL_READ_EVENT,
+  NOTIF_READ_EVENT,
+} from '@/lib/notifications-bus';
 import type { NotificationItem } from '@/db/queries/notifications';
 
 const markOneMock = vi.fn();
@@ -374,5 +378,119 @@ describe('NotificationsBell', () => {
 
     const link = screen.getByRole('menuitem');
     expect(link).toHaveAttribute('href', '/topics/coffee/posts/p1');
+  });
+
+  describe('cross-component bus', () => {
+    it('decrements the badge when the /notifications list dispatches a row-read event', () => {
+      render(
+        <NotificationsBell
+          items={[
+            makeNotification({ id: 'n1' }),
+            makeNotification({ id: 'n2' }),
+          ]}
+          unread={2}
+        />
+      );
+
+      expect(screen.getByText('2')).toBeInTheDocument();
+
+      act(() => {
+        window.dispatchEvent(
+          new CustomEvent(NOTIF_READ_EVENT, { detail: { id: 'n1' } })
+        );
+      });
+
+      expect(screen.getByText('1')).toBeInTheDocument();
+    });
+
+    it('decrements the badge for older rows the bell does not have locally', () => {
+      // Bell holds only 1 visible row; unread count covers an older row
+      // that the dropdown does not have in localItems. The list can still
+      // emit a read event for that older id; the bell trusts the dispatcher
+      // and decrements the badge.
+      render(
+        <NotificationsBell
+          items={[makeNotification({ id: 'visible' })]}
+          unread={5}
+        />
+      );
+
+      act(() => {
+        window.dispatchEvent(
+          new CustomEvent(NOTIF_READ_EVENT, { detail: { id: 'older-row' } })
+        );
+      });
+
+      expect(screen.getByText('4')).toBeInTheDocument();
+    });
+
+    it('does NOT decrement again when the same row is dispatched twice', () => {
+      render(
+        <NotificationsBell
+          items={[makeNotification({ id: 'n1' })]}
+          unread={1}
+        />
+      );
+
+      act(() => {
+        window.dispatchEvent(
+          new CustomEvent(NOTIF_READ_EVENT, { detail: { id: 'n1' } })
+        );
+      });
+      // First dispatch clears the only unread row → badge gone.
+      expect(screen.queryByText('1')).not.toBeInTheDocument();
+
+      act(() => {
+        window.dispatchEvent(
+          new CustomEvent(NOTIF_READ_EVENT, { detail: { id: 'n1' } })
+        );
+      });
+      // Second dispatch must be a no-op (row already marked read locally) —
+      // it must not underflow the badge or re-introduce one.
+      expect(screen.queryByText(/^[0-9]+$/)).not.toBeInTheDocument();
+    });
+
+    it('clears the badge and marks every visible row read on the all-read event', () => {
+      render(
+        <NotificationsBell
+          items={[
+            makeNotification({ id: 'n1' }),
+            makeNotification({ id: 'n2' }),
+          ]}
+          unread={5}
+        />
+      );
+
+      act(() => {
+        window.dispatchEvent(new CustomEvent(NOTIF_ALL_READ_EVENT));
+      });
+
+      // Badge clears even though unread > visible items (older unread
+      // accounted for in the prop).
+      expect(screen.queryByText(/^[0-9]+$/)).not.toBeInTheDocument();
+    });
+
+    it('removes its window listeners on unmount', () => {
+      const { unmount } = render(
+        <NotificationsBell
+          items={[makeNotification({ id: 'n1' })]}
+          unread={1}
+        />
+      );
+
+      unmount();
+
+      // Dispatching after unmount must NOT throw / try to setState on
+      // an unmounted component (React would warn).
+      const warn = vi.spyOn(console, 'error').mockImplementation(() => {});
+      act(() => {
+        window.dispatchEvent(
+          new CustomEvent(NOTIF_READ_EVENT, { detail: { id: 'n1' } })
+        );
+        window.dispatchEvent(new CustomEvent(NOTIF_ALL_READ_EVENT));
+      });
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
   });
 });

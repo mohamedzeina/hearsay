@@ -2,6 +2,10 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NotificationsList from '@/components/notifications/notifications-list';
+import {
+  NOTIF_ALL_READ_EVENT,
+  NOTIF_READ_EVENT,
+} from '@/lib/notifications-bus';
 import type { NotificationItem } from '@/db/queries/notifications';
 
 const markOneMock = vi.fn();
@@ -318,6 +322,79 @@ describe('NotificationsList', () => {
       expect(
         screen.getByRole('button', { name: /mark all read/i })
       ).toBeInTheDocument();
+    });
+  });
+
+  describe('cross-component bus', () => {
+    it('dispatches a row-read event so the header bell can decrement', async () => {
+      const user = userEvent.setup();
+      const onRead = vi.fn();
+      window.addEventListener(NOTIF_READ_EVENT, onRead);
+
+      try {
+        render(
+          <NotificationsList
+            initialItems={[
+              makeNotification({ id: 'n1' }),
+              makeNotification({ id: 'n2' }),
+            ]}
+          />
+        );
+
+        const [firstRow] = screen.getAllByRole('link', { name: /Alice/i });
+        await user.click(firstRow);
+
+        await waitFor(() => expect(onRead).toHaveBeenCalledTimes(1));
+        const event = onRead.mock.calls[0][0] as CustomEvent<{ id: string }>;
+        expect(event.detail).toEqual({ id: 'n1' });
+      } finally {
+        window.removeEventListener(NOTIF_READ_EVENT, onRead);
+      }
+    });
+
+    it('does NOT dispatch a row-read event when clicking an already-read row', async () => {
+      const user = userEvent.setup();
+      const onRead = vi.fn();
+      window.addEventListener(NOTIF_READ_EVENT, onRead);
+
+      try {
+        const read = makeNotification({
+          id: 'n1',
+          readAt: new Date('2026-05-21T12:00:00Z'),
+        });
+        render(<NotificationsList initialItems={[read]} />);
+
+        await user.click(screen.getByRole('link', { name: /Alice/i }));
+        // The default nav is allowed through; the bus event must NOT fire
+        // because there is nothing to decrement.
+        expect(onRead).not.toHaveBeenCalled();
+      } finally {
+        window.removeEventListener(NOTIF_READ_EVENT, onRead);
+      }
+    });
+
+    it('dispatches an all-read event when the user clicks "Mark all read"', async () => {
+      const user = userEvent.setup();
+      const onAllRead = vi.fn();
+      window.addEventListener(NOTIF_ALL_READ_EVENT, onAllRead);
+
+      try {
+        render(
+          <NotificationsList
+            initialItems={[
+              makeNotification({ id: 'n1' }),
+              makeNotification({ id: 'n2' }),
+            ]}
+          />
+        );
+
+        await user.click(
+          screen.getByRole('button', { name: /mark all read/i })
+        );
+        await waitFor(() => expect(onAllRead).toHaveBeenCalledTimes(1));
+      } finally {
+        window.removeEventListener(NOTIF_ALL_READ_EVENT, onAllRead);
+      }
     });
   });
 });

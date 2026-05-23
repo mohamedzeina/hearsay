@@ -9,6 +9,11 @@ import { IconBell } from '@/components/icons';
 import Avatar from '@/components/common/avatar';
 import paths from '@/paths';
 import { timeAgo } from '@/lib/utils';
+import {
+  NOTIF_ALL_READ_EVENT,
+  NOTIF_READ_EVENT,
+  type NotificationReadDetail,
+} from '@/lib/notifications-bus';
 import type { NotificationItem } from '@/db/queries/notifications';
 
 interface NotificationsBellProps {
@@ -43,6 +48,49 @@ export default function NotificationsBell({
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Mirror localItems into a ref so the listener below can read current
+  // items without re-subscribing on every state change.
+  const localItemsRef = useRef(localItems);
+  useEffect(() => {
+    localItemsRef.current = localItems;
+  }, [localItems]);
+
+  // Listen for mark-read signals from the /notifications page so the
+  // header badge updates the moment a row is clicked there — without
+  // waiting for the full navigation to re-render the layout. The list
+  // only dispatches for genuinely unread rows; the bell additionally
+  // bails if it already has the row marked read (defensive in case a
+  // stray double-event ever arrives).
+  useEffect(() => {
+    const onRead = (e: Event) => {
+      const detail = (e as CustomEvent<NotificationReadDetail>).detail;
+      if (!detail) return;
+      const { id } = detail;
+      const found = localItemsRef.current.find((n) => n.id === id);
+      if (found?.readAt) return;
+      if (found) {
+        setLocalItems((prev) =>
+          prev.map((n) =>
+            n.id === id ? { ...n, readAt: new Date() } : n
+          )
+        );
+      }
+      setLocalUnread((u) => Math.max(0, u - 1));
+    };
+    const onAllRead = () => {
+      setLocalItems((prev) =>
+        prev.map((n) => (n.readAt ? n : { ...n, readAt: new Date() }))
+      );
+      setLocalUnread(0);
+    };
+    window.addEventListener(NOTIF_READ_EVENT, onRead);
+    window.addEventListener(NOTIF_ALL_READ_EVENT, onAllRead);
+    return () => {
+      window.removeEventListener(NOTIF_READ_EVENT, onRead);
+      window.removeEventListener(NOTIF_ALL_READ_EVENT, onAllRead);
+    };
   }, []);
 
   const visibleUnreadCount = localItems.filter((n) => !n.readAt).length;
