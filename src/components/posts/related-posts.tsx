@@ -3,6 +3,7 @@ import paths from '@/paths';
 import { timeAgo } from '@/lib/utils';
 import SurfacePanel from '@/components/common/surface-panel';
 import { fetchRelatedPosts } from '@/db/queries/posts';
+import VisitedLi from '@/components/posts/visited-li';
 
 interface RelatedPostsProps {
   postId: string;
@@ -32,8 +33,9 @@ export default async function RelatedPosts({
       </header>
       <ol>
         {posts.map((post, i) => (
-          <li
+          <VisitedLi
             key={post.id}
+            postId={post.id}
             className="border-b border-rule last:border-b-0"
           >
             <Link
@@ -55,7 +57,7 @@ export default async function RelatedPosts({
                 </p>
               </div>
             </Link>
-          </li>
+          </VisitedLi>
         ))}
       </ol>
     </SurfacePanel>
