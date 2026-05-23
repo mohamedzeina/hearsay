@@ -6,6 +6,16 @@ A community discussion platform where every voice gets a thread — topics, post
 
 **Live:** [hearsay-community.vercel.app](https://hearsay-community.vercel.app)
 
+<p align="center">
+  <img src="docs/screenshots/hero-light.png" alt="Hearsay home feed in light mode — cream background, persimmon accents, post cards with topic chips, sidebar with Your feed scope nav" width="48%" />
+  &nbsp;
+  <img src="docs/screenshots/hero-dark.png" alt="Hearsay home feed in dark mode — warm charcoal background, persimmon accents preserved, topic chips with dark-tinted backgrounds" width="48%" />
+</p>
+
+### See it in motion
+
+![Hearsay demo — scope nav, dark mode, bookmark toast with undo, visited fade](docs/screenshots/demo.gif)
+
 ## Table of Contents
 
 - [Features](#features)
@@ -20,6 +30,31 @@ A community discussion platform where every voice gets a thread — topics, post
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Scripts](#scripts)
+
+## Snapshots
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/feature-scope-nav.png" alt="Your feed sidebar — Everywhere / Following scope nav with follow count" />
+      <p align="center"><sub><b>Feed scope nav</b> — URL-driven, switches client-side, sticky sort across scopes</sub></p>
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/feature-toast.png" alt="Save toast — Saved · Tucked away in /saved. with Undo" />
+      <p align="center"><sub><b>Bookmark toast</b> — editorial card, Undo restores card + re-saves</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/feature-post-detail.png" alt="Post detail page — markdown + syntax highlighting + threaded comments + sidebar" />
+      <p align="center"><sub><b>Post detail</b> — markdown, syntax highlighting, threaded comments, thread map</sub></p>
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/feature-mentions.png" alt="Mention autocomplete dropdown" />
+      <p align="center"><sub><b>Mention autocomplete</b> — type @ to get a portaled, keyboard-navigable picker</sub></p>
+    </td>
+  </tr>
+</table>
 
 ## Features
 
