@@ -23,7 +23,8 @@ the README image tags resolve automatically.
 | `hero-dark.png` | Dark | Same composition, theme toggle flipped. Pair against `hero-light.png` side-by-side. |
 | `feature-scope-nav.png` | Light or dark | Just the **Your feed** sidebar panel, tightly cropped. Show Everywhere active + Following with the follow-count chip. ~600px wide. |
 | `feature-toast.png` | Light or dark | Bottom-right of the viewport with the **Saved** toast visible (eyebrow, body, Undo button). Trigger by clicking the bookmark on any home-feed card. Crop tight, ~600×260. |
-| `feature-post-detail.png` | Light or dark | A post detail page (`/topics/career/posts/<id>`) showing the markdown body (with a fenced code block if possible — pick a seed post that has one), a few threaded comments, and the right sidebar. |
+| `feature-post-detail.png` | Light or dark | A post detail page (`/topics/career/posts/<id>`) showing the markdown body, vote/save row, reply form, and the right sidebar (Author + Thread map + Related posts). Aim for ~1300px tall so the frame ends just where comments start — threading lives in its own shot below. |
+| `feature-threading.png` | Light or dark | The same post, scrolled past the post body so the "X replies" heading sits at the top. Should clearly show 2-3 parent → child comment pairs with the indented nesting (and ideally one 3-deep chain). |
 | `feature-mentions.png` | Light or dark | Click the reply textarea on a post, type `@` then a letter. Capture with the portaled dropdown open showing 2-3 suggestions. Crop to just the textarea + dropdown. |
 | `demo.gif` | Light → Dark | 12-18 seconds, ~1200×750. **Storyboard below.** |
 

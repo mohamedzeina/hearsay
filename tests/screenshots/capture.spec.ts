@@ -136,34 +136,61 @@ test('feature-toast — Saved · Tucked away in /saved. with Undo', async ({
   });
 });
 
-test('feature-post-detail — markdown + comments + sidebar', async ({
+test('feature-post-detail + feature-threading — two framed shots from the same page', async ({
   page,
 }) => {
   await signIn(page);
   await setTheme(page, 'light');
   await page.goto('/');
 
-  // Click into the first post card on the home feed.
-  const firstPost = page.locator('ul li').first().locator('a[href*="/posts/"]');
-  await firstPost.click();
-  // Wait for the post show to hydrate.
+  // Navigate to a specifically heavy-comment post so both shots have
+  // meaningful content. "What's one habit..." is the engineer-habits
+  // post the seed creates with the deepest thread (Riley → Jordan,
+  // Aiden → Lin → Maya). Clicking by title (vs. "first card") guards
+  // against the home feed's Top sort landing on a low-reply post when
+  // upvote ties break differently between seed runs.
+  await page.getByRole('link', { name: /one habit/i }).first().click();
+  // Wait for the post show + at least one comment to hydrate.
   await expect(page.locator('article').first()).toBeVisible();
-  // Wait for at least one comment to land so the screenshot frames the
-  // threaded-comments story, not just the post body in isolation.
   await expect(page.locator('[id^="c-"]').first()).toBeVisible();
   await hideDevChrome(page);
 
-  // Stretch the viewport tall enough to catch multiple top-level comments
-  // *plus* the nested replies underneath them. The first few top-level
-  // comments in the seed are often childless replies, so 1700px wasn't
-  // enough to actually demonstrate threading — 2800px lands ~10 comments
-  // worth of vertical space, which gets us into the part of the thread
-  // where parents with children are common.
-  await page.setViewportSize({ width: 1440, height: 2800 });
-  await page.waitForTimeout(500);
-
+  // ---- Shot 1: post body + sidebar (above the fold) ----
+  // 1300px tall fits the breadcrumb + post card + reply form + sidebar
+  // panels (Author + Thread map) without bleeding into comments. Keeps
+  // the README tile readable instead of an oddly long vertical strip.
+  await page.setViewportSize({ width: 1440, height: 1300 });
+  await page.evaluate(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  });
+  await page.waitForTimeout(300);
   await page.screenshot({
     path: resolve(OUT_DIR, 'feature-post-detail.png'),
+    fullPage: false,
+  });
+
+  // ---- Shot 2: threaded comments (scrolled past the post body) ----
+  // Scroll so the "X replies" heading sits near the top of the
+  // viewport, then capture 1700px of comment content underneath.
+  // That window reliably contains multiple parent → child threads in
+  // the seed (Riley → Jordan, Nadia → Sasha, Aiden → Lin → Maya).
+  await page.setViewportSize({ width: 1440, height: 1700 });
+  await page.evaluate(() => {
+    const heading = Array.from(document.querySelectorAll('h2')).find((el) =>
+      /\breplies?\b/i.test(el.textContent ?? '')
+    );
+    if (heading) {
+      heading.scrollIntoView({ block: 'start', behavior: 'instant' as ScrollBehavior });
+      // A little headroom above the heading so the sort pills don't
+      // hug the very top edge of the frame.
+      window.scrollBy({ top: -32, behavior: 'instant' as ScrollBehavior });
+    } else {
+      window.scrollTo({ top: 1100, behavior: 'instant' as ScrollBehavior });
+    }
+  });
+  await page.waitForTimeout(300);
+  await page.screenshot({
+    path: resolve(OUT_DIR, 'feature-threading.png'),
     fullPage: false,
   });
 

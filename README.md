@@ -46,11 +46,19 @@ A community discussion platform where every voice gets a thread — topics, post
   </tr>
   <tr>
     <td width="50%">
-      <img src="docs/screenshots/feature-post-detail.png" alt="Post detail page — markdown + syntax highlighting + threaded comments + sidebar" />
-      <p align="center"><sub><b>Post detail</b> — markdown, syntax highlighting, threaded comments, thread map</sub></p>
+      <img src="docs/screenshots/feature-post-detail.png" alt="Post detail — markdown post body with author sidebar + thread map" />
+      <p align="center"><sub><b>Post detail</b> — markdown body, author card, thread map, related posts sidebar</sub></p>
     </td>
     <td width="50%">
-      <img src="docs/screenshots/feature-mentions.png" alt="Mention autocomplete dropdown" />
+      <img src="docs/screenshots/feature-threading.png" alt="Threaded comments — parent comments with indented nested replies, up to three levels deep" />
+      <p align="center"><sub><b>Threaded comments</b> — recursive replies, up to 3+ levels of nesting</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" colspan="2">
+      <p align="center">
+        <img src="docs/screenshots/feature-mentions.png" alt="Mention autocomplete dropdown — type @ to get portaled keyboard-navigable picker" width="60%" />
+      </p>
       <p align="center"><sub><b>Mention autocomplete</b> — type @ to get a portaled, keyboard-navigable picker</sub></p>
     </td>
   </tr>
