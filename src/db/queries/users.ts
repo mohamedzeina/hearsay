@@ -43,6 +43,51 @@ export function fetchRecentUsers(take: number): Promise<RecentUser[]> {
   });
 }
 
+export type UserSuggestion = {
+  id: string;
+  name: string | null;
+  username: string;
+  image: string | null;
+};
+
+// Mention-autocomplete lookup. Matches by username prefix (case-insensitive)
+// — that's what the user is actually typing after `@`, and aligns with
+// how the mention renderer resolves names. An empty query returns the
+// most-recently-joined users so the dropdown has something useful to
+// show the moment the user types `@`.
+//
+// Cap is small on purpose: keep the popover scannable, and never let a
+// crafted long query thrash Postgres.
+export const USER_SUGGESTION_LIMIT = 6;
+
+export async function fetchUserSuggestions(
+  rawQuery: string
+): Promise<UserSuggestion[]> {
+  const query = rawQuery.trim().slice(0, 39);
+  const hasQuery = query.length > 0;
+
+  const users = await db.user.findMany({
+    where: {
+      username: hasQuery
+        ? { startsWith: query, mode: 'insensitive', not: null }
+        : { not: null },
+    },
+    take: USER_SUGGESTION_LIMIT,
+    orderBy: hasQuery
+      ? { username: 'asc' }
+      : { createdAt: 'desc' },
+    select: { id: true, name: true, username: true, image: true },
+  });
+
+  // The where-clause guarantees a non-null username, but Prisma's
+  // generated type can't narrow on `not: null` — filter to satisfy TS.
+  return users.flatMap((u) =>
+    u.username
+      ? [{ id: u.id, name: u.name, username: u.username, image: u.image }]
+      : []
+  );
+}
+
 export type UserStats = { postCount: number; commentCount: number };
 
 export const fetchUserStats = cache(

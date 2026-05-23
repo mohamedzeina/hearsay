@@ -1,11 +1,12 @@
 'use client';
 
 import { use, useActionState, useEffect } from 'react';
-import { Input, Textarea } from '@heroui/react';
+import { Input } from '@heroui/react';
 import { useRouter } from 'next/navigation';
 import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
 import CharCounter from '@/components/common/char-counter';
+import MentionTextarea from '@/components/mentions/mention-textarea';
 import * as actions from '@/actions';
 import Link from 'next/link';
 import paths from '@/paths';
@@ -94,7 +95,7 @@ export default function PostCreatePage({ params }: PostCreatePageProps) {
               errorMessage={fieldError(formState, 'title')?.join(', ')}
               classNames={inputClassNames}
             />
-            <Textarea
+            <MentionTextarea
               name="content"
               label="Content"
               labelPlacement="outside"

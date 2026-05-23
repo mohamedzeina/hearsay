@@ -1,12 +1,12 @@
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
-import { Textarea } from '@heroui/react';
 import { useSession } from 'next-auth/react';
 import FormButton from '@/components/common/form-button';
 import FormError from '@/components/common/form-error';
 import CharCounter from '@/components/common/char-counter';
 import { PrimaryButton } from '@/components/common/primary-button';
+import MentionTextarea from '@/components/mentions/mention-textarea';
 import * as actions from '@/actions';
 import SurfacePanel from '@/components/common/surface-panel';
 import { IconReply } from '@/components/icons';
@@ -56,7 +56,7 @@ export default function CommentCreateForm({
   const form = (
     <form action={action} ref={ref}>
       <div className="space-y-3">
-        <Textarea
+        <MentionTextarea
           name="content"
           placeholder={
             startOpen ? 'Share your thoughts...' : 'Write a reply...'
