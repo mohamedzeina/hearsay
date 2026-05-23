@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NotificationsBell from '@/components/notifications/notifications-bell';
@@ -491,6 +491,128 @@ describe('NotificationsBell', () => {
       });
       expect(warn).not.toHaveBeenCalled();
       warn.mockRestore();
+    });
+  });
+
+  describe('live polling', () => {
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      fetchMock.mockReset();
+      vi.stubGlobal('fetch', fetchMock);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    });
+
+    function setRecentResponse(items: NotificationItem[], unread: number) {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({ items, unread }),
+      });
+    }
+
+    function setTabVisible(visible: boolean) {
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => (visible ? 'visible' : 'hidden'),
+      });
+    }
+
+    it('polls /api/notifications/recent on the interval and updates the badge', async () => {
+      setTabVisible(true);
+      setRecentResponse([makeNotification({ id: 'n-new' })], 7);
+
+      render(<NotificationsBell items={[]} unread={2} />);
+      expect(screen.getByText('2')).toBeInTheDocument();
+
+      // Advance past the 60s interval, then drain any remaining
+      // microtasks the fetch / state-update chain queued. With fake
+      // timers active, waitFor's internal setTimeout would never fire,
+      // so we flush explicitly instead of relying on it.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_000);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/notifications/recent',
+        expect.objectContaining({ cache: 'no-store' })
+      );
+      expect(screen.getByText('7')).toBeInTheDocument();
+    });
+
+    it('does NOT poll while the tab is hidden', async () => {
+      setTabVisible(false);
+      setRecentResponse([], 0);
+
+      render(<NotificationsBell items={[]} unread={1} />);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_000);
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('does NOT poll while the dropdown is open', async () => {
+      setTabVisible(true);
+      setRecentResponse([], 0);
+
+      vi.useRealTimers(); // userEvent needs real timers for click
+      const user = userEvent.setup();
+      render(<NotificationsBell items={[makeNotification({ id: 'n1' })]} unread={1} />);
+      await user.click(screen.getByRole('button', { name: /1 unread/i }));
+      vi.useFakeTimers();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_000);
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('fires an immediate fetch when the tab returns to visible', async () => {
+      setTabVisible(false);
+      setRecentResponse([], 4);
+
+      render(<NotificationsBell items={[]} unread={1} />);
+
+      // 60s passes hidden — no polling.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_000);
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+
+      // Tab visible → visibilitychange listener fires an immediate refresh.
+      setTabVisible(true);
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('4')).toBeInTheDocument();
+    });
+
+    it('stops polling after unmount (no fetch after cleanup)', async () => {
+      setTabVisible(true);
+      setRecentResponse([], 0);
+
+      const { unmount } = render(
+        <NotificationsBell items={[]} unread={0} />
+      );
+      unmount();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(120_000);
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 });
