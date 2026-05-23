@@ -29,6 +29,33 @@
   --teal-rgb: 15 110 100;
   --teal-soft-rgb: 221 239 236;
 
+  /* Topic-chip palette — 50 (bg), 500 (dot), 700 (label).
+     Light tones are soft pastels paired with deep readable text. */
+  --topic-terracotta-50-rgb:  253 232 224;
+  --topic-terracotta-500-rgb: 194 86 54;
+  --topic-terracotta-700-rgb: 156 61 36;
+  --topic-sage-50-rgb:        228 235 223;
+  --topic-sage-500-rgb:       95 122 77;
+  --topic-sage-700-rgb:       63 87 51;
+  --topic-plum-50-rgb:        237 226 238;
+  --topic-plum-500-rgb:       138 87 144;
+  --topic-plum-700-rgb:       107 61 110;
+  --topic-teal-50-rgb:        219 237 235;
+  --topic-teal-500-rgb:       53 121 115;
+  --topic-teal-700-rgb:       31 90 85;
+  --topic-mustard-50-rgb:     245 237 211;
+  --topic-mustard-500-rgb:    154 123 48;
+  --topic-mustard-700-rgb:    107 84 33;
+  --topic-periwinkle-50-rgb:  226 229 242;
+  --topic-periwinkle-500-rgb: 91 103 159;
+  --topic-periwinkle-700-rgb: 63 72 120;
+  --topic-rust-50-rgb:        243 220 201;
+  --topic-rust-500-rgb:       161 88 46;
+  --topic-rust-700-rgb:       122 63 28;
+  --topic-rose-50-rgb:        244 224 225;
+  --topic-rose-500-rgb:       160 90 102;
+  --topic-rose-700-rgb:       124 63 73;
+
   --cream: rgb(var(--cream-rgb));
   --cream-2: rgb(var(--cream-2-rgb));
   --surface: rgb(var(--surface-rgb));
@@ -65,6 +92,33 @@
   --teal-rgb: 90 168 159;
   --teal-soft-rgb: 26 51 47;
   /* --persimmon-rgb intentionally unchanged — accent stays the same */
+
+  /* Topic chips on dark: dark-tinted backgrounds + brighter pastel text.
+     Dot tones (500) brighten slightly so they stay visible on dark bg. */
+  --topic-terracotta-50-rgb:  61 31 20;
+  --topic-terracotta-500-rgb: 217 113 80;
+  --topic-terracotta-700-rgb: 240 167 142;
+  --topic-sage-50-rgb:        31 45 26;
+  --topic-sage-500-rgb:       122 152 99;
+  --topic-sage-700-rgb:       168 196 153;
+  --topic-plum-50-rgb:        46 31 48;
+  --topic-plum-500-rgb:       165 113 171;
+  --topic-plum-700-rgb:       201 156 205;
+  --topic-teal-50-rgb:        26 46 43;
+  --topic-teal-500-rgb:       72 146 138;
+  --topic-teal-700-rgb:       122 196 190;
+  --topic-mustard-50-rgb:     50 40 19;
+  --topic-mustard-500-rgb:    176 144 74;
+  --topic-mustard-700-rgb:    212 179 106;
+  --topic-periwinkle-50-rgb:  31 35 51;
+  --topic-periwinkle-500-rgb: 111 124 170;
+  --topic-periwinkle-700-rgb: 148 160 204;
+  --topic-rust-50-rgb:        51 32 20;
+  --topic-rust-500-rgb:       185 109 68;
+  --topic-rust-700-rgb:       208 138 92;
+  --topic-rose-50-rgb:        50 31 34;
+  --topic-rose-500-rgb:       160 107 118;
+  --topic-rose-700-rgb:       197 142 150;
 }
 
 html {

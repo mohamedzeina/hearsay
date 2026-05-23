@@ -47,15 +47,48 @@ const config: Config = {
         'teal-soft': 'rgb(var(--teal-soft-rgb) / <alpha-value>)',
         // Topic chip palette — 8 hashed-by-slug tones. Each tone exposes
         // 50 (chip background), 500 (dot), 700 (label text). See topicTone()
-        // in lib/utils.ts for the mapping.
-        'topic-terracotta': { 50: '#FDE8E0', 500: '#C25636', 700: '#9C3D24' },
-        'topic-sage':       { 50: '#E4EBDF', 500: '#5F7A4D', 700: '#3F5733' },
-        'topic-plum':       { 50: '#EDE2EE', 500: '#8A5790', 700: '#6B3D6E' },
-        'topic-teal':       { 50: '#DBEDEB', 500: '#357973', 700: '#1F5A55' },
-        'topic-mustard':    { 50: '#F5EDD3', 500: '#9A7B30', 700: '#6B5421' },
-        'topic-periwinkle': { 50: '#E2E5F2', 500: '#5B679F', 700: '#3F4878' },
-        'topic-rust':       { 50: '#F3DCC9', 500: '#A1582E', 700: '#7A3F1C' },
-        'topic-rose':       { 50: '#F4E0E1', 500: '#A05A66', 700: '#7C3F49' },
+        // in lib/utils.ts for the mapping. Token RGBs live in globals.css
+        // so .dark can swap to dark-tinted pastels.
+        'topic-terracotta': {
+          50:  'rgb(var(--topic-terracotta-50-rgb) / <alpha-value>)',
+          500: 'rgb(var(--topic-terracotta-500-rgb) / <alpha-value>)',
+          700: 'rgb(var(--topic-terracotta-700-rgb) / <alpha-value>)',
+        },
+        'topic-sage': {
+          50:  'rgb(var(--topic-sage-50-rgb) / <alpha-value>)',
+          500: 'rgb(var(--topic-sage-500-rgb) / <alpha-value>)',
+          700: 'rgb(var(--topic-sage-700-rgb) / <alpha-value>)',
+        },
+        'topic-plum': {
+          50:  'rgb(var(--topic-plum-50-rgb) / <alpha-value>)',
+          500: 'rgb(var(--topic-plum-500-rgb) / <alpha-value>)',
+          700: 'rgb(var(--topic-plum-700-rgb) / <alpha-value>)',
+        },
+        'topic-teal': {
+          50:  'rgb(var(--topic-teal-50-rgb) / <alpha-value>)',
+          500: 'rgb(var(--topic-teal-500-rgb) / <alpha-value>)',
+          700: 'rgb(var(--topic-teal-700-rgb) / <alpha-value>)',
+        },
+        'topic-mustard': {
+          50:  'rgb(var(--topic-mustard-50-rgb) / <alpha-value>)',
+          500: 'rgb(var(--topic-mustard-500-rgb) / <alpha-value>)',
+          700: 'rgb(var(--topic-mustard-700-rgb) / <alpha-value>)',
+        },
+        'topic-periwinkle': {
+          50:  'rgb(var(--topic-periwinkle-50-rgb) / <alpha-value>)',
+          500: 'rgb(var(--topic-periwinkle-500-rgb) / <alpha-value>)',
+          700: 'rgb(var(--topic-periwinkle-700-rgb) / <alpha-value>)',
+        },
+        'topic-rust': {
+          50:  'rgb(var(--topic-rust-50-rgb) / <alpha-value>)',
+          500: 'rgb(var(--topic-rust-500-rgb) / <alpha-value>)',
+          700: 'rgb(var(--topic-rust-700-rgb) / <alpha-value>)',
+        },
+        'topic-rose': {
+          50:  'rgb(var(--topic-rose-50-rgb) / <alpha-value>)',
+          500: 'rgb(var(--topic-rose-500-rgb) / <alpha-value>)',
+          700: 'rgb(var(--topic-rose-700-rgb) / <alpha-value>)',
+        },
       },
       boxShadow: {
         'soft': '0 1px 2px rgba(26, 22, 20, 0.04), 0 0 0 1px rgba(26, 22, 20, 0.04)',
