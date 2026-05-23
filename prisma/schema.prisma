@@ -49,6 +49,7 @@ model User {
   postVotes     PostVote[]
   commentVotes  CommentVote[]
   savedPosts    SavedPost[]
+  topicFollows  TopicFollow[]
   notifications        Notification[] @relation("NotificationRecipient")
   triggeredNotifications Notification[] @relation("NotificationActor")
 }
@@ -66,6 +67,7 @@ model Topic {
   slug        String @unique
   description String
   posts       Post[]
+  followers   TopicFollow[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -136,6 +138,25 @@ model SavedPost {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
+  @@index([userId])
+}
+
+// Join table backing topic-following. A row means `userId` follows
+// `topicId`; absence means they don't. The unique constraint prevents
+// double-follows at the DB level so the toggle action doesn't need to
+// race-guard. Cascade on both FKs so removing a user / topic cleans up
+// stale follow rows.
+model TopicFollow {
+  id      String @id @default(cuid())
+  userId  String
+  topicId String
+
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
   @@index([userId])
 }
 

@@ -67,6 +67,26 @@ export async function fetchRecentPosts(): Promise<PostWithData[]> {
 	});
 }
 
+// Posts from topics the viewer follows, newest first. Returns an empty
+// array if the viewer follows nothing (or isn't signed in) so callers
+// can fall back to a "you don't follow anything yet" empty state
+// without an auth round-trip.
+export async function fetchFollowingPosts(
+	userId: string
+): Promise<PostWithData[]> {
+	return db.post.findMany({
+		where: {
+			topic: {
+				followers: {
+					some: { userId },
+				},
+			},
+		},
+		orderBy: { createdAt: 'desc' },
+		include: postInclude(userId),
+	});
+}
+
 export type RelatedPost = {
 	id: string;
 	title: string;
