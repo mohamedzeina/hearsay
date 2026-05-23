@@ -153,11 +153,13 @@ test('feature-post-detail — markdown + comments + sidebar', async ({
   await expect(page.locator('[id^="c-"]').first()).toBeVisible();
   await hideDevChrome(page);
 
-  // Stretch the viewport for this shot so the frame includes the post
-  // body AND a couple of threaded comments below it (default 900px
-  // catches only the post + sidebar). 1700px fits the post card +
-  // ~2-3 top-level comments + their first nested reply on most posts.
-  await page.setViewportSize({ width: 1440, height: 1700 });
+  // Stretch the viewport tall enough to catch multiple top-level comments
+  // *plus* the nested replies underneath them. The first few top-level
+  // comments in the seed are often childless replies, so 1700px wasn't
+  // enough to actually demonstrate threading — 2800px lands ~10 comments
+  // worth of vertical space, which gets us into the part of the thread
+  // where parents with children are common.
+  await page.setViewportSize({ width: 1440, height: 2800 });
   await page.waitForTimeout(500);
 
   await page.screenshot({
