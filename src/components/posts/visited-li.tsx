@@ -25,8 +25,13 @@ export default function VisitedLi({
   return (
     <li
       data-visited={isVisited || undefined}
+      // `!opacity-60` (CSS !important) is load-bearing: PostCardList passes
+      // `className="rise"` which ends at `opacity: 1` via animation-fill-mode,
+      // so the non-important Tailwind class would be quietly overridden on
+      // the home feed. The bang ensures the fade lands consistently across
+      // every list surface (home, /saved, search, topic, profile, related).
       className={`${className} transition-opacity duration-300 motion-reduce:transition-none ${
-        isVisited ? 'opacity-60 hover:opacity-100' : 'opacity-100'
+        isVisited ? '!opacity-60 hover:!opacity-100' : 'opacity-100'
       }`.trim()}
     >
       {children}
