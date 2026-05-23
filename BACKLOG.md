@@ -34,6 +34,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Notifications filtering — All / Replies / Upvotes / Mentions pill row on `/notifications` (matches the comment-sort pill pattern); filters client-side, resets to page 1 on change, shows a filter-specific empty state when the active filter has no matches; pill row hidden when there are no items overall
 - ✅ Mention autocomplete — typing `@` in a post or comment textarea opens a portaled dropdown of matching users (avatar + @username + display name); click / Enter / Tab inserts `@username `; `↑` / `↓` navigate, `Escape` closes; `GET /api/users/suggestions` (auth-gated, ≤6 rows, prefix-match case-insensitive) backs the lookup; dropdown is portaled to `document.body` and tracks scroll/resize so a `SurfacePanel`'s `overflow-hidden` can't clip it
 - ✅ Notifications live polling — header bell polls `GET /api/notifications/recent` every 60s, pauses while the dropdown is open and while the tab is hidden, and fires an immediate refresh when the tab returns to visible; cadence overridable via `NEXT_PUBLIC_NOTIFICATIONS_POLL_MS` for local dev so the loop is testable without sitting and waiting a minute
+- ✅ Topic following + Following tab — new `TopicFollow` join table (`@@unique(userId, topicId)` + `userId` index, cascades on both FKs); `toggleTopicFollow` action ($transaction find/delete-or-create, `revalidatePath('/')`); Follow/Following pill on each topic page header (optimistic via `useOptimistic`, auth-gated via signin modal); Following tab on the home post feed (signed-in viewers only, newest-first, dedicated empty state when you follow nothing); seed gives every persona 2–4 follows and the real owner 4 so the demo lands
 
 ---
 
@@ -47,10 +48,7 @@ _Notifications polish complete: filtering on `/notifications` shipped, live poll
 
 ## Tier 3 — content quality
 
-- **Topic following + a "Following" tab on the home feed** (M)
-  Follow a topic → its new posts surface in a `Following` view on home
-  (still explicit, not algorithmic). Single join table; toggle on each
-  topic page.
+_Topic following shipped. No remaining Tier 3 items — see Tier 4+ for the next pick._
 
 ## Tier 4 — moderation (light-touch)
 
@@ -112,4 +110,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-23 (after mention autocomplete + notifications live polling ship). Update or trash as priorities shift._
+_Last touched 2026-05-23 (after topic following ship). Update or trash as priorities shift._
