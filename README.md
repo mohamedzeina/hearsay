@@ -348,7 +348,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │       └── test.yml                 # CI: postgres service + lint + vitest coverage + Playwright
 ├── prisma/
 │   ├── schema.prisma          # User, Topic, Post, Comment, PostVote, CommentVote, SavedPost, Notification
-│   ├── migrations/            # init → soft_delete → votes → edited_at → user_profile_fields → saved_post → notification
+│   ├── migrations/            # init → soft_delete → votes → edited_at → user_profile_fields → saved_post → notification → topic_follow
 │   └── seed.ts                # 10 personas (with handles + spread join dates) + 12 topics (one intentionally empty to show the topic empty-state CTA) + threaded markdown content + pre-edited rows + pre-saved bookmarks
 ├── src/
 │   ├── app/
@@ -377,6 +377,7 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── delete-post.ts / delete-comment.ts
 │   │   ├── toggle-post-vote.ts / toggle-comment-vote.ts
 │   │   ├── toggle-saved-post.ts
+│   │   ├── toggle-topic-follow.ts      # Follow / unfollow a topic (optimistic + auth-gated)
 │   │   ├── mark-notifications-read.ts  # markNotificationRead (per-item) + markAllNotificationsRead (bulk)
 │   │   └── index.ts
 │   ├── components/
@@ -420,7 +421,10 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   │   └── comment-list-loading.tsx
 │   │   ├── topics/
 │   │   │   ├── topic-list.tsx
-│   │   │   └── topic-create-form.tsx
+│   │   │   ├── topic-create-form.tsx
+│   │   │   └── follow-button.tsx       # Optimistic follow / unfollow pill (useOptimistic)
+│   │   ├── mentions/
+│   │   │   └── mention-textarea.tsx    # HeroUI Textarea + portaled @-autocomplete dropdown
 │   │   ├── feed-nav/
 │   │   │   ├── feed-nav.tsx            # Sidebar "Your feed" scope nav (Everywhere / Following + follow-count chip)
 │   │   │   ├── feed-nav-mobile.tsx     # lg:hidden horizontal scope pills above the feed
@@ -438,15 +442,18 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   ├── db/
 │   │   ├── index.ts                    # Prisma singleton
 │   │   └── queries/
-│   │       ├── posts.ts                # by-id (cached), by-topic, search, recent, related — viewer-aware votes + saves include
+│   │       ├── posts.ts                # by-id (cached), by-topic, search, recent, following, related — viewer-aware votes + saves include
 │   │       ├── comments.ts             # by-post (cached)
-│   │       ├── users.ts                # profile-by-username (cached, indexed lookup)
+│   │       ├── users.ts                # profile-by-username (cached, indexed lookup) + @-mention suggestions
+│   │       ├── topics.ts               # by-slug (cached) + followed-topics-by-user
+│   │       ├── stats.ts                # site-wide counts (cached) for the home hero
 │   │       ├── saved-posts.ts          # fetchSavedPosts(userId) — SAVED_POSTS_LIMIT = 100
 │   │       ├── notifications.ts        # recent (cap 20) + unread count + full history, all cached
 │   │       └── search-suggestions.ts
 │   ├── lib/
 │   │   ├── utils.ts                    # timeAgo(), stripMarkdown(), topicTone(), slugifyName()
 │   │   ├── server-utils.ts             # requireAuth(), getViewerId()
+│   │   ├── actions.ts                  # ok() / formError() / parseFormData() / requireUserOr() server-action helpers
 │   │   ├── form-classes.ts             # Shared HeroUI input/textarea classes
 │   │   ├── form-limits.ts              # Shared min/max bounds (single source for Zod + CharCounter)
 │   │   ├── use-paginated.ts            # Client pagination hook
@@ -454,6 +461,8 @@ Run everything with `npm run test:everything` — it starts the Docker test PG, 
 │   │   ├── use-visited.ts              # Local-only read-state set + markVisited() helper
 │   │   ├── mentions.ts                 # MENTION regex + extractMentions(content)
 │   │   ├── remark-mentions.ts          # mdast plugin that rewrites @name → /u/<name> links
+│   │   ├── find-mention-trigger.ts     # Caret-aware @-trigger detector shared by renderer + autocomplete
+│   │   ├── notifications-bus.ts        # CustomEvent bus so /notifications mark-reads decrement the header bell live
 │   │   └── types.ts                    # FormState, ActionResult
 │   ├── auth.ts                         # NextAuth v5 config (GitHub profile.login → User.username + events.signIn backfill + test creds)
 │   └── paths.ts                        # Type-safe URL builder (home, topicShow, postShow, postCreate, userProfile, savedPosts, notifications)
@@ -566,4 +575,7 @@ npm run test:everything    # All of the above + brings up Docker
 npm run test:db:up         # Start Docker test Postgres
 npm run test:db:down       # Stop and clean up Docker test Postgres
 npx prisma db seed         # Reseed the dev database from prisma/seed.ts
+
+# Docs
+npm run screenshots        # Headlessly recapture every README screenshot via playwright.screenshots.config.ts
 ```
