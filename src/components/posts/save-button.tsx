@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useOptimistic, useState, useTransition } from 'react';
+import { useCallback, useState, useTransition } from 'react';
 import { useSession } from 'next-auth/react';
 import { toggleSavedPost } from '@/actions';
 import { useSignInPrompt } from '@/components/auth/signin-prompt';
@@ -27,14 +27,18 @@ export default function SaveButton({
   size = 'sm',
   onToggle,
 }: SaveButtonProps) {
-  // The base state is what the server confirmed. useOptimistic layers an
-  // in-flight overlay on top during a transition and auto-reverts on failure
-  // — no manual rollback bookkeeping the way the useState version needed.
+  // `confirmed` is the server-confirmed truth. `pending` is an optimistic
+  // overlay that flips synchronously on click — outside the transition,
+  // so the icon lands in the same frame as the toast. Cleared (back to
+  // confirmed) on either success or failure.
+  //
+  // Done as a manual override rather than useOptimistic because that hook
+  // requires its setter to run inside a transition, which schedules the
+  // icon flip one frame after the urgent toast render. The visible lag
+  // was the price of "no rollback bookkeeping" — not worth it for a bool.
   const [confirmed, setConfirmed] = useState(initialSaved);
-  const [saved, addOptimistic] = useOptimistic(
-    confirmed,
-    (_current, next: boolean) => next
-  );
+  const [pending, setPending] = useState<boolean | null>(null);
+  const saved = pending ?? confirmed;
   const [isPending, startTransition] = useTransition();
   const session = useSession();
   const signInPrompt = useSignInPrompt();
@@ -50,6 +54,10 @@ export default function SaveButton({
       // the card would visibly linger for a frame. One-way hint to the
       // list; we don't restore on server error.
       if (!next) savedList?.removePost(postId);
+
+      // Flip the icon urgently — outside startTransition — so it lands
+      // in the same frame as the toast render below.
+      setPending(next);
 
       if (!silent) {
         toast.show({
@@ -67,22 +75,22 @@ export default function SaveButton({
       }
 
       startTransition(async () => {
-        addOptimistic(next);
         try {
           const result = await toggleSavedPost(postId);
+          // Batch confirmed + pending clear so the icon doesn't flicker
+          // back to the old confirmed value between the two updates.
           setConfirmed(result.saved);
+          setPending(null);
           onToggle?.(result.saved);
         } catch {
-          // Pull the toast back too — the action didn't land, so the
-          // confirmation message is now lying.
+          // Server rejected — clear the override and the icon snaps back
+          // to whatever confirmed is now (still the pre-click value).
+          setPending(null);
           if (!silent) toast.dismiss();
-          // No setConfirmed → useOptimistic auto-reverts when the
-          // transition settles, snapping the icon back to its
-          // server-confirmed state.
         }
       });
     },
-    [confirmed, postId, savedList, toast, addOptimistic, onToggle]
+    [confirmed, postId, savedList, toast, onToggle]
   );
 
   const onClick = (e: React.MouseEvent) => {
