@@ -47,75 +47,38 @@ function makePost(
 }
 
 describe('PostFeed', () => {
-  it('omits the Following tab when canFollow is false (signed-out)', () => {
-    render(
-      <PostFeed
-        posts={[makePost({ id: 'p1', title: 'Hello' })]}
-        canFollow={false}
-      />
-    );
+  it('renders the Top and New sort tabs and nothing else', () => {
+    render(<PostFeed posts={[makePost({ id: 'p1', title: 'Hello' })]} />);
 
-    expect(screen.queryByRole('tab', { name: /following/i })).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /top/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /new/i })).toBeInTheDocument();
-  });
-
-  it('renders the Following tab when canFollow is true', () => {
-    render(
-      <PostFeed
-        posts={[makePost({ id: 'p1', title: 'Hello' })]}
-        followingPosts={[makePost({ id: 'f1', title: 'Followed' })]}
-        canFollow
-      />
-    );
-
-    expect(screen.getByRole('tab', { name: /following/i })).toBeInTheDocument();
-  });
-
-  it('switches to followed posts when the Following tab is selected', async () => {
-    const user = userEvent.setup();
-    render(
-      <PostFeed
-        posts={[
-          makePost({ id: 'all-1', title: 'All site post' }),
-          makePost({ id: 'all-2', title: 'Another site post' }),
-        ]}
-        followingPosts={[makePost({ id: 'follow-1', title: 'From a follow' })]}
-        canFollow
-      />
-    );
-
-    // Default tab shows site-wide posts.
-    expect(screen.getByText('All site post')).toBeInTheDocument();
-    expect(screen.queryByText('From a follow')).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('tab', { name: /following/i }));
-
-    expect(screen.getByText('From a follow')).toBeInTheDocument();
-    expect(screen.queryByText('All site post')).not.toBeInTheDocument();
-  });
-
-  it('shows the empty state on the Following tab when there are no followed posts', async () => {
-    const user = userEvent.setup();
-    render(
-      <PostFeed
-        posts={[makePost({ id: 'all-1', title: 'All site post' })]}
-        followingPosts={[]}
-        canFollow
-      />
-    );
-
-    await user.click(screen.getByRole('tab', { name: /following/i }));
-
     expect(
-      screen.getByText(/nothing in your follows yet/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: /browse topics/i })
-    ).toBeInTheDocument();
+      screen.queryByRole('tab', { name: /following/i })
+    ).not.toBeInTheDocument();
   });
 
-  it('still renders the top/new sort tabs and orders posts by votes vs createdAt', async () => {
+  it('orders posts by votes when Top is active (default)', () => {
+    const posts = [
+      makePost({
+        id: 'old-popular',
+        title: 'Old but popular',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        _count: { comments: 0, votes: 50 },
+      }),
+      makePost({
+        id: 'new-quiet',
+        title: 'New and quiet',
+        createdAt: new Date('2026-05-01T00:00:00Z'),
+        _count: { comments: 0, votes: 1 },
+      }),
+    ];
+    render(<PostFeed posts={posts} />);
+
+    const visible = screen.getAllByTestId('post');
+    expect(visible[0]).toHaveTextContent('Old but popular');
+  });
+
+  it('switches to recency order when New is clicked', async () => {
     const user = userEvent.setup();
     const posts = [
       makePost({
@@ -131,14 +94,63 @@ describe('PostFeed', () => {
         _count: { comments: 0, votes: 1 },
       }),
     ];
-    render(<PostFeed posts={posts} canFollow={false} />);
-
-    // Default is top — old-popular leads.
-    const visibleTop = screen.getAllByTestId('post');
-    expect(visibleTop[0]).toHaveTextContent('Old but popular');
+    render(<PostFeed posts={posts} />);
 
     await user.click(screen.getByRole('tab', { name: /new/i }));
-    const visibleNew = screen.getAllByTestId('post');
-    expect(visibleNew[0]).toHaveTextContent('New and quiet');
+    const visible = screen.getAllByTestId('post');
+    expect(visible[0]).toHaveTextContent('New and quiet');
+  });
+
+  it('honours defaultSort="new" by leading with the newest post', () => {
+    const posts = [
+      makePost({
+        id: 'old-popular',
+        title: 'Old but popular',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        _count: { comments: 0, votes: 50 },
+      }),
+      makePost({
+        id: 'new-quiet',
+        title: 'New and quiet',
+        createdAt: new Date('2026-05-01T00:00:00Z'),
+        _count: { comments: 0, votes: 1 },
+      }),
+    ];
+    render(<PostFeed posts={posts} defaultSort="new" />);
+
+    const visible = screen.getAllByTestId('post');
+    expect(visible[0]).toHaveTextContent('New and quiet');
+  });
+
+  it('renders the supplied title and subtitle when provided', () => {
+    render(
+      <PostFeed
+        posts={[makePost({ id: 'p1', title: 'Hello' })]}
+        title="From topics you follow"
+        subtitle="Scoped to your follows"
+      />
+    );
+
+    expect(
+      screen.getByRole('heading', { name: /from topics you follow/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/scoped to your follows/i)).toBeInTheDocument();
+  });
+
+  it('renders the supplied emptyState when posts is empty', () => {
+    render(
+      <PostFeed
+        posts={[]}
+        emptyState={<div data-testid="custom-empty">Nothing yet</div>}
+      />
+    );
+
+    expect(screen.getByTestId('custom-empty')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /top/i })).not.toBeInTheDocument();
+  });
+
+  it('falls back to the default empty card when no emptyState is given', () => {
+    render(<PostFeed posts={[]} />);
+    expect(screen.getByText(/nothing here yet/i)).toBeInTheDocument();
   });
 });
