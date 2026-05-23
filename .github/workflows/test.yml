@@ -68,13 +68,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Unit + component tests
-        run: npm test
-
-      - name: Integration tests
-        # tests/integration/setup.ts runs `prisma db push --force-reset`
-        # itself, so we don't need a separate migrate step.
-        run: npm run test:integration
+      - name: Unit + component + integration tests (with coverage gate)
+        # `test:coverage` runs every vitest project (unit + integration)
+        # and enforces the thresholds in vitest.config.ts; a meaningful
+        # drop in coverage fails the build. The integration project hits
+        # the postgres service container directly — tests/integration/
+        # setup.ts handles its own schema push.
+        run: npm run test:coverage
 
       # Playwright browser is installed only when E2E runs. `--with-deps`
       # adds the system libs Chromium needs in the GHA Ubuntu runner.

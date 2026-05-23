@@ -16,7 +16,22 @@ export default defineConfig({
         'src/app/**/layout.tsx',
         'src/app/**/loading.tsx',
         'src/app/**/page.tsx',
+        // Skeleton + home-skeleton are pure presentational chrome — they
+        // surface for ~ms during route transitions and have no logic worth
+        // instrumenting.
+        'src/app/**/*-skeleton.tsx',
+        'src/app/**/loading-*.tsx',
       ],
+      // Baseline thresholds — set a few points below the current numbers
+      // so PRs that meaningfully drop coverage fail, but routine edits to
+      // already-covered code don't trip on rounding. Bump these as the
+      // codebase tightens.
+      thresholds: {
+        statements: 60,
+        branches: 80,
+        functions: 70,
+        lines: 60,
+      },
     },
     projects: [
       {
