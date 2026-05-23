@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import TopicCreateForm from '@/components/topics/topic-create-form';
 import TopicList from '@/components/topics/topic-list';
 import { fetchFollowingPosts, fetchRecentPosts } from '@/db/queries/posts';
@@ -5,16 +7,38 @@ import { fetchSiteStats } from '@/db/queries/stats';
 import PostFeed from '@/components/posts/post-feed';
 import SurfacePanel from '@/components/common/surface-panel';
 import { PrimaryLink } from '@/components/common/primary-button';
+import FeedNav from '@/components/feed-nav/feed-nav';
+import FeedNavMobile from '@/components/feed-nav/feed-nav-mobile';
 import { auth } from '@/auth';
+import { db } from '@/db';
+import paths from '@/paths';
 
-export default async function Home() {
-  const session = await auth();
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const [session, params] = await Promise.all([auth(), searchParams]);
   const viewerId = session?.user?.id ?? null;
+  const rawView = params.view;
 
-  const [posts, stats, followingPosts] = await Promise.all([
-    fetchRecentPosts(),
+  // Signed-out viewers can't have a Following scope — silently redirect
+  // so a stray link can't render an empty "follow some topics" CTA.
+  if (rawView === 'following' && !viewerId) {
+    redirect(paths.home());
+  }
+
+  const scope: 'everywhere' | 'following' =
+    rawView === 'following' && viewerId ? 'following' : 'everywhere';
+
+  const [stats, posts, followCount] = await Promise.all([
     fetchSiteStats(),
-    viewerId ? fetchFollowingPosts(viewerId) : Promise.resolve([]),
+    scope === 'following'
+      ? fetchFollowingPosts(viewerId as string)
+      : fetchRecentPosts(),
+    viewerId
+      ? db.topicFollow.count({ where: { userId: viewerId } })
+      : Promise.resolve(0),
   ]);
 
   return (
@@ -27,14 +51,25 @@ export default async function Home() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-10">
         <div id="feed" className="lg:col-span-8">
+          {viewerId && <FeedNavMobile />}
           <PostFeed
             posts={posts}
-            followingPosts={followingPosts}
-            canFollow={!!viewerId}
+            defaultSort={scope === 'following' ? 'new' : 'top'}
+            title={
+              scope === 'following' ? 'From topics you follow' : undefined
+            }
+            subtitle={
+              scope === 'following'
+                ? 'Scoped to your follows'
+                : undefined
+            }
+            emptyState={scope === 'following' ? <FollowingEmpty /> : undefined}
           />
         </div>
         <aside className="lg:col-span-4">
           <div className="sticky top-[calc(var(--nav-h)+2rem)] space-y-5">
+            {viewerId && <FeedNav followCount={followCount} />}
+
             <SidebarPanel
               title="Start something"
               hint="Create a topic"
@@ -54,6 +89,27 @@ export default async function Home() {
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function FollowingEmpty() {
+  return (
+    <div className="rounded-2xl border border-dashed border-rule-2 bg-cream-2/30 px-6 py-12 text-center">
+      <p className="font-display font-bold text-lg text-ink mb-1">
+        Nothing in your follows yet
+      </p>
+      <p className="text-sm text-ink-2 mb-4 max-w-sm mx-auto leading-relaxed">
+        Open a topic page and tap{' '}
+        <span className="font-semibold text-ink">Follow</span> to start
+        collecting new posts here.
+      </p>
+      <Link
+        href={paths.home()}
+        className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon transition-colors duration-150 motion-reduce:transition-none"
+      >
+        Browse topics &rarr;
+      </Link>
     </div>
   );
 }

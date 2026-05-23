@@ -1,4 +1,7 @@
 const paths = {
+  home(opts?: { view?: 'following' }) {
+    return opts?.view === 'following' ? '/?view=following' : '/';
+  },
   topicShow(topicSlug: string) {
     return `/topics/${topicSlug}`;
   },
