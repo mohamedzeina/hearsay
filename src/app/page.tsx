@@ -1,17 +1,18 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import TopicCreateForm from '@/components/topics/topic-create-form';
 import TopicList from '@/components/topics/topic-list';
 import { fetchFollowingPosts, fetchRecentPosts } from '@/db/queries/posts';
 import { fetchSiteStats } from '@/db/queries/stats';
-import PostFeed from '@/components/posts/post-feed';
 import SurfacePanel from '@/components/common/surface-panel';
 import { PrimaryLink } from '@/components/common/primary-button';
 import FeedNav from '@/components/feed-nav/feed-nav';
 import FeedNavMobile from '@/components/feed-nav/feed-nav-mobile';
+import ScopedPostFeed from '@/components/feed-nav/scoped-post-feed';
+import {
+  ScopeProvider,
+  type Scope,
+} from '@/components/feed-nav/scope-provider';
 import { auth } from '@/auth';
 import { db } from '@/db';
-import paths from '@/paths';
 
 export default async function Home({
   searchParams,
@@ -20,26 +21,24 @@ export default async function Home({
 }) {
   const [session, params] = await Promise.all([auth(), searchParams]);
   const viewerId = session?.user?.id ?? null;
-  const rawView = params.view;
 
-  // Signed-out viewers can't have a Following scope — silently redirect
-  // so a stray link can't render an empty "follow some topics" CTA.
-  if (rawView === 'following' && !viewerId) {
-    redirect(paths.home());
-  }
+  // `searchParams.view` is used **only** to seed the initial client-side
+  // scope so a direct URL or refresh lands on the right tab. Subsequent
+  // scope switches happen entirely in `<ScopeProvider>` via React state
+  // + `history.replaceState`, so the server component never re-renders
+  // on a tab swap — that's what makes the switch feel instant.
+  const initialScope: Scope =
+    params.view === 'following' && viewerId ? 'following' : 'everywhere';
 
-  const scope: 'everywhere' | 'following' =
-    rawView === 'following' && viewerId ? 'following' : 'everywhere';
-
-  const [stats, posts, followCount] = await Promise.all([
-    fetchSiteStats(),
-    scope === 'following'
-      ? fetchFollowingPosts(viewerId as string)
-      : fetchRecentPosts(),
-    viewerId
-      ? db.topicFollow.count({ where: { userId: viewerId } })
-      : Promise.resolve(0),
-  ]);
+  const [stats, everywherePosts, followingPosts, followCount] =
+    await Promise.all([
+      fetchSiteStats(),
+      fetchRecentPosts(),
+      viewerId ? fetchFollowingPosts(viewerId) : Promise.resolve([]),
+      viewerId
+        ? db.topicFollow.count({ where: { userId: viewerId } })
+        : Promise.resolve(0),
+    ]);
 
   return (
     <div className="py-8 sm:py-10">
@@ -49,67 +48,39 @@ export default async function Home({
         <SignedInGreeting name={session.user.name ?? 'friend'} {...stats} />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-10">
-        <div id="feed" className="lg:col-span-8">
-          {viewerId && <FeedNavMobile />}
-          <PostFeed
-            posts={posts}
-            defaultSort={scope === 'following' ? 'new' : 'top'}
-            title={
-              scope === 'following' ? 'From topics you follow' : undefined
-            }
-            subtitle={
-              scope === 'following'
-                ? 'Scoped to your follows'
-                : undefined
-            }
-            emptyState={scope === 'following' ? <FollowingEmpty /> : undefined}
-          />
-        </div>
-        <aside className="lg:col-span-4">
-          <div className="sticky top-[calc(var(--nav-h)+2rem)] space-y-5">
-            {viewerId && <FeedNav followCount={followCount} />}
-
-            <SidebarPanel
-              title="Start something"
-              hint="Create a topic"
-              tone="persimmon"
-            >
-              <TopicCreateForm />
-            </SidebarPanel>
-
-            <SidebarPanel
-              title="Browse topics"
-              hint={`${stats.topicCount} active`}
-            >
-              <TopicList />
-            </SidebarPanel>
-
-            <CommunityNote />
+      <ScopeProvider initialScope={initialScope} canFollow={!!viewerId}>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-10">
+          <div id="feed" className="lg:col-span-8">
+            {viewerId && <FeedNavMobile />}
+            <ScopedPostFeed
+              everywherePosts={everywherePosts}
+              followingPosts={followingPosts}
+            />
           </div>
-        </aside>
-      </div>
-    </div>
-  );
-}
+          <aside className="lg:col-span-4">
+            <div className="sticky top-[calc(var(--nav-h)+2rem)] space-y-5">
+              {viewerId && <FeedNav followCount={followCount} />}
 
-function FollowingEmpty() {
-  return (
-    <div className="rounded-2xl border border-dashed border-rule-2 bg-cream-2/30 px-6 py-12 text-center">
-      <p className="font-display font-bold text-lg text-ink mb-1">
-        Nothing in your follows yet
-      </p>
-      <p className="text-sm text-ink-2 mb-4 max-w-sm mx-auto leading-relaxed">
-        Open a topic page and tap{' '}
-        <span className="font-semibold text-ink">Follow</span> to start
-        collecting new posts here.
-      </p>
-      <Link
-        href={paths.home()}
-        className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-persimmon transition-colors duration-150 motion-reduce:transition-none"
-      >
-        Browse topics &rarr;
-      </Link>
+              <SidebarPanel
+                title="Start something"
+                hint="Create a topic"
+                tone="persimmon"
+              >
+                <TopicCreateForm />
+              </SidebarPanel>
+
+              <SidebarPanel
+                title="Browse topics"
+                hint={`${stats.topicCount} active`}
+              >
+                <TopicList />
+              </SidebarPanel>
+
+              <CommunityNote />
+            </div>
+          </aside>
+        </div>
+      </ScopeProvider>
     </div>
   );
 }

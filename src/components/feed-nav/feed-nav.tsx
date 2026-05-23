@@ -1,35 +1,20 @@
 'use client';
 
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import SurfacePanel from '@/components/common/surface-panel';
-import paths from '@/paths';
+import { useScope, type Scope } from './scope-provider';
 
 interface FeedNavProps {
   /** Total topics the viewer currently follows. Shown as a quiet count next to "Following". */
   followCount?: number;
 }
 
-type Scope = 'everywhere' | 'following';
-
-const SCOPES: { id: Scope; label: string; hint: string; href: string }[] = [
-  {
-    id: 'everywhere',
-    label: 'Everywhere',
-    hint: 'All of Hearsay',
-    href: paths.home(),
-  },
-  {
-    id: 'following',
-    label: 'Following',
-    hint: 'Topics you follow',
-    href: paths.home({ view: 'following' }),
-  },
+const SCOPES: { id: Scope; label: string; hint: string }[] = [
+  { id: 'everywhere', label: 'Everywhere', hint: 'All of Hearsay' },
+  { id: 'following', label: 'Following', hint: 'Topics you follow' },
 ];
 
 export default function FeedNav({ followCount }: FeedNavProps) {
-  const searchParams = useSearchParams();
-  const active: Scope = searchParams.get('view') === 'following' ? 'following' : 'everywhere';
+  const { scope: active, setScope } = useScope();
 
   return (
     <SurfacePanel as="section">
@@ -45,44 +30,42 @@ export default function FeedNav({ followCount }: FeedNavProps) {
       <hr className="border-0 h-px bg-rule" />
       <nav aria-label="Feed scope" className="p-1.5">
         <ul className="flex flex-col gap-0.5">
-          {SCOPES.map((scope) => {
-            const isActive = scope.id === active;
+          {SCOPES.map((s) => {
+            const isActive = s.id === active;
             return (
-              <li key={scope.id}>
-                <Link
-                  href={scope.href}
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => setScope(s.id)}
                   aria-current={isActive ? 'page' : undefined}
-                  scroll={false}
-                  className={`group flex items-center justify-between gap-3 rounded-xl border-l-2 pl-3 pr-2.5 py-2 text-sm transition-colors duration-150 motion-reduce:transition-none ${
+                  className={`group w-full flex items-center justify-between gap-3 rounded-xl border-l-2 pl-3 pr-2.5 py-2 text-sm text-left transition-colors duration-150 motion-reduce:transition-none ${
                     isActive
                       ? 'border-persimmon bg-cream-2/70 text-ink'
                       : 'border-transparent text-ink-2 hover:text-ink hover:bg-cream-2/50'
                   }`}
                 >
                   <span className="flex flex-col min-w-0">
-                    <span
-                      className={`font-display font-bold text-[0.95rem] leading-tight ${
-                        isActive ? 'text-ink' : 'text-ink'
-                      }`}
-                    >
-                      {scope.label}
+                    <span className="font-display font-bold text-[0.95rem] leading-tight text-ink">
+                      {s.label}
                     </span>
                     <span className="text-[11px] text-ink-2 leading-tight mt-0.5">
-                      {scope.hint}
+                      {s.hint}
                     </span>
                   </span>
-                  {scope.id === 'following' && typeof followCount === 'number' && followCount > 0 && (
-                    <span
-                      className={`shrink-0 inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[10px] font-mono font-semibold ${
-                        isActive
-                          ? 'bg-persimmon-soft text-persimmon-deep'
-                          : 'bg-cream-2 text-ink-2'
-                      }`}
-                    >
-                      {followCount}
-                    </span>
-                  )}
-                </Link>
+                  {s.id === 'following' &&
+                    typeof followCount === 'number' &&
+                    followCount > 0 && (
+                      <span
+                        className={`shrink-0 inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[10px] font-mono font-semibold ${
+                          isActive
+                            ? 'bg-persimmon-soft text-persimmon-deep'
+                            : 'bg-cream-2 text-ink-2'
+                        }`}
+                      >
+                        {followCount}
+                      </span>
+                    )}
+                </button>
               </li>
             );
           })}
