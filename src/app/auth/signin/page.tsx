@@ -131,7 +131,7 @@ export default async function SignInPage() {
               className="absolute inset-x-0 top-0 h-40 pointer-events-none"
               style={{
                 backgroundImage:
-                  'radial-gradient(circle at 50% 0%, rgba(var(--persimmon-rgb), 0.08), transparent 70%)',
+                  'radial-gradient(circle at 50% 0%, rgb(var(--persimmon-rgb) / 0.08), transparent 70%)',
               }}
             />
 

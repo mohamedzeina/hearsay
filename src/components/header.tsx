@@ -2,6 +2,7 @@ import Link from 'next/link';
 import SearchInput from './search-input';
 import HeaderAuth from './header-auth';
 import Notifications from './notifications/notifications';
+import ThemeToggle from './theme/theme-toggle';
 import { Suspense } from 'react';
 
 export default function Header() {
@@ -48,8 +49,9 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Notifications + auth — right */}
-            <div className="shrink-0 flex items-center gap-2 sm:gap-3">
+            {/* Theme toggle + notifications + auth — right */}
+            <div className="shrink-0 flex items-center gap-1 sm:gap-2">
+              <ThemeToggle />
               <Suspense fallback={null}>
                 <Notifications />
               </Suspense>

@@ -74,7 +74,7 @@ export default function TopicCreateForm() {
         scrollBehavior="inside"
         classNames={{
           base: 'rounded-2xl border border-rule bg-surface shadow-lift-lg',
-          backdrop: 'bg-ink/40 backdrop-blur-sm',
+          backdrop: 'bg-black/40 dark:bg-black/60 backdrop-blur-sm',
           closeButton: 'top-3 right-3 text-ink-2 hover:bg-cream-2',
         }}
       >

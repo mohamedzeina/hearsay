@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import Providers from '@/app/providers';
 import Header from '@/components/header';
+import { themeBootScript } from '@/components/theme/theme-provider';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -31,6 +32,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${jakarta.variable} ${jetbrains.variable}`}>
+      <head>
+        {/* Runs synchronously before paint. Applies the persisted theme (or
+            the system preference) to <html> so dark-mode users don't see a
+            light flash before the React provider hydrates. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: themeBootScript }}
+        />
+      </head>
       <body className="font-sans min-h-screen text-ink antialiased">
         <Providers>
           <Header />

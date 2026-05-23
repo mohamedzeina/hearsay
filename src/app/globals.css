@@ -2,20 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Color tokens are kept in two parallel forms:
+ *   --foo-rgb   space-separated triple (e.g. "26 22 20") — fed to Tailwind
+ *               via `rgb(var(--foo-rgb) / <alpha-value>)` so utilities like
+ *               `bg-ink/40` keep working under the var-driven theme.
+ *   --foo       full color string (e.g. `rgb(26 22 20)`) — for direct uses
+ *               in CSS (selection, focus ring, syntax highlighting). Derived
+ *               from `--foo-rgb` so the dark override only swaps the RGB.
+ *
+ * Dark theme below redefines only the *-rgb tokens; the derived `--foo`
+ * names follow automatically because CSS resolves var() at use time.
+ */
 :root {
-  --cream: #FAF7F2;
-  --cream-2: #F2EDE3;
-  --surface: #FFFFFF;
-  --ink: #1A1614;
-  --ink-2: #5C544E;
-  --ink-3: #A8A29E;
-  --rule: #EAE4D7;
-  --persimmon: #E5533D;
-  --persimmon-rgb: 229, 83, 61;
-  --persimmon-soft: #FBE8E3;
-  --persimmon-deep: #C2402B;
-  --teal: #0F6E64;
+  --cream-rgb: 250 247 242;
+  --cream-2-rgb: 242 237 227;
+  --surface-rgb: 255 255 255;
+  --ink-rgb: 26 22 20;
+  --ink-2-rgb: 92 84 78;
+  --ink-3-rgb: 168 162 158;
+  --rule-rgb: 234 228 215;
+  --rule-2-rgb: 221 213 197;
+  --persimmon-rgb: 229 83 61;
+  --persimmon-soft-rgb: 251 232 227;
+  --persimmon-deep-rgb: 194 64 43;
+  --teal-rgb: 15 110 100;
+  --teal-soft-rgb: 221 239 236;
+
+  --cream: rgb(var(--cream-rgb));
+  --cream-2: rgb(var(--cream-2-rgb));
+  --surface: rgb(var(--surface-rgb));
+  --ink: rgb(var(--ink-rgb));
+  --ink-2: rgb(var(--ink-2-rgb));
+  --ink-3: rgb(var(--ink-3-rgb));
+  --rule: rgb(var(--rule-rgb));
+  --persimmon: rgb(var(--persimmon-rgb));
+  --persimmon-soft: rgb(var(--persimmon-soft-rgb));
+  --persimmon-deep: rgb(var(--persimmon-deep-rgb));
+  --teal: rgb(var(--teal-rgb));
+
   --nav-h: 4rem;
+}
+
+/*
+ * Dark theme — "Hearsay at night". The cream-paper identity becomes a deep
+ * warm charcoal; persimmon stays exactly as the accent. Surfaces lift one
+ * step above the page, mirroring how the light theme separates white cards
+ * from the cream background. Persimmon-soft inverts to a deep persimmon-
+ * tinted fill so the same hover treatment reads consistently.
+ */
+.dark {
+  --cream-rgb: 22 18 16;       /* page background — deep warm charcoal */
+  --cream-2-rgb: 31 26 22;     /* input fill / hover wash */
+  --surface-rgb: 36 30 26;     /* cards — lift one step above the page */
+  --ink-rgb: 242 237 227;      /* primary text — warm off-white */
+  --ink-2-rgb: 181 172 165;    /* secondary text */
+  --ink-3-rgb: 122 112 104;    /* tertiary text */
+  --rule-rgb: 47 39 33;        /* hairline borders */
+  --rule-2-rgb: 64 53 45;      /* stronger borders */
+  --persimmon-soft-rgb: 58 31 24; /* deep persimmon-tinted fill */
+  --persimmon-deep-rgb: 255 139 114; /* lighter persimmon for contrast on dark */
+  --teal-rgb: 90 168 159;
+  --teal-soft-rgb: 26 51 47;
+  /* --persimmon-rgb intentionally unchanged — accent stays the same */
 }
 
 html {
@@ -84,8 +133,8 @@ select:focus {
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--persimmon-rgb), 0.3); }
-  50% { box-shadow: 0 0 0 6px rgba(var(--persimmon-rgb), 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--persimmon-rgb) / 0.3); }
+  50% { box-shadow: 0 0 0 6px rgb(var(--persimmon-rgb) / 0); }
 }
 
 .dot-live {
@@ -95,7 +144,7 @@ select:focus {
 /* Anchor target flash for thread-map navigation */
 @keyframes target-flash {
   0% {
-    box-shadow: 0 0 0 4px rgba(var(--persimmon-rgb), 0.3);
+    box-shadow: 0 0 0 4px rgb(var(--persimmon-rgb) / 0.3);
     border-radius: 1rem;
   }
   100% {

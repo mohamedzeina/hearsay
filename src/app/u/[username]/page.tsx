@@ -37,7 +37,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
           className="absolute inset-0 pointer-events-none opacity-50"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 0% 0%, rgba(var(--persimmon-rgb), 0.08), transparent 55%), radial-gradient(circle at 100% 100%, rgba(26,22,20,0.04), transparent 55%)',
+              'radial-gradient(circle at 0% 0%, rgb(var(--persimmon-rgb) / 0.08), transparent 55%), radial-gradient(circle at 100% 100%, rgb(var(--ink-rgb) / 0.04), transparent 55%)',
           }}
         />
 

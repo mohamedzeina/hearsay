@@ -27,19 +27,24 @@ const config: Config = {
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
       colors: {
-        cream: '#FAF7F2',
-        'cream-2': '#F2EDE3',
-        surface: '#FFFFFF',
-        ink: '#1A1614',
-        'ink-2': '#5C544E',
-        'ink-3': '#A8A29E',
-        rule: '#EAE4D7',
-        'rule-2': '#DDD5C5',
-        persimmon: PERSIMMON,
-        'persimmon-soft': '#FBE8E3',
-        'persimmon-deep': '#C2402B',
-        teal: '#0F6E64',
-        'teal-soft': '#DDEFEC',
+        // Core palette is driven by CSS variables defined in globals.css so
+        // a single `.dark` class on <html> swaps the entire theme. The
+        // `rgb(var(...) / <alpha-value>)` form is what lets Tailwind opacity
+        // utilities like `bg-ink/40` keep working under variable-driven
+        // colors — Tailwind splices the alpha into the `<alpha-value>` slot.
+        cream: 'rgb(var(--cream-rgb) / <alpha-value>)',
+        'cream-2': 'rgb(var(--cream-2-rgb) / <alpha-value>)',
+        surface: 'rgb(var(--surface-rgb) / <alpha-value>)',
+        ink: 'rgb(var(--ink-rgb) / <alpha-value>)',
+        'ink-2': 'rgb(var(--ink-2-rgb) / <alpha-value>)',
+        'ink-3': 'rgb(var(--ink-3-rgb) / <alpha-value>)',
+        rule: 'rgb(var(--rule-rgb) / <alpha-value>)',
+        'rule-2': 'rgb(var(--rule-2-rgb) / <alpha-value>)',
+        persimmon: 'rgb(var(--persimmon-rgb) / <alpha-value>)',
+        'persimmon-soft': 'rgb(var(--persimmon-soft-rgb) / <alpha-value>)',
+        'persimmon-deep': 'rgb(var(--persimmon-deep-rgb) / <alpha-value>)',
+        teal: 'rgb(var(--teal-rgb) / <alpha-value>)',
+        'teal-soft': 'rgb(var(--teal-soft-rgb) / <alpha-value>)',
         // Topic chip palette — 8 hashed-by-slug tones. Each tone exposes
         // 50 (chip background), 500 (dot), 700 (label text). See topicTone()
         // in lib/utils.ts for the mapping.
