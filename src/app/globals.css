@@ -94,29 +94,31 @@
   /* --persimmon-rgb intentionally unchanged — accent stays the same */
 
   /* Topic chips on dark: dark-tinted backgrounds + brighter pastel text.
-     Dot tones (500) brighten slightly so they stay visible on dark bg. */
-  --topic-terracotta-50-rgb:  61 31 20;
+     Dot tones (500) brighten slightly so they stay visible on dark bg.
+     50-tokens sit ~50% above the surface bg (#241E1A ≈ 36 30 26) so each
+     chip reads as a distinct pocket against the card rather than blending. */
+  --topic-terracotta-50-rgb:  92 47 30;
   --topic-terracotta-500-rgb: 217 113 80;
   --topic-terracotta-700-rgb: 240 167 142;
-  --topic-sage-50-rgb:        31 45 26;
+  --topic-sage-50-rgb:        47 68 39;
   --topic-sage-500-rgb:       122 152 99;
   --topic-sage-700-rgb:       168 196 153;
-  --topic-plum-50-rgb:        46 31 48;
+  --topic-plum-50-rgb:        69 47 72;
   --topic-plum-500-rgb:       165 113 171;
   --topic-plum-700-rgb:       201 156 205;
-  --topic-teal-50-rgb:        26 46 43;
+  --topic-teal-50-rgb:        39 69 65;
   --topic-teal-500-rgb:       72 146 138;
   --topic-teal-700-rgb:       122 196 190;
-  --topic-mustard-50-rgb:     50 40 19;
+  --topic-mustard-50-rgb:     75 60 29;
   --topic-mustard-500-rgb:    176 144 74;
   --topic-mustard-700-rgb:    212 179 106;
-  --topic-periwinkle-50-rgb:  31 35 51;
+  --topic-periwinkle-50-rgb:  47 53 77;
   --topic-periwinkle-500-rgb: 111 124 170;
   --topic-periwinkle-700-rgb: 148 160 204;
-  --topic-rust-50-rgb:        51 32 20;
+  --topic-rust-50-rgb:        77 48 30;
   --topic-rust-500-rgb:       185 109 68;
   --topic-rust-700-rgb:       208 138 92;
-  --topic-rose-50-rgb:        50 31 34;
+  --topic-rose-50-rgb:        75 47 51;
   --topic-rose-500-rgb:       160 107 118;
   --topic-rose-700-rgb:       197 142 150;
 }
