@@ -182,4 +182,142 @@ describe('NotificationsList', () => {
     const link = screen.getByRole('link', { name: /Alice/i });
     expect(link).toHaveAttribute('href', '/topics/coffee/posts/p1');
   });
+
+  describe('filter pills', () => {
+    function mixedItems(): NotificationItem[] {
+      return [
+        makeNotification({ id: 'r1', kind: 'REPLY_TO_POST' }),
+        makeNotification({ id: 'r2', kind: 'REPLY_TO_COMMENT' }),
+        makeNotification({ id: 'u1', kind: 'UPVOTE_POST', commentId: null }),
+        makeNotification({ id: 'u2', kind: 'UPVOTE_COMMENT' }),
+        makeNotification({ id: 'm1', kind: 'MENTION' }),
+      ];
+    }
+
+    it('renders the filter pill row when there are items', () => {
+      render(<NotificationsList initialItems={mixedItems()} />);
+      const tablist = screen.getByRole('tablist', { name: /filter/i });
+      expect(tablist).toBeInTheDocument();
+      // All four pills present, "All" selected by default.
+      expect(
+        screen.getByRole('tab', { name: /^all$/i })
+      ).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('tab', { name: /^replies$/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /^upvotes$/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /^mentions$/i })).toBeInTheDocument();
+    });
+
+    it('omits the filter pill row when there are no items', () => {
+      render(<NotificationsList initialItems={[]} />);
+      expect(
+        screen.queryByRole('tablist', { name: /filter/i })
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows only reply rows when the Replies filter is selected', async () => {
+      const user = userEvent.setup();
+      render(<NotificationsList initialItems={mixedItems()} />);
+
+      await user.click(screen.getByRole('tab', { name: /^replies$/i }));
+
+      // Two reply rows are reply kinds (REPLY_TO_POST, REPLY_TO_COMMENT)
+      const rows = screen.getAllByRole('link', { name: /Alice/i });
+      expect(rows).toHaveLength(2);
+      expect(
+        screen.getAllByText(/replied to your/i)
+      ).toHaveLength(2);
+      // Upvote and mention verbs are not in the DOM under this filter.
+      expect(screen.queryByText(/upvoted your/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/mentioned you/i)).not.toBeInTheDocument();
+    });
+
+    it('shows only upvote rows when the Upvotes filter is selected', async () => {
+      const user = userEvent.setup();
+      render(<NotificationsList initialItems={mixedItems()} />);
+
+      await user.click(screen.getByRole('tab', { name: /^upvotes$/i }));
+
+      const rows = screen.getAllByRole('link', { name: /Alice/i });
+      expect(rows).toHaveLength(2);
+      expect(screen.getAllByText(/upvoted your/i)).toHaveLength(2);
+      expect(screen.queryByText(/replied to your/i)).not.toBeInTheDocument();
+    });
+
+    it('shows only mention rows when the Mentions filter is selected', async () => {
+      const user = userEvent.setup();
+      render(<NotificationsList initialItems={mixedItems()} />);
+
+      await user.click(screen.getByRole('tab', { name: /^mentions$/i }));
+
+      expect(screen.getAllByRole('link', { name: /Alice/i })).toHaveLength(1);
+      expect(screen.getByText(/mentioned you/i)).toBeInTheDocument();
+    });
+
+    it('renders a filter-specific empty state when the active filter has no matches', async () => {
+      const user = userEvent.setup();
+      // Only upvotes in the list — switching to Replies must show an
+      // empty state rather than the global no-items copy.
+      const items: NotificationItem[] = [
+        makeNotification({ id: 'u1', kind: 'UPVOTE_POST', commentId: null }),
+        makeNotification({ id: 'u2', kind: 'UPVOTE_COMMENT' }),
+      ];
+      render(<NotificationsList initialItems={items} />);
+
+      await user.click(screen.getByRole('tab', { name: /^replies$/i }));
+
+      expect(screen.getByText(/no replies to show yet/i)).toBeInTheDocument();
+      // The global empty state's CTA must not appear here.
+      expect(
+        screen.queryByRole('link', { name: /browse posts/i })
+      ).not.toBeInTheDocument();
+    });
+
+    it('resets to page 1 when the filter changes', async () => {
+      const user = userEvent.setup();
+      // 12 replies + 12 upvotes — replies span 2 pages on their own.
+      const items: NotificationItem[] = [
+        ...Array.from({ length: 12 }, (_, i) =>
+          makeNotification({ id: `r${i}`, kind: 'REPLY_TO_POST' })
+        ),
+        ...Array.from({ length: 12 }, (_, i) =>
+          makeNotification({ id: `u${i}`, kind: 'UPVOTE_POST', commentId: null })
+        ),
+      ];
+      render(<NotificationsList initialItems={items} />);
+
+      // Page forward into "All" page 2, then switch filter.
+      await user.click(screen.getByRole('button', { name: /next/i }));
+      // We're now on page 2 (Next becomes disabled at end; we're mid-list).
+      expect(screen.getByRole('button', { name: /previous/i })).toBeEnabled();
+
+      await user.click(screen.getByRole('tab', { name: /^upvotes$/i }));
+
+      // Filter swap snaps to page 1 of the filtered set — Previous disabled.
+      expect(screen.getByRole('button', { name: /previous/i })).toBeDisabled();
+      expect(screen.getAllByText(/upvoted your post/i)).toHaveLength(10);
+    });
+
+    it('keeps the "Mark all read" pill scoped to all items, not just the filtered view', async () => {
+      const user = userEvent.setup();
+      // Only the (unread) upvote is unread; filtering to Replies still
+      // shows the global unread pill because items overall has unread rows.
+      const items: NotificationItem[] = [
+        makeNotification({
+          id: 'r1',
+          kind: 'REPLY_TO_POST',
+          readAt: new Date('2026-05-21T12:00:00Z'),
+        }),
+        makeNotification({ id: 'u1', kind: 'UPVOTE_POST', commentId: null }),
+      ];
+      render(<NotificationsList initialItems={items} />);
+
+      await user.click(screen.getByRole('tab', { name: /^replies$/i }));
+
+      // Filtered view shows the read reply only; pill still visible since
+      // the underlying list has an unread upvote.
+      expect(
+        screen.getByRole('button', { name: /mark all read/i })
+      ).toBeInTheDocument();
+    });
+  });
 });
