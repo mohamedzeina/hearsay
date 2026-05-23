@@ -5,6 +5,7 @@ import CommentCreateForm from '@/components/comments/comment-create-form';
 import PostAuthor from '@/components/posts/post-author';
 import ThreadMap from '@/components/posts/thread-map';
 import RelatedPosts from '@/components/posts/related-posts';
+import MarkVisited from '@/components/posts/mark-visited';
 import { Suspense } from 'react';
 import PostShowLoading from '@/components/posts/post-show-loading';
 import CommentListLoading from '@/components/comments/comment-list-loading';
@@ -23,6 +24,10 @@ export default async function PostShowPage({ params }: PostShowPageProps) {
 
   return (
     <div className="py-8 sm:py-10">
+      {/* Mark the post as locally-visited on mount; PostCardList fades
+          read cards everywhere it's rendered next. */}
+      <MarkVisited postId={postId} />
+
       <Suspense
         fallback={
           <div className="h-4 w-48 bg-cream-2 rounded animate-pulse mb-6" />
