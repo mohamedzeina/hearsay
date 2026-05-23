@@ -32,19 +32,18 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Notifications history page — dedicated `/notifications` route with the full history paginated at 10/page via `usePaginated`, per-row mark-read + "Mark all read" pill (matches the bell), bell footer now links here via a "See all →" link, "Notifications" entry added to the avatar dropdown
 - ✅ Mentions — `@username` in post and comment markdown autolinks to `/u/<name>` (custom remark plugin via `mdast-util-find-and-replace`, code-context safe); a `MENTION` notification fires inside the existing create transactions, with self-mention skip, unknown-user skip, dedupe per write, and suppression of double-pinging a recipient who already got the reply notification
 - ✅ Notifications filtering — All / Replies / Upvotes / Mentions pill row on `/notifications` (matches the comment-sort pill pattern); filters client-side, resets to page 1 on change, shows a filter-specific empty state when the active filter has no matches; pill row hidden when there are no items overall
+- ✅ Mention autocomplete — typing `@` in a post or comment textarea opens a portaled dropdown of matching users (avatar + @username + display name); click / Enter / Tab inserts `@username `; `↑` / `↓` navigate, `Escape` closes; `GET /api/users/suggestions` (auth-gated, ≤6 rows, prefix-match case-insensitive) backs the lookup; dropdown is portaled to `document.body` and tracks scroll/resize so a `SurfacePanel`'s `overflow-hidden` can't clip it
+- ✅ Notifications live polling — header bell polls `GET /api/notifications/recent` every 60s, pauses while the dropdown is open and while the tab is hidden, and fires an immediate refresh when the tab returns to visible; cadence overridable via `NEXT_PUBLIC_NOTIFICATIONS_POLL_MS` for local dev so the loop is testable without sitting and waiting a minute
 
 ---
 
 ## Tier 1 — highest leverage
 
-_All Tier 1 items have shipped. See Tier 2 for the next-best pick._
+_All Tier 1 items have shipped. See Tier 3 for the next-best pick._
 
 ## Tier 2 — engagement & retention
 
-- **Notifications — live polling on the bell** (S)
-  Light polling every ~60s on the header bell so new items appear
-  without a full navigation. Pause when the tab is hidden / dropdown
-  is open. Filtering has already shipped on `/notifications`.
+_Notifications polish complete: filtering on `/notifications` shipped, live polling on the bell shipped._
 
 ## Tier 3 — content quality
 
@@ -113,4 +112,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-23 (after notifications filtering ship). Update or trash as priorities shift._
+_Last touched 2026-05-23 (after mention autocomplete + notifications live polling ship). Update or trash as priorities shift._
