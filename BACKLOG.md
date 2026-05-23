@@ -38,6 +38,7 @@ Sizes: **S** = a day or less, **M** = a few days, **L** = a week+.
 - ✅ Feed scope nav (URL-driven, instant client-side swap) — Following is no longer a third sort pill; the home page renders a dedicated "Your feed" sidebar `SurfacePanel` (Everywhere / Following, persimmon left rail on the active row, quiet follow-count chip) plus a `lg:hidden` horizontal fallback above the feed. Both feeds are fetched server-side once (`Promise.all`); a `ScopeProvider` owns the client-side scope state so toggling between Everywhere and Following is a synchronous React state swap — no Next router involved, no recompile, instant. Scope clicks update the URL via `history.replaceState` (deep-links still work; `popstate` keeps browser back/forward in sync). Sort is sticky across scope swaps; `PostFeed` is scope-agnostic and gains `defaultSort` / `title` / `subtitle` / `emptyState` / `resetKey` props so per-scope copy + pagination reset come from the page.
 - ✅ Bookmark save/unsave toast — editorial index-card toast in the bottom-right (`SurfacePanel`-family card with persimmon dot + mono uppercase eyebrow + display-font sentence + Undo affordance). Fires from `SaveButton` urgently — alongside the optimistic icon flip — so the confirmation lands in the same frame as the tap. `Saved · Tucked away in /saved.` / `Unsaved · Removed from /saved.`; auto-dismisses at 3.5s, hover pauses, Escape closes, Undo snap-dismisses (no exit animation lag). `SavedListContext` gained `restorePost` backed by a tombstone cache so unsaving on `/saved` + Undo restores the card at its original index — the provider stays mounted even when the list empties so an undo from the last-unsave still has somewhere to call back into. New `ToastProvider` + `useToast()` primitive is generic — single visible toast at a time, calling `show()` replaces (never stacks). Dropped `useOptimistic` from `SaveButton` because its setter has to run inside `startTransition`, which scheduled the icon flip one frame behind the urgent toast render; manual `pending ?? confirmed` pattern is on the urgent lane.
 - ✅ Dark mode — "Hearsay at night" is warm charcoal (`#161210` page, `#241E1A` surface), not generic black; persimmon stays as the accent. Tailwind palette rewired to `rgb(var(--name-rgb) / <alpha-value>)` so a single `.dark` class on `<html>` swaps the entire theme while utilities like `bg-ink/40` and `border-persimmon/15` keep working. Topic-chip palette (8 tones × 3 shades = 24 tokens) gets a paired dark set with dark-tinted backgrounds + brighter pastel labels so each topic still reads as its own color. `ThemeProvider` + sun/moon `ThemeToggle` in the header, persisting to `hearsay:theme` in localStorage; an inline boot script in `<head>` applies the saved-or-system theme before paint so dark-preference users don't see a light flash. hljs syntax highlighting follows the var-driven swap without a separate ruleset. Modal backdrops switched from `bg-ink/40` (which would invert and lighten on dark) to `bg-black/40 dark:bg-black/60`.
+- ✅ CI pipeline + coverage gate — `.github/workflows/test.yml` runs the full test pyramid on every PR and push to main: postgres:16-alpine service container (same image + creds + port as `docker-compose.test.yml`), Prisma generate, lint, unit + integration via `npm run test:coverage`, Playwright (chromium with system deps), and a Playwright report artifact uploaded on failure. Concurrent runs of the same branch cancel earlier ones so a fresh push doesn't burn runner minutes. `vitest.config.ts` enforces baseline coverage thresholds (statements/lines 60, branches 80, functions 70 — a few points below the current 66/86/77/77 numbers) so a meaningful drop fails the build but routine edits don't trip on rounding; `@vitest/coverage-v8` added as a dev dep.
 
 ---
 
@@ -79,13 +80,7 @@ _Topic following shipped. No remaining Tier 3 items — see Tier 4+ for the next
 
 ## Tier 6 — infra & DX
 
-- **CI pipeline running the full test pyramid** (S)
-  `test:everything` already works locally. Wire it to GitHub Actions:
-  spin up the Docker test PG, run unit + integration + E2E on every PR.
-
-- **Coverage gate** (S)
-  Vitest already supports `--coverage`. Add a threshold so PRs that
-  drop coverage below the line fail CI.
+_CI pipeline + coverage gate shipped. No remaining Tier 6 items._
 
 ---
 
@@ -109,4 +104,4 @@ light-touch).
 
 ---
 
-_Last touched 2026-05-23 (after dark mode ship). Update or trash as priorities shift._
+_Last touched 2026-05-23 (after CI + coverage gate ship). Update or trash as priorities shift._

@@ -277,10 +277,21 @@ A four-layer test pyramid covers utilities, components, queries/actions, and ful
 
 Run everything with `npm run test:everything` — it starts the Docker test PG, runs all Vitest projects, then Playwright. Granular scripts (`test`, `test:integration`, `test:e2e`) exist for fast iteration on a single layer.
 
+### Continuous integration
+
+`.github/workflows/test.yml` runs the full pyramid on every PR and push to `main`. The job mirrors local setup: a `postgres:16-alpine` service container with the same creds + port as `docker-compose.test.yml`, Prisma client generation, lint, then `npm run test:coverage` (covers both unit + integration projects with the coverage gate enforced), followed by Playwright (chromium with system deps). A failing Playwright run uploads the report + traces as an artifact. Concurrent runs of the same branch / PR cancel earlier ones so a fresh push doesn't burn runner minutes.
+
+### Coverage gate
+
+`vitest.config.ts` carries baseline coverage thresholds (statements / lines `60`, branches `80`, functions `70`) backed by `@vitest/coverage-v8`. The numbers sit a few points below current (`~66 / 86 / 77 / 66`) so routine edits to already-covered code don't trip on rounding while a meaningful drop fails the build. Skeleton + loading chrome are excluded from instrumentation since they're presentational.
+
 ## Project Structure
 
 ```
 .
+├── .github/
+│   └── workflows/
+│       └── test.yml                 # CI: postgres service + lint + vitest coverage + Playwright
 ├── prisma/
 │   ├── schema.prisma          # User, Topic, Post, Comment, PostVote, CommentVote, SavedPost, Notification
 │   ├── migrations/            # init → soft_delete → votes → edited_at → user_profile_fields → saved_post → notification
