@@ -1,6 +1,7 @@
 import PostCreateForm from '@/components/posts/post-create-form';
 import PostList from '@/components/posts/post-list';
 import TopicPostsEmpty from '@/components/posts/topic-posts-empty';
+import FollowButton from '@/components/topics/follow-button';
 import { fetchPostByTopicSlug } from '@/db/queries/posts';
 import { fetchTopicBySlug } from '@/db/queries/topics';
 import { notFound } from 'next/navigation';
@@ -40,33 +41,43 @@ export default async function TopicShowPage({ params }: TopicShowPageProps) {
         />
 
         <div className="relative px-6 sm:px-10 py-8 sm:py-10">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full bg-surface/70 backdrop-blur px-2.5 py-1 text-[11px] font-mono uppercase tracking-[0.12em] ${tone.text}`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} />
-              topic
-            </span>
-            <span
-              className={`inline-flex items-center gap-1 rounded-full bg-surface/70 backdrop-blur px-2.5 py-1 text-[11px] font-mono uppercase tracking-[0.12em] ${tone.text}`}
-            >
-              <span className="font-semibold num-plate">{postCount}</span>
-              {postCount === 1 ? 'post' : 'posts'}
-            </span>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full bg-surface/70 backdrop-blur px-2.5 py-1 text-[11px] font-mono uppercase tracking-[0.12em] ${tone.text}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} />
+                  topic
+                </span>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full bg-surface/70 backdrop-blur px-2.5 py-1 text-[11px] font-mono uppercase tracking-[0.12em] ${tone.text}`}
+                >
+                  <span className="font-semibold num-plate">{postCount}</span>
+                  {postCount === 1 ? 'post' : 'posts'}
+                </span>
+              </div>
+
+              <h1
+                className={`font-display font-extrabold tracking-tight leading-[1.05] text-4xl sm:text-5xl lowercase ${tone.text}`}
+              >
+                <span className="opacity-60">#</span>
+                {slug}
+              </h1>
+
+              {topic.description && (
+                <p className={`mt-3 max-w-2xl text-base sm:text-lg leading-relaxed ${tone.text} opacity-85`}>
+                  {topic.description}
+                </p>
+              )}
+            </div>
+
+            <FollowButton
+              topicId={topic.id}
+              topicSlug={slug}
+              initialFollowed={topic.followers.length > 0}
+            />
           </div>
-
-          <h1
-            className={`font-display font-extrabold tracking-tight leading-[1.05] text-4xl sm:text-5xl lowercase ${tone.text}`}
-          >
-            <span className="opacity-60">#</span>
-            {slug}
-          </h1>
-
-          {topic.description && (
-            <p className={`mt-3 max-w-2xl text-base sm:text-lg leading-relaxed ${tone.text} opacity-85`}>
-              {topic.description}
-            </p>
-          )}
         </div>
       </header>
 

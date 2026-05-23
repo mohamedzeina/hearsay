@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { db } from '@/db';
+import { getViewerId } from '@/lib/server-utils';
 
 export type TopicWithPostCount = {
   id: string;
@@ -10,12 +11,29 @@ export type TopicWithPostCount = {
   _count: { posts: number };
 };
 
+// Topic detail variant — adds viewer-scoped follow state so the
+// FollowButton can render its initial value without a follow-up
+// roundtrip. Empty `followers` array means the viewer is signed-out
+// or doesn't follow; a one-element array means they do.
+export type TopicWithFollowState = TopicWithPostCount & {
+  followers: { id: string }[];
+};
+
 export const fetchTopicBySlug = cache(
-  (slug: string): Promise<TopicWithPostCount | null> =>
-    db.topic.findUnique({
+  async (slug: string): Promise<TopicWithFollowState | null> => {
+    const viewerId = await getViewerId();
+    return db.topic.findUnique({
       where: { slug },
-      include: { _count: { select: { posts: true } } },
-    })
+      include: {
+        _count: { select: { posts: true } },
+        followers: {
+          where: { userId: viewerId ?? '' },
+          select: { id: true },
+          take: 1,
+        },
+      },
+    });
+  }
 );
 
 export function fetchAllTopicsByActivity(): Promise<TopicWithPostCount[]> {
