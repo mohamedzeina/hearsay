@@ -94,7 +94,7 @@ describe('ToastProvider', () => {
     expect(screen.queryByTestId('toast')).not.toBeInTheDocument();
   });
 
-  it('Undo button calls the supplied callback and dismisses', async () => {
+  it('Undo button calls the supplied callback and snaps the toast away', async () => {
     const undo = vi.fn();
     renderProvider();
 
@@ -106,9 +106,24 @@ describe('ToastProvider', () => {
     fireEvent.click(screen.getByRole('button', { name: /undo/i }));
     expect(undo).toHaveBeenCalledTimes(1);
 
-    await act(async () => {
-      vi.advanceTimersByTime(230);
+    // No exit animation tick needed — Undo dismisses instantly.
+    expect(screen.queryByTestId('toast')).not.toBeInTheDocument();
+  });
+
+  it('dismiss({ instant: true }) skips the exit animation', async () => {
+    renderProvider();
+
+    act(() => {
+      toastApi!.show({ eyebrow: 'Saved', body: 'snap-out' });
     });
+    await flushFrame();
+    expect(screen.getByTestId('toast')).toBeInTheDocument();
+
+    act(() => {
+      toastApi!.dismiss({ instant: true });
+    });
+
+    // No timer advance — gone in the same frame.
     expect(screen.queryByTestId('toast')).not.toBeInTheDocument();
   });
 

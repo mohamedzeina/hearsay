@@ -25,7 +25,12 @@ interface ToastPayload {
 
 interface ToastContextValue {
   show: (toast: Omit<ToastPayload, 'id'>) => void;
-  dismiss: () => void;
+  /**
+   * Dismiss the active toast. Pass `{ instant: true }` to skip the exit
+   * animation — useful when the user just triggered an action (e.g. Undo)
+   * and is expecting the toast to get out of the way immediately.
+   */
+  dismiss: (opts?: { instant?: boolean }) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -106,11 +111,19 @@ export default function ToastProvider({
     [scheduleDismiss]
   );
 
-  const dismiss = useCallback(() => {
-    clearDismissTimer();
-    if (exitTimer.current) return; // already exiting
-    beginExit();
-  }, [beginExit]);
+  const dismiss = useCallback(
+    (opts?: { instant?: boolean }) => {
+      clearDismissTimer();
+      if (opts?.instant) {
+        clearExitTimer();
+        setToast(null);
+        return;
+      }
+      if (exitTimer.current) return; // already exiting
+      beginExit();
+    },
+    [beginExit]
+  );
 
   // Pause the dismiss clock while the user has the toast hovered.
   const onMouseEnter = () => {
@@ -176,7 +189,10 @@ export default function ToastProvider({
                 type="button"
                 onClick={() => {
                   toast.undo?.();
-                  dismiss();
+                  // Snap-dismiss so the user gets immediate feedback that
+                  // their tap landed — the exit animation reads as lag
+                  // here, since the action they just took is the news.
+                  dismiss({ instant: true });
                 }}
                 className="shrink-0 text-sm font-semibold text-persimmon-deep hover:text-persimmon transition-colors duration-150 motion-reduce:transition-none"
               >

@@ -55,7 +55,14 @@ export default function SaveButton({
         toast.show({
           eyebrow: next ? 'Saved' : 'Unsaved',
           body: next ? 'Tucked away in /saved.' : 'Removed from /saved.',
-          undo: () => doToggle(true),
+          undo: () => {
+            // If this toast came from an unsave on /saved, the card has been
+            // tombstoned out of the list. Restore it first (synchronous
+            // setState — renders in the same frame) so Undo feels instant;
+            // doToggle re-saves on the server underneath.
+            if (next === false) savedList?.restorePost(postId);
+            doToggle(true);
+          },
         });
       }
 

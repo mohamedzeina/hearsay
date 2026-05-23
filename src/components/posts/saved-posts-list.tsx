@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PostWithData } from '@/db/queries/posts';
 import { IconBookmark } from '@/components/icons';
 import PostCardList from '@/components/posts/post-card-list';
@@ -15,18 +15,52 @@ interface SavedPostsListProps {
  * Owns the /saved page body so unsaving a post drops its card immediately
  * (mirroring Twitter/Reddit). Renders both the populated list and the empty
  * state so the page header stays in sync as the count changes.
+ *
+ * Tombstones the removed post (object + original index) so the bookmark
+ * toast's Undo can put it back in the same frame the server re-save kicks
+ * off — the provider stays mounted even when the list empties so an undo
+ * from the last-unsave still has somewhere to call back into.
  */
 export default function SavedPostsList({ initialPosts }: SavedPostsListProps) {
   const [posts, setPosts] = useState(initialPosts);
+  // Mirror posts into a ref so removePost can compute the tombstone without
+  // putting a side effect inside a setState updater (strict-mode-safe).
+  const postsRef = useRef(posts);
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
+
+  const tombstones = useRef(
+    new Map<string, { post: PostWithData; index: number }>()
+  );
 
   const removePost = useCallback((postId: string) => {
+    const current = postsRef.current;
+    const index = current.findIndex((p) => p.id === postId);
+    if (index === -1) return;
+    tombstones.current.set(postId, { post: current[index], index });
     setPosts((prev) => prev.filter((p) => p.id !== postId));
   }, []);
 
-  const value = useMemo(() => ({ removePost }), [removePost]);
+  const restorePost = useCallback((postId: string) => {
+    const tomb = tombstones.current.get(postId);
+    if (!tomb) return;
+    tombstones.current.delete(postId);
+    setPosts((prev) => {
+      if (prev.some((p) => p.id === postId)) return prev;
+      const next = [...prev];
+      next.splice(Math.min(tomb.index, next.length), 0, tomb.post);
+      return next;
+    });
+  }, []);
+
+  const value = useMemo(
+    () => ({ removePost, restorePost }),
+    [removePost, restorePost]
+  );
 
   return (
-    <>
+    <SavedListProvider value={value}>
       <header className="mb-6 flex items-end justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
@@ -64,10 +98,8 @@ export default function SavedPostsList({ initialPosts }: SavedPostsListProps) {
           </Link>
         </div>
       ) : (
-        <SavedListProvider value={value}>
-          <PostCardList posts={posts} />
-        </SavedListProvider>
+        <PostCardList posts={posts} />
       )}
-    </>
+    </SavedListProvider>
   );
 }
