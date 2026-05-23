@@ -1,0 +1,95 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Concurrent runs of the same branch/PR cancel each other so a fresh
+# push doesn't leave a stale run burning runner minutes.
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Full test pyramid
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Service container mirrors docker-compose.test.yml (same image, port,
+    # creds) so local `test:everything` and CI hit identically-shaped
+    # Postgreses. The tmpfs we use locally for speed isn't worth the
+    # complication on GHA — service teardown is fast enough.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hearsay
+          POSTGRES_PASSWORD: hearsay
+          POSTGRES_DB: hearsay_test
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U hearsay -d hearsay_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Matches .env.test.example so the integration setup + Prisma schema
+      # push both land on the service container above. The "secrets" here
+      # are dummies — auth isn't really exercised; the test-credentials
+      # Playwright path is gated by PLAYWRIGHT_TEST=1 set per-step below.
+      DATABASE_URL: postgresql://hearsay:hearsay@localhost:54329/hearsay_test?schema=public
+      AUTH_SECRET: ci-not-real
+      NEXTAUTH_SECRET: ci-not-real
+      GITHUB_CLIENT_ID: ci-not-real
+      GITHUB_CLIENT_SECRET: ci-not-real
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `next build` and tests both reach for the generated Prisma client.
+      # No postinstall hook does this for us, so run it explicitly.
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit + component tests
+        run: npm test
+
+      - name: Integration tests
+        # tests/integration/setup.ts runs `prisma db push --force-reset`
+        # itself, so we don't need a separate migrate step.
+        run: npm run test:integration
+
+      # Playwright browser is installed only when E2E runs. `--with-deps`
+      # adds the system libs Chromium needs in the GHA Ubuntu runner.
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: E2E tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
